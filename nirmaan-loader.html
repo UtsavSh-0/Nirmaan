@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="theme-color" content="#F7F7FF"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<title>Nirmaan — Loading</title>
+<link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@700&family=General+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;background:#F7F7FF;overflow:hidden;}
+.lr{width:100%;height:100vh;height:100dvh;background:#F7F7FF;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden;font-family:'General Sans',sans-serif;}
+.grid-bg{position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,0.07) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.07) 1px,transparent 1px);background-size:32px 32px;}
+.glow{position:absolute;width:480px;height:480px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.13) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);animation:gp 3s ease-in-out infinite;}
+@keyframes gp{0%,100%{opacity:.7;transform:translate(-50%,-50%) scale(1);}50%{opacity:1;transform:translate(-50%,-50%) scale(1.1);}}
+.ring{position:absolute;border-radius:50%;border:1px solid rgba(99,102,241,0.18);top:50%;left:50%;animation:spin linear infinite;}
+.ring::after{content:'';position:absolute;border-radius:50%;background:#6366F1;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;box-shadow:0 0 0 3px rgba(99,102,241,0.12);}
+.r1{width:150px;height:150px;margin:-75px 0 0 -75px;animation-duration:4s;}
+.r2{width:230px;height:230px;margin:-115px 0 0 -115px;animation-duration:7s;animation-direction:reverse;}
+.r2::after{background:#818CF8;width:5px;height:5px;top:-2.5px;}
+.r3{width:310px;height:310px;margin:-155px 0 0 -155px;animation-duration:11s;}
+.r3::after{background:#A5B4FC;width:4px;height:4px;top:-2px;}
+.r4{width:400px;height:400px;margin:-200px 0 0 -200px;animation-duration:16s;animation-direction:reverse;border-color:rgba(99,102,241,0.08);}
+.r4::after{background:#C7D2FE;width:3px;height:3px;top:-1.5px;}
+@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+.logo-wrap{position:relative;z-index:10;display:flex;flex-direction:column;align-items:center;}
+.icon-box{width:80px;height:80px;border-radius:22px;background:#6366F1;display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:24px;position:relative;animation:pop .6s cubic-bezier(.34,1.56,.64,1) .3s both;box-shadow:0 6px 28px rgba(99,102,241,0.25),0 0 0 5px rgba(99,102,241,0.1);}
+.icon-box::before{content:'';position:absolute;inset:-5px;border-radius:27px;border:1.5px solid rgba(99,102,241,0.25);animation:ring2 2s ease-in-out .9s infinite;}
+@keyframes pop{from{opacity:0;transform:scale(.4);}to{opacity:1;transform:scale(1);}}
+@keyframes ring2{0%{opacity:1;transform:scale(1);}100%{opacity:0;transform:scale(1.55);}}
+.wm{font-family:'Clash Display',sans-serif;font-size:56px;font-weight:700;letter-spacing:-.04em;color:#1e1b4b;display:flex;align-items:center;height:72px;overflow:hidden;}
+.wc{display:inline-block;opacity:0;transform:translateY(34px);animation:cd .5s cubic-bezier(.34,1.56,.64,1) forwards;}
+.wd{display:inline-block;width:9px;height:9px;border-radius:50%;background:#6366F1;margin-left:4px;align-self:flex-end;margin-bottom:13px;opacity:0;animation:cd .4s cubic-bezier(.34,1.56,.64,1) forwards;box-shadow:0 0 0 3px rgba(99,102,241,0.15);}
+@keyframes cd{to{opacity:1;transform:translateY(0);}}
+.tagline{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:#818CF8;margin-top:10px;opacity:0;animation:fu .6s ease 1.8s forwards;}
+@keyframes fu{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.prog-wrap{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);width:210px;z-index:10;display:flex;flex-direction:column;align-items:center;gap:11px;}
+.prog-track{width:100%;height:3px;background:#E0E7FF;border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;width:0%;background:#6366F1;border-radius:99px;animation:pr 2s cubic-bezier(.4,0,.2,1) .5s forwards;}
+@keyframes pr{0%{width:0%;}15%{width:18%;}35%{width:42%;}60%{width:67%;}80%{width:84%;}95%{width:96%;}100%{width:100%;}}
+.prog-lbl{font-size:11px;font-weight:500;color:#A5B4FC;letter-spacing:.05em;}
+.chip{position:absolute;background:#fff;border:1px solid #E0E7FF;border-radius:20px;padding:6px 14px;font-size:11px;font-weight:600;color:#6366F1;letter-spacing:.02em;animation:cf 3s ease-in-out infinite;z-index:5;box-shadow:0 2px 10px rgba(99,102,241,0.09);}
+.c1{top:17%;left:6%;animation-delay:0s;}
+.c2{top:29%;right:7%;animation-delay:.8s;}
+.c3{bottom:27%;left:7%;animation-delay:1.4s;}
+.c4{bottom:19%;right:6%;animation-delay:.4s;}
+.c5{top:15%;right:19%;animation-delay:2s;}
+.c6{bottom:29%;left:22%;animation-delay:1s;}
+.c7{top:52%;left:4%;animation-delay:1.7s;}
+.c8{top:44%;right:5%;animation-delay:.6s;}
+@keyframes cf{0%,100%{transform:translateY(0);opacity:.75;}50%{transform:translateY(-8px);opacity:1;}}
+.done-msg{position:absolute;bottom:88px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:500;color:#6366F1;letter-spacing:.06em;white-space:nowrap;opacity:0;animation:fu .4s ease 2.2s forwards;}
+.flash{position:absolute;inset:0;background:rgba(99,102,241,0.05);opacity:0;pointer-events:none;animation:fl .3s ease 2s forwards;}
+@keyframes fl{0%{opacity:0;}50%{opacity:1;}100%{opacity:0;}}
+.ver{position:absolute;bottom:22px;right:24px;font-size:10px;color:#C7D2FE;letter-spacing:.06em;}
+.made{position:absolute;bottom:22px;left:24px;font-size:10px;color:#C7D2FE;letter-spacing:.04em;}
+
+/* ── MOBILE ── */
+@media(max-width:600px){
+  .wm{font-size:40px;height:54px;}
+  .icon-box{width:64px;height:64px;border-radius:18px;font-size:28px;margin-bottom:18px;}
+  .tagline{font-size:9px;letter-spacing:.15em;}
+  .glow{width:280px;height:280px;}
+  .r1{width:110px;height:110px;margin:-55px 0 0 -55px;}
+  .r2{width:175px;height:175px;margin:-87px 0 0 -87px;}
+  .r3{width:240px;height:240px;margin:-120px 0 0 -120px;}
+  .r4{width:305px;height:305px;margin:-152px 0 0 -152px;}
+  .chip{font-size:10px;padding:4px 10px;}
+  .c1{top:12%;left:4%;}
+  .c2{top:22%;right:4%;}
+  .c3{bottom:22%;left:4%;}
+  .c4{bottom:14%;right:4%;}
+  .c5,.c6{display:none;}
+  .c7,.c8{display:none;}
+  .prog-wrap{width:170px;bottom:env(safe-area-inset-bottom,0px) + 40px;bottom:calc(40px + env(safe-area-inset-bottom));}
+  .done-msg{font-size:11px;bottom:calc(76px + env(safe-area-inset-bottom));}
+  .ver{bottom:calc(16px + env(safe-area-inset-bottom));right:16px;}
+  .made{bottom:calc(16px + env(safe-area-inset-bottom));left:16px;}
+}
+</style>
+</head>
+<body>
+<div class="lr">
+  <div class="grid-bg"></div>
+  <div class="glow"></div>
+  <div class="ring r1"></div>
+  <div class="ring r2"></div>
+  <div class="ring r3"></div>
+  <div class="ring r4"></div>
+  <div class="chip c1">AI Matching</div>
+  <div class="chip c2">Skill Gap</div>
+  <div class="chip c3">Roadmap</div>
+  <div class="chip c4">Resume AI</div>
+  <div class="chip c5">Network Hub</div>
+  <div class="chip c6">Voice — Arya</div>
+  <div class="chip c7">Smart Apply</div>
+  <div class="chip c8">Job Alerts</div>
+  <div class="logo-wrap">
+    <div class="icon-box">✦</div>
+    <div class="wm" id="wm"></div>
+    <div class="tagline">AI Internship Platform</div>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-track"><div class="prog-fill"></div></div>
+    <div class="prog-lbl" id="pl">Initialising AI engine…</div>
+  </div>
+  <div class="done-msg">Ready — let's get you placed ✦</div>
+  <div class="flash"></div>
+  <div class="ver">v3.0</div>
+  <div class="made">Made in India 🇮🇳</div>
+</div>
+
+<script>
+  const wm = document.getElementById('wm');
+  'Nirmaan'.split('').forEach((ch, i) => {
+    const s = document.createElement('span');
+    s.className = 'wc';
+    s.textContent = ch;
+    s.style.animationDelay = (.7 + i * .08) + 's';
+    wm.appendChild(s);
+  });
+  const dot = document.createElement('span');
+  dot.className = 'wd';
+  dot.style.animationDelay = '1.36s';
+  wm.appendChild(dot);
+
+  const labels = [
+    'Initialising AI engine…',
+    'Loading semantic model…',
+    'Calibrating match scores…',
+    'Syncing internship database…',
+    'Preparing your dashboard…',
+    'Almost there…',
+    'Done ✓'
+  ];
+  const pl = document.getElementById('pl');
+  labels.forEach((t, i) => setTimeout(() => pl.textContent = t, 200 + i * 270));
+
+  /* ── AUTO-REDIRECT ──────────────────────────────────────────
+     After 7.5 s the loader navigates to the main app.
+     Change 'nirmaan.html' below if your main file has a
+     different name or is hosted at a different path.
+  ────────────────────────────────────────────────────────── */
+  setTimeout(() => {
+    window.location.href = 'nirmaan.html';
+  }, 2800);
+</script>
+</body>
+</html>
