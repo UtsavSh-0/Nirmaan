@@ -1,6 +1,6 @@
 // ══════════════════════ STATE ══════════════════════
 const S={
-  page:'home',user:null,lang:'en',dark:false,langChosen:false,
+  page:'home',user:null,lang:'en',dark:false,langChosen:false,cookieAccepted:localStorage.getItem('nirmaan_cookies')==='1',
   chatOpen:false,chatMsgs:[],chatTyping:false,
   voiceActive:false,
   notifs:[],notifId:0,
@@ -104,6 +104,10 @@ const T={
     applyNow:'🚀 Apply Now',applied:'Applied ✓',saveBtn:'🔖 Save',savedBtn:'🔖 Saved',
     gapBtn:'📊 Gap',remote:'Remote',hybrid:'Hybrid',onsite:'On-site',
     // Language popup
+    cookieTitle:'We use cookies 🍪',cookieLearnMore:'Learn More',
+    cookiePolicyTitle:'Cookies Policy',cookieLastUpdated:'Last Updated: May 15, 2026',
+    cookieText:'We use cookies to personalise your experience, remember your language preference, and improve our AI matching. By continuing, you agree to our',
+    cookiePrivacy:'Privacy Policy',cookieAccept:'Accept All',cookieDecline:'Essential Only',
     langPopupTitle:'Choose your language',langPopupSub:'You can change this any time from the navigation bar.',
     langContinue:'Continue',
     // Skill Gap
@@ -218,6 +222,10 @@ const T={
     applyNow:'🚀 आवेदन करें',applied:'आवेदन हुआ ✓',saveBtn:'🔖 सेव करें',savedBtn:'🔖 सेव हुआ',
     gapBtn:'📊 गैप',remote:'रिमोट',hybrid:'हाइब्रिड',onsite:'ऑन-साइट',
     // Language popup
+    cookieTitle:'हम कुकीज़ उपयोग करते हैं 🍪',cookieLearnMore:'और जानें',
+    cookiePolicyTitle:'कुकीज़ नीति',cookieLastUpdated:'अंतिम अपडेट: 15 मई 2026',
+    cookieText:'हम आपके अनुभव को व्यक्तिगत बनाने, भाषा प्राथमिकता याद रखने और AI मैचिंग सुधारने के लिए कुकीज़ उपयोग करते हैं। जारी रखकर आप हमारी',
+    cookiePrivacy:'गोपनीयता नीति',cookieAccept:'सभी स्वीकार करें',cookieDecline:'केवल ज़रूरी',
     langPopupTitle:'भाषा चुनें',langPopupSub:'आप इसे नेविगेशन बार से कभी भी बदल सकते हैं।',
     langContinue:'जारी रखें',
     // Skill Gap
@@ -262,6 +270,24 @@ const T={
 function t(key){ return (T[S.lang]||T.en)[key]||(T.en[key]||key); }
 
 // ── Language popup builder ──
+function buildCookieBanner(){
+  if(S.cookieAccepted)return '';
+  return `<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8888;padding:.85rem 1rem calc(.85rem + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--b);box-shadow:0 -4px 24px rgba(0,0,0,.10);animation:slideUp .3s cubic-bezier(.34,1.2,.64,1)">
+    <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <span style="font-size:1.4rem;flex-shrink:0">🍪</span>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:.82rem;font-weight:700;color:var(--t);margin-bottom:.2rem">${t('cookieTitle')}</div>
+        <div style="font-size:.74rem;color:var(--t3);line-height:1.5">${t('cookieText')} <span style="color:var(--p);cursor:pointer;text-decoration:underline;font-weight:600" onclick="notif('Privacy Policy opening…','in')">${t('cookiePrivacy')}</span>.</div>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-shrink:0;flex-wrap:wrap">
+        <button onclick="S.cookieAccepted=true;localStorage.setItem('nirmaan_cookies','1');render()" style="padding:.5rem 1.1rem;border-radius:99px;background:var(--p);color:#fff;border:none;font-size:.79rem;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap;-webkit-tap-highlight-color:transparent">${t('cookieAccept')}</button>
+        <button onclick="S.cookieAccepted=true;localStorage.setItem('nirmaan_cookies','1');render()" style="padding:.5rem 1rem;border-radius:99px;background:var(--bg3);color:var(--t2);border:1px solid var(--b);font-size:.79rem;font-weight:600;cursor:pointer;font-family:var(--fb);white-space:nowrap;-webkit-tap-highlight-color:transparent">${t('cookieDecline')}</button>
+        <button onclick="S.modal='cookiePolicy';render()" style="padding:.5rem 1rem;border-radius:99px;background:transparent;color:var(--p);border:1px solid rgba(99,102,241,.3);font-size:.79rem;font-weight:600;cursor:pointer;font-family:var(--fb);white-space:nowrap;-webkit-tap-highlight-color:transparent">${t('cookieLearnMore')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function buildLangPopup(){
   if(S.langChosen)return '';
   const isHi=S.lang==='hi';
@@ -634,7 +660,7 @@ function buildMobNav(){
 }
 function buildApp(){
   if(!('mobMenu' in S))S.mobMenu=false;
-  return `${buildNav()}${buildBody()}${buildMobNav()}${buildChat()}${S.voiceActive?`<div class="vi"><div class="vd"></div><div class="vw">${[1,2,3,4,5].map(i=>`<div class="vb"></div>`).join('')}</div><span>Listening…</span></div>`:''}${buildNotifs()}${S.modal?buildModal():''}${buildLangPopup()}`;
+  return `${buildNav()}${buildBody()}${buildMobNav()}${buildChat()}${S.voiceActive?`<div class="vi"><div class="vd"></div><div class="vw">${[1,2,3,4,5].map(i=>`<div class="vb"></div>`).join('')}</div><span>Listening…</span></div>`:''}${buildNotifs()}${S.modal?buildModal():''}${buildCookieBanner()}${buildLangPopup()}`;
 }
 
 // ══════════════════════ NAV ══════════════════════
@@ -1505,7 +1531,69 @@ function buildNotifs(){
 }
 
 // ══════════════════════ MODAL ══════════════════════
+function buildCookiePolicyModal(){
+  return `<div style="position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:1rem" onclick="S.modal=null;render()">
+    <div style="background:var(--bg2);border:1px solid var(--b);border-radius:20px;width:100%;max-width:640px;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.2);animation:fadeUp .3s cubic-bezier(.34,1.2,.64,1)" onclick="event.stopPropagation()">
+      <div style="padding:1.4rem 1.5rem;border-bottom:1px solid var(--b);display:flex;align-items:center;justify-content:space-between;flex-shrink:0">
+        <div>
+          <h2 style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--t);letter-spacing:-.02em">🍪 ${t('cookiePolicyTitle')}</h2>
+          <p style="font-size:.72rem;color:var(--t3);margin-top:.2rem">${t('cookieLastUpdated')}</p>
+        </div>
+        <button onclick="S.modal=null;render()" style="width:32px;height:32px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;color:var(--t2);flex-shrink:0">×</button>
+      </div>
+      <div style="overflow-y:auto;padding:1.4rem 1.5rem;flex:1;font-size:.82rem;color:var(--t2);line-height:1.75">
+        <p style="margin-bottom:1rem">Welcome to <a href="https://nirmaan-ebon.vercel.app/nirmaan.html" target="_blank" style="color:var(--p);font-weight:700;text-decoration:none">Nirmaan</a>. This Cookies Policy explains how we use cookies and similar technologies when you visit our website.</p>
+
+        <h3 style="font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--t);margin:.9rem 0 .4rem">1. What Are Cookies?</h3>
+        <p>Cookies are small text files stored on your device when you visit a website. They help websites function properly, improve user experience, and analyze website performance.</p>
+
+        <h3 style="font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--t);margin:.9rem 0 .4rem">2. Types of Cookies We Use</h3>
+        <div style="background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:.85rem 1rem;margin-bottom:.6rem">
+          <div style="font-weight:700;color:var(--t);margin-bottom:.3rem">✅ Essential Cookies</div>
+          <p style="font-size:.79rem">Necessary for the website to work correctly. They enable core features such as page navigation and secure access.</p>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:.85rem 1rem;margin-bottom:.6rem">
+          <div style="font-weight:700;color:var(--t);margin-bottom:.3rem">📊 Performance & Analytics Cookies</div>
+          <p style="font-size:.79rem;margin-bottom:.4rem">Help us understand how visitors interact with the website by collecting anonymous information such as:</p>
+          <ul style="list-style:none;padding:0;font-size:.79rem">
+            ${['Pages visited','Time spent on pages','Browser and device type','Website performance'].map(i=>`<li style="padding:.1rem 0">• ${i}</li>`).join('')}
+          </ul>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--b);border-radius:10px;padding:.85rem 1rem;margin-bottom:.6rem">
+          <div style="font-weight:700;color:var(--t);margin-bottom:.3rem">⚙️ Functional Cookies</div>
+          <p style="font-size:.79rem">Remember your preferences and settings to provide a more personalised experience.</p>
+        </div>
+
+        <h3 style="font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--t);margin:.9rem 0 .4rem">3. Third-Party Cookies</h3>
+        <p style="margin-bottom:.4rem">Some third-party services integrated into the website may place cookies on your device, such as:</p>
+        <ul style="list-style:none;padding:0;margin-bottom:.5rem">
+          ${['Analytics services','Embedded content','Hosting or performance tools'].map(i=>`<li style="padding:.1rem 0;font-size:.79rem">• ${i}</li>`).join('')}
+        </ul>
+        <p>We do not control third-party cookies directly.</p>
+
+        <h3 style="font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--t);margin:.9rem 0 .4rem">4. How You Can Control Cookies</h3>
+        <p style="margin-bottom:.4rem">You can manage or disable cookies through your browser settings. Most browsers allow you to:</p>
+        <ul style="list-style:none;padding:0;margin-bottom:.5rem">
+          ${['Delete cookies','Block cookies','Receive alerts before cookies are stored'].map(i=>`<li style="padding:.1rem 0;font-size:.79rem">• ${i}</li>`).join('')}
+        </ul>
+        <p>Please note that disabling certain cookies may affect website functionality.</p>
+
+        <h3 style="font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--t);margin:.9rem 0 .4rem">5. Changes to This Policy</h3>
+        <p>We may update this Cookies Policy from time to time. Any changes will be posted on this page with an updated revision date.</p>
+
+        <h3 style="font-family:var(--fh);font-size:.88rem;font-weight:700;color:var(--t);margin:.9rem 0 .4rem">6. Contact Us</h3>
+        <p>If you have any questions about this Cookies Policy, please contact us through the website: <a href="https://nirmaan-ebon.vercel.app/nirmaan.html" target="_blank" style="color:var(--p);font-weight:700;text-decoration:none">Nirmaan Contact Page</a>.</p>
+      </div>
+      <div style="padding:1rem 1.5rem;border-top:1px solid var(--b);display:flex;gap:.6rem;justify-content:flex-end;flex-shrink:0">
+        <button onclick="S.modal=null;render()" style="padding:.55rem 1.1rem;border-radius:99px;background:var(--bg3);color:var(--t2);border:1px solid var(--b);font-size:.8rem;font-weight:600;cursor:pointer;font-family:var(--fb)">${t('cookieDecline')}</button>
+        <button onclick="S.cookieAccepted=true;localStorage.setItem('nirmaan_cookies','1');S.modal=null;render()" style="padding:.55rem 1.25rem;border-radius:99px;background:var(--p);color:#fff;border:none;font-size:.8rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${t('cookieAccept')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
 function buildModal(){
+  if(S.modal==='cookiePolicy')return buildCookiePolicyModal();
   if(S.modal==='project') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal"><button class="mcl" onclick="S.modal=null;render()">×</button><div class="mh">Add Project</div><p style="font-size:.82rem;color:var(--t3);margin-bottom:1.35rem">Showcase your work to boost AI match score</p><div class="fg"><label class="fl">Project Name</label><input class="fi" id="mpn" placeholder="AI Chat App"/></div><div class="fg"><label class="fl">Technologies Used</label><input class="fi" id="mpt" placeholder="React, Node.js, OpenAI"/></div><div class="fg"><label class="fl">Project Link</label><input class="fi" id="mpl" placeholder="github.com/you/project"/></div><div class="fg"><label class="fl">Description</label><textarea class="fta" rows="3" placeholder="What does it do? What did you build?"></textarea></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="addProject()">Add Project ✓</button><button class="btn btn-ghost" onclick="S.modal=null;render()">Cancel</button></div></div></div>`;
   if(S.modal&&S.modal.startsWith('msg_')){
     const id=parseInt(S.modal.split('_')[1]);const p=NETWORK.find(x=>x.id===id);
