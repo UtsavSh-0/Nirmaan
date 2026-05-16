@@ -1,7 +1,7 @@
 // ══════════════════════ STATE ══════════════════════
 const S={
-  page:'home',user:null,lang:'en',dark:false,langChosen:false,cookieAccepted:localStorage.getItem('nirmaan_cookies')==='1',
-  chatOpen:false,chatMsgs:[],chatTyping:false,
+  page:'home',user:null,lang:localStorage.getItem('nirmaan_lang')||'en',dark:localStorage.getItem('nirmaan_dark')==='1',langChosen:localStorage.getItem('nirmaan_lang_chosen')==='1',cookieAccepted:localStorage.getItem('nirmaan_cookies')==='1',
+  chatOpen:false,chatMsgs:[],chatTyping:false,chatHintDismissed:false,
   voiceActive:false,
   notifs:[],notifId:0,
   savedIds:[],appliedIds:[],
@@ -272,7 +272,7 @@ function t(key){ return (T[S.lang]||T.en)[key]||(T.en[key]||key); }
 // ── Language popup builder ──
 function buildCookieBanner(){
   if(S.cookieAccepted)return '';
-  return `<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8888;padding:.85rem 1rem calc(.85rem + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--b);box-shadow:0 -4px 24px rgba(0,0,0,.10);animation:slideUp .3s cubic-bezier(.34,1.2,.64,1)">
+  return `<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8000;pointer-events:none;padding:.85rem 1rem calc(.85rem + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--b);box-shadow:0 -4px 24px rgba(0,0,0,.10);animation:slideUp .3s cubic-bezier(.34,1.2,.64,1);pointer-events:auto">
     <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
       <span style="font-size:1.4rem;flex-shrink:0">🍪</span>
       <div style="flex:1;min-width:200px">
@@ -313,13 +313,13 @@ function buildLangPopup(){
           ${S.lang==='hi'?`<div style="font-size:.65rem;color:var(--p);font-weight:800;margin-top:.4rem">✓ चुना गया</div>`:''}
         </button>
       </div>
-      <button onclick="S.langChosen=true;render()" style="width:100%;padding:.82rem;border-radius:12px;background:var(--p);color:#fff;border:none;font-size:.92rem;font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.01em;-webkit-tap-highlight-color:transparent">${isHi?'जारी रखें ✦':'Continue ✦'}</button>
+      <button onclick="S.langChosen=true;localStorage.setItem('nirmaan_lang_chosen','1');localStorage.setItem('nirmaan_lang',S.lang);render()" style="width:100%;padding:.82rem;border-radius:12px;background:var(--p);color:#fff;border:none;font-size:.92rem;font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.01em;-webkit-tap-highlight-color:transparent">${isHi?'जारी रखें ✦':'Continue ✦'}</button>
       <p style="text-align:center;margin-top:.85rem;font-size:.7rem;color:var(--t3)">${isHi?'✦ Nirmaan — भारत का AI इंटर्नशिप प्लेटफॉर्म':'✦ Nirmaan — AI Internship Platform for India'}</p>
     </div>
   </div>`;
 }
 
-function setLang(l){S.lang=l;render();}
+function setLang(l){S.lang=l;localStorage.setItem('nirmaan_lang',l);render();}
 window.setLang=setLang;
 
 
@@ -1595,7 +1595,7 @@ function doGLogin(){
 function doLogout(){
   clearInterval(autoTimer);
   S.user=null;S.appliedIds=[];S.savedIds=[];INTERNS.forEach(i=>i.saved=false);
-  S.chatMsgs=[];S.chatOpen=false;S.autoLoginActive=true;S.loginRole='student';
+  S.chatMsgs=[];S.chatOpen=false;S.autoLoginActive=true;S.loginRole='student';S.chatHintDismissed=false;
   notif('Logged out','in');
   go('home');
 }
@@ -1691,6 +1691,25 @@ function render(){
   const savedEnd=active&&active.selectionEnd!=null?active.selectionEnd:null;
 
   document.getElementById('root').innerHTML=buildApp();
+  // Wire chat buttons via event listeners (more reliable than inline onclick)
+  const fab=document.getElementById('chat-fab-btn');
+  if(fab)fab.addEventListener('click',function(){S.chatOpen=!S.chatOpen;S.chatHintDismissed=true;render();});
+  const closeBtn=document.getElementById('chat-close-btn');
+  if(closeBtn)closeBtn.addEventListener('click',function(){S.chatOpen=false;render();});
+  const clearBtn=document.getElementById('chat-clear-btn');
+  if(clearBtn)clearBtn.addEventListener('click',function(){S.chatMsgs=[];render();});
+  const hintBubble=document.getElementById('chat-hint-bubble');
+  if(hintBubble)hintBubble.addEventListener('click',function(){S.chatOpen=true;S.chatHintDismissed=true;render();});
+  const hintClose=document.getElementById('chat-hint-close');
+  if(hintClose)hintClose.addEventListener('click',function(e){e.stopPropagation();S.chatHintDismissed=true;render();});
+  const voiceBtn=document.getElementById('chat-voice-btn');
+  if(voiceBtn)voiceBtn.addEventListener('click',function(){chatVoice();});
+  const sendBtn=document.getElementById('chat-send-btn');
+  if(sendBtn)sendBtn.addEventListener('click',function(){const inp=document.getElementById('chatinp');const v=inp?.value?.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});inp.value='';processChat(v);}});
+  const inp=document.getElementById('chatinp');
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter'){const v=this.value.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});this.value='';processChat(v);}}});
+  document.querySelectorAll('[data-chatq]').forEach(function(el){el.addEventListener('click',function(){const q=this.getAttribute('data-chatq');S.chatMsgs.push({r:'u',t:q});processChat(q);});});
+  const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
   attachEv();
 
   if(savedId){
@@ -2590,13 +2609,42 @@ function buildContact(){
 // ══════════════════════ CHAT ══════════════════════
 function buildChat(){
   const msgs=S.chatMsgs.length===0?[{r:'b',t:t('chatWelcome')||BRAIN.hi}]:S.chatMsgs;
-  return `<button class="cfab ${S.voiceActive?'rec':''}" onclick="S.chatOpen=!S.chatOpen;render()">${S.voiceActive?'🔴':'💬'}</button>
-  ${S.chatOpen?`<div class="cw"><div class="ch"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div><div style="flex:1"><div style="color:#fff;font-weight:700;font-size:.88rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.7);font-size:.68rem">● Online · Voice enabled</div></div><button onclick="S.chatOpen=false;render()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:25px;height:25px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem">×</button></div>
-  <div class="cms" id="chatmsgs">${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\n/g,'<br>')}</div>`).join('')}${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}</div>
-  <div class="cqb">${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Get referral','Cold email','Cover letter','CGPA tips','Remote internships','Nirmaan info']).map(q=>`<div class="cq" onclick="S.chatMsgs.push({r:'u',t:'${q}'});processChat('${q}')">${q}</div>`).join('')}</div>
-  <div class="cir"><button class="cvb ${S.voiceActive?'on':''}" onclick="chatVoice()" title="Voice input">🎙️</button><input class="cinp" id="chatinp" placeholder="Ask anything…" onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});this.value='';processChat(v);}}"/><button class="csnd" onclick="const v=document.getElementById('chatinp')?.value?.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});document.getElementById('chatinp').value='';processChat(v);}">➤</button></div>
-  </div>`:''}`;
+  const hint=S.lang==='hi'?'मैं क्या मदद कर सकता हूं? 👋':'What can I help you with? 👋';
+  const ph=t('chatPlaceholder')||'Ask me anything…';
+  let html='';
+  if(!S.chatOpen&&!S.chatHintDismissed){
+    html+=`<div id="chat-hint-bubble" style="position:fixed;bottom:5.8rem;right:1.6rem;z-index:9001;background:var(--bg2);border:1.5px solid var(--b);border-radius:14px;padding:.58rem .9rem;font-size:.8rem;font-weight:600;color:var(--t);box-shadow:0 4px 24px rgba(0,0,0,.13);display:flex;align-items:center;gap:.35rem;cursor:pointer;animation:fadeUp .35s cubic-bezier(.34,1.3,.64,1);white-space:nowrap;max-width:260px;">
+      <span>${hint}</span>
+      <span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.3rem;font-size:.9rem;line-height:1;padding:2px 4px">×</span>
+      <div style="position:absolute;bottom:-7px;right:22px;width:12px;height:12px;background:var(--bg2);border-right:1.5px solid var(--b);border-bottom:1.5px solid var(--b);transform:rotate(45deg)"></div>
+    </div>`;
+  }
+  html+=`<button id="chat-fab-btn" style="position:fixed;bottom:1.6rem;right:1.6rem;width:54px;height:54px;border-radius:50%;background:var(--g1);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.4);font-size:1.35rem;z-index:9000;border:none;transition:all .15s">${S.voiceActive?'🔴':'🤖'}</button>`;
+  if(S.chatOpen){
+    html+=`<div id="chat-window" style="position:fixed;bottom:5.2rem;right:1.6rem;width:340px;height:490px;background:var(--bg2);border-radius:var(--rxl);box-shadow:0 20px 56px rgba(0,0,0,.18);border:1px solid var(--b);display:flex;flex-direction:column;z-index:9000;overflow:hidden;animation:sci .22s ease">
+      <div style="padding:.85rem 1rem;background:var(--g1);display:flex;align-items:center;gap:.7rem">
+        <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
+        <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.65);font-size:.67rem">● Online · 50+ topics</div></div>
+        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.18rem .5rem;font-size:.65rem;cursor:pointer">🗑</button>
+        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1.1rem;margin-left:.25rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1">×</button>
+      </div>
+      <div id="chatmsgs" style="flex:1;overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.6rem">
+        ${msgs.map(m=>`<div style="max-width:88%;padding:.65rem .85rem;border-radius:${m.r==='b'?'4px 14px 14px 14px':'14px 4px 14px 14px'};background:${m.r==='b'?'var(--bg3)':'var(--p)'};color:${m.r==='b'?'var(--t)':'#fff'};font-size:.8rem;line-height:1.6;align-self:${m.r==='b'?'flex-start':'flex-end'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
+        ${S.chatTyping?`<div style="display:flex;gap:4px;padding:.65rem .85rem;background:var(--bg3);border-radius:4px 14px 14px 14px;width:fit-content"><div style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:tdb .9s ease-in-out infinite"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:tdb .9s ease-in-out .2s infinite"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:tdb .9s ease-in-out .4s infinite"></div></div>`:''}
+      </div>
+      <div style="display:flex;gap:.35rem;padding:.5rem .85rem;overflow-x:auto;scrollbar-width:none;border-top:1px solid var(--b)">
+        ${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon','DSA prep','Roadmap','Help']).map(q=>`<div data-chatq="${q}" style="flex-shrink:0;padding:.3rem .72rem;border-radius:99px;border:1px solid var(--b);background:var(--bg3);color:var(--t2);font-size:.72rem;cursor:pointer;white-space:nowrap">${q}</div>`).join('')}
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;padding:.65rem .85rem;border-top:1px solid var(--b)">
+        <button id="chat-voice-btn" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--b);background:${S.voiceActive?'var(--red)':'var(--bg3)'};color:${S.voiceActive?'#fff':'var(--t2)'};cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">🎙️</button>
+        <input id="chatinp" placeholder="${ph}" style="flex:1;border:1.5px solid var(--b);border-radius:99px;padding:.5rem .85rem;font-size:.8rem;background:var(--bg3);color:var(--t);font-family:var(--fb);outline:none"/>
+        <button id="chat-send-btn" style="width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">➤</button>
+      </div>
+    </div>`;
+  }
+  return html;
 }
+
 
 // ══════════════════════ NOTIFS ══════════════════════
 function buildNotifs(){
@@ -2682,6 +2730,7 @@ function buildFooter(){
 
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
+window.render=render;window.chatVoice=chatVoice;window.notif=notif;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
