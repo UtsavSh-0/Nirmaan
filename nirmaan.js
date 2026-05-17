@@ -2611,38 +2611,28 @@ function buildChat(){
   const msgs=S.chatMsgs.length===0?[{r:'b',t:t('chatWelcome')||BRAIN.hi}]:S.chatMsgs;
   const hint=S.lang==='hi'?'मैं क्या मदद कर सकता हूं? 👋':'What can I help you with? 👋';
   const ph=t('chatPlaceholder')||'Ask me anything…';
-  let html='';
-  if(!S.chatOpen&&!S.chatHintDismissed){
-    html+=`<div id="chat-hint-bubble" style="position:fixed;bottom:5.8rem;right:1.6rem;z-index:9001;background:var(--bg2);border:1.5px solid var(--b);border-radius:14px;padding:.58rem .9rem;font-size:.8rem;font-weight:600;color:var(--t);box-shadow:0 4px 24px rgba(0,0,0,.13);display:flex;align-items:center;gap:.35rem;cursor:pointer;animation:fadeUp .35s cubic-bezier(.34,1.3,.64,1);white-space:nowrap;max-width:260px;">
-      <span>${hint}</span>
-      <span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.3rem;font-size:.9rem;line-height:1;padding:2px 4px">×</span>
-      <div style="position:absolute;bottom:-7px;right:22px;width:12px;height:12px;background:var(--bg2);border-right:1.5px solid var(--b);border-bottom:1.5px solid var(--b);transform:rotate(45deg)"></div>
-    </div>`;
-  }
-  html+=`<button id="chat-fab-btn" style="position:fixed;bottom:1.6rem;right:1.6rem;width:54px;height:54px;border-radius:50%;background:var(--g1);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,.4);font-size:1.35rem;z-index:9000;border:none;transition:all .15s">${S.voiceActive?'🔴':'🤖'}</button>`;
-  if(S.chatOpen){
-    html+=`<div id="chat-window" style="position:fixed;bottom:5.2rem;right:1.6rem;width:340px;height:490px;background:var(--bg2);border-radius:var(--rxl);box-shadow:0 20px 56px rgba(0,0,0,.18);border:1px solid var(--b);display:flex;flex-direction:column;z-index:9000;overflow:hidden;animation:sci .22s ease">
-      <div style="padding:.85rem 1rem;background:var(--g1);display:flex;align-items:center;gap:.7rem">
+  return `
+    ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
+    <button id="chat-fab-btn" class="cfab ${S.voiceActive?'rec':''}">${S.voiceActive?'🔴':'🤖'}</button>
+    ${S.chatOpen?`<div class="cw">
+      <div class="ch">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
         <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.65);font-size:.67rem">● Online · 50+ topics</div></div>
-        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.18rem .5rem;font-size:.65rem;cursor:pointer">🗑</button>
-        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:1.1rem;margin-left:.25rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1">×</button>
+        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.18rem .5rem;font-size:.65rem;cursor:pointer;font-family:var(--fb)">🗑</button>
+        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
       </div>
-      <div id="chatmsgs" style="flex:1;overflow-y:auto;padding:.85rem;display:flex;flex-direction:column;gap:.6rem">
-        ${msgs.map(m=>`<div style="max-width:88%;padding:.65rem .85rem;border-radius:${m.r==='b'?'4px 14px 14px 14px':'14px 4px 14px 14px'};background:${m.r==='b'?'var(--bg3)':'var(--p)'};color:${m.r==='b'?'var(--t)':'#fff'};font-size:.8rem;line-height:1.6;align-self:${m.r==='b'?'flex-start':'flex-end'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
-        ${S.chatTyping?`<div style="display:flex;gap:4px;padding:.65rem .85rem;background:var(--bg3);border-radius:4px 14px 14px 14px;width:fit-content"><div style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:tdb .9s ease-in-out infinite"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:tdb .9s ease-in-out .2s infinite"></div><div style="width:7px;height:7px;border-radius:50%;background:var(--t3);animation:tdb .9s ease-in-out .4s infinite"></div></div>`:''}
+      <div class="cms" id="chatmsgs">
+        ${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
+        ${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}
       </div>
-      <div style="display:flex;gap:.35rem;padding:.5rem .85rem;overflow-x:auto;scrollbar-width:none;border-top:1px solid var(--b)">
-        ${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon','DSA prep','Roadmap','Help']).map(q=>`<div data-chatq="${q}" style="flex-shrink:0;padding:.3rem .72rem;border-radius:99px;border:1px solid var(--b);background:var(--bg3);color:var(--t2);font-size:.72rem;cursor:pointer;white-space:nowrap">${q}</div>`).join('')}
+      <div class="cqb">${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']).map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}</div>
+      <div class="cir">
+        <button id="chat-voice-btn" class="cvb ${S.voiceActive?'on':''}" title="Voice">🎙️</button>
+        <input class="cinp" id="chatinp" placeholder="${ph}"/>
+        <button id="chat-send-btn" class="csnd">➤</button>
       </div>
-      <div style="display:flex;align-items:center;gap:.5rem;padding:.65rem .85rem;border-top:1px solid var(--b)">
-        <button id="chat-voice-btn" style="width:32px;height:32px;border-radius:50%;border:1.5px solid var(--b);background:${S.voiceActive?'var(--red)':'var(--bg3)'};color:${S.voiceActive?'#fff':'var(--t2)'};cursor:pointer;font-size:.95rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">🎙️</button>
-        <input id="chatinp" placeholder="${ph}" style="flex:1;border:1.5px solid var(--b);border-radius:99px;padding:.5rem .85rem;font-size:.8rem;background:var(--bg3);color:var(--t);font-family:var(--fb);outline:none"/>
-        <button id="chat-send-btn" style="width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0">➤</button>
-      </div>
-    </div>`;
-  }
-  return html;
+    </div>`:''}
+  `;
 }
 
 

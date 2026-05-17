@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nirmaan - Open Chat Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #6366F1, #8B5CF6, #EC4899);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #6366F1;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .open-btn {
+            background: linear-gradient(135deg, #6366F1, #8B5CF6);
+            color: white;
+            border: none;
+            padding: 16px 40px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .open-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(99,102,241,0.4);
+        }
+        .features {
+            margin-top: 30px;
+            text-align: left;
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 12px;
+        }
+        .features h3 {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+        .features ul {
+            list-style: none;
+            color: #666;
+            font-size: 13px;
+        }
+        .features li {
+            padding: 6px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .features li::before {
+            content: "✓";
+            color: #6366F1;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Chat Assistant</h1>
+        <p class="subtitle">Open the assistant in a small popup window</p>
+        <button class="open-btn" onclick="openChatbot()">
+            💬 Open Chat
+        </button>
+        <div class="features">
+            <h3>Features:</h3>
+            <ul>
+                <li>🎤 Voice Input - Speak your questions</li>
+                <li>🔊 Voice Response - Listen to answers</li>
+                <li>⚡ Fast Answers - Quick responses</li>
+                <li>🌙 Dark Mode - Easy on the eyes</li>
+                <li>📱 Compact - Opens in small popup</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function openChatbot() {
+            // Open chatbot in a small centered popup window (like Google login)
+            const width = 420;
+            const height = 600;
+
+            // Calculate center position
+            const left = (window.screen.width - width) / 2;
+            const top = (window.screen.height - height) / 2;
+
+            // Open popup window
+            const popup = window.open(
+                'irmaan-chatbot.html',
+                'AI Assistant',
+                `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,toolbar=no,menubar=no,location=no,status=no`
+            );
+
+            // If popup was blocked, provide fallback
+            if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+                // Open in new tab as fallback
+                window.open('irmaan-chatbot.html', '_blank');
+            }
+        }
+
+        // Also allow keyboard shortcut
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'o') {
+                e.preventDefault();
+                openChatbot();
+            }
+        });
+    </script>
+</body>
+</html>
