@@ -2613,7 +2613,7 @@ function buildChat(){
   const ph=t('chatPlaceholder')||'Ask me anything…';
   return `
     ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
-    <button id="chat-fab-btn" class="cfab ${S.voiceActive?'rec':''}">${S.voiceActive?'🔴':'🤖'}</button>
+    <button id="chat-fab-btn" style="display:none"></button>
     ${S.chatOpen?`<div class="cw">
       <div class="ch">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
