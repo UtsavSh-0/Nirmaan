@@ -118,17 +118,15 @@ setTimeout(function() {
 .chat-close:hover { opacity: 1; }
 </style>
 
-<!-- Chatbot -->
+<!-- Bilingual Chatbot (Hindi + English) -->
 <div id="chat-modal">
     <div class="chat-header">
         <div class="bot-icon">💬</div>
-        <span class="chat-header-title">AI Assistant</span>
+        <span class="chat-header-title" id="chat-title">AI Assistant</span>
         <div class="chat-header-status"></div>
         <button class="chat-close" onclick="toggleChat()">×</button>
     </div>
-    <div class="chat-messages" id="chat-messages">
-        <div class="chat-msg bot">Hello! I'm your AI assistant. Type or speak your questions. How can I help?</div>
-    </div>
+    <div class="chat-messages" id="chat-messages"></div>
     <div class="chat-input-area">
         <input type="text" class="chat-input" id="chat-input" placeholder="Type your message..." onkeypress="if(event.key==='Enter')sendChatMsg()">
         <button class="chat-mic-btn" id="chat-mic" onclick="toggleChatMic()">🎤</button>
@@ -142,6 +140,108 @@ var chatRecognition = null;
 var chatListening = false;
 var chatVoiceEnabled = true;
 
+// ── Bilingual content ──────────────────────────────────────
+var CHAT_LANG = {
+    en: {
+        title: 'AI Assistant',
+        placeholder: 'Type your message…',
+        welcome: "Hello! 👋 I'm your AI assistant. Type or speak your questions. How can I help?",
+        fabTitle: 'Open AI Chat',
+        voiceError: 'Voice not supported. Use Chrome.',
+        fallback: "Great question! I can help with internships, AI matching, skill gaps, resume building, and coding. What would you like to know?",
+        kb: {
+            'hello':        'Hello! How can I assist you today?',
+            'hi':           'Hi there! What can I help you with?',
+            'hey':          'Hey! How can I help you?',
+            'who are you':  'I am an AI assistant for the Nirmaan platform, helping with internships and careers.',
+            'what can you do': 'I can help with AI matching, skill gaps, resume building, internships, and general knowledge.',
+            'help':         'I can help with AI matching, skill gap analysis, roadmap generation, resume building, and finding internships.',
+            'internship':   'Nirmaan helps you find AI-matched internships. Go to "AI Matches" to see opportunities based on your skills.',
+            'resume':       'Use the Resume Builder in your dashboard to create professional resumes with AI optimization.',
+            'skill':        'Add skills in your profile to improve AI matching. The Skill Gap feature shows what you need to learn.',
+            'job':          'Internships are entry-level positions for students. Nirmaan focuses on internship matching.',
+            'ai':           'Nirmaan uses AI to match students with internships based on skills, interests, and career goals.',
+            'roadmap':      'The Career Roadmap gives you a personalized week-by-week plan to land your first internship.',
+            'network':      'Use the Networking Hub to connect with seniors, alumni, and professionals for referrals.',
+            'match':        'Go to "AI Matches" in your dashboard to see your top internship recommendations.',
+            'apply':        'Click "Apply Now" on any internship card in the AI Matches section to apply instantly.',
+            'profile':      'Complete your profile to get better AI matches. Add skills, education, and projects.',
+            'python':       'Python is a popular language used in AI, web development, and data science.',
+            'javascript':   'JavaScript is the language of the web — great for frontend and backend development.',
+            'java':         'Java is widely used for enterprise applications and Android development.',
+            'react':        'React is a JavaScript library for building fast, interactive user interfaces.',
+            'thank':        "You're welcome! Let me know if you need anything else.",
+            'thanks':       'No problem! Happy to help.',
+            'bye':          'Goodbye! Feel free to come back anytime.',
+            'date':         'Today is May 18, 2026.',
+            'thank you':    'Happy to help!',
+        }
+    },
+    hi: {
+        title: 'AI सहायक',
+        placeholder: 'अपना संदेश टाइप करें…',
+        welcome: "नमस्ते! 👋 मैं आपका AI सहायक हूं। टाइप करें या बोलकर सवाल पूछें। मैं कैसे मदद कर सकता हूं?",
+        fabTitle: 'AI चैट खोलें',
+        voiceError: 'वॉइस इस ब्राउज़र में समर्थित नहीं है। Chrome उपयोग करें।',
+        fallback: "बढ़िया सवाल! मैं इंटर्नशिप, AI मैचिंग, स्किल गैप, रिज्यूमे बिल्डिंग और कोडिंग में मदद कर सकता हूं। आप क्या जानना चाहते हैं?",
+        kb: {
+            'नमस्ते':       'नमस्ते! आज मैं आपकी कैसे मदद कर सकता हूं?',
+            'हेलो':         'हेलो! बताइए, मैं आपकी क्या मदद करूं?',
+            'हाय':          'हाय! मैं आपकी कैसे सहायता कर सकता हूं?',
+            'तुम कौन हो':   'मैं Nirmaan प्लेटफ़ॉर्म का AI सहायक हूं, जो इंटर्नशिप और करियर में मदद करता है।',
+            'आप कौन हैं':   'मैं Nirmaan का AI सहायक हूं। इंटर्नशिप, स्किल्स और करियर से जुड़े सवाल पूछें!',
+            'क्या कर सकते हो': 'मैं AI मैचिंग, स्किल गैप, रिज्यूमे बिल्डिंग, इंटर्नशिप और करियर रोडमैप में मदद करता हूं।',
+            'मदद':          'मैं AI मैचिंग, स्किल गैप विश्लेषण, रोडमैप, रिज्यूमे बिल्डिंग और इंटर्नशिप खोजने में मदद कर सकता हूं।',
+            'इंटर्नशिप':    'Nirmaan AI की मदद से आपके लिए सबसे अच्छी इंटर्नशिप ढूंढता है। "AI Matches" सेक्शन देखें।',
+            'रिज्यूमे':     'डैशबोर्ड में Resume Builder खोलें और AI की मदद से प्रोफेशनल रिज्यूमे बनाएं।',
+            'स्किल':        'अपनी प्रोफ़ाइल में स्किल्स जोड़ें। Skill Gap फ़ीचर बताएगा आपको क्या सीखना है।',
+            'नौकरी':        'इंटर्नशिप छात्रों के लिए एंट्री-लेवल पोजीशन होती है। Nirmaan इंटर्नशिप मैचिंग पर फ़ोकस करता है।',
+            'ai':           'Nirmaan AI का उपयोग करके आपके स्किल्स और रुचियों के आधार पर इंटर्नशिप मैच करता है।',
+            'रोडमैप':       'Career Roadmap आपको हफ्ते-दर-हफ्ते का प्लान देता है ताकि आप पहली इंटर्नशिप पा सकें।',
+            'नेटवर्क':      'Networking Hub से सीनियर्स, एलुमनाई और प्रोफेशनल्स से जुड़ें और रेफरल पाएं।',
+            'मैच':          'डैशबोर्ड में "AI Matches" खोलें और अपनी टॉप इंटर्नशिप सिफारिशें देखें।',
+            'अप्लाई':       'AI Matches सेक्शन में किसी भी कार्ड पर "Apply Now" दबाएं।',
+            'प्रोफ़ाइल':    'बेहतर AI मैच के लिए अपनी प्रोफ़ाइल पूरी करें — स्किल्स, शिक्षा और प्रोजेक्ट जोड़ें।',
+            'python':        'Python AI, वेब डेवलपमेंट और डेटा साइंस में बहुत उपयोगी भाषा है।',
+            'javascript':    'JavaScript वेब की भाषा है — फ्रंटएंड और बैकएंड दोनों के लिए बढ़िया।',
+            'java':          'Java एंटरप्राइज़ एप्लिकेशन और Android डेवलपमेंट के लिए व्यापक रूप से उपयोग की जाती है।',
+            'react':         'React एक JavaScript लाइब्रेरी है जो तेज़ और इंटरएक्टिव UI बनाने के लिए उपयोग होती है।',
+            'धन्यवाद':      'आपका स्वागत है! कोई और सवाल हो तो पूछें।',
+            'शुक्रिया':     'कोई बात नहीं! खुशी से मदद करूंगा।',
+            'अलविदा':       'अलविदा! फिर कभी भी सवाल पूछ सकते हैं।',
+            'तारीख':        'आज 18 मई 2026 है।',
+            'आज':           'आज 18 मई 2026 है।',
+            'hello':         'नमस्ते! आज मैं आपकी कैसे मदद कर सकता हूं?',
+            'hi':            'नमस्ते! बताइए, क्या मदद चाहिए?',
+            'help':          'मैं AI मैचिंग, स्किल गैप, रोडमैप, रिज्यूमे और इंटर्नशिप में मदद कर सकता हूं।',
+            'internship':    'Nirmaan AI की मदद से आपके लिए सबसे अच्छी इंटर्नशिप ढूंढता है।',
+            'resume':        'Dashboard में Resume Builder खोलें और AI से प्रोफेशनल रिज्यूमे बनाएं।',
+            'skill':         'अपनी प्रोफ़ाइल में स्किल्स जोड़ें और Skill Gap फ़ीचर देखें।',
+            'thank':         'आपका स्वागत है! और कोई सवाल हो तो बताएं।',
+            'bye':           'अलविदा! जब भी ज़रूरत हो, आ जाइए।',
+        }
+    }
+};
+
+// ── Detect language from nirmaan.js state ─────────────────
+function getChatLang() {
+    try { return (typeof S !== 'undefined' && S.lang === 'hi') ? 'hi' : 'en'; } catch(e) { return 'en'; }
+}
+
+function getLang() { return CHAT_LANG[getChatLang()]; }
+
+// ── Init welcome message based on current language ────────
+function initChatWelcome() {
+    var container = document.getElementById('chat-messages');
+    container.innerHTML = '';
+    addChatMsg(getLang().welcome, 'bot');
+    // Update UI text
+    document.getElementById('chat-title').textContent = getLang().title;
+    document.getElementById('chat-input').placeholder = getLang().placeholder;
+    if (chatRecognition) chatRecognition.lang = getChatLang() === 'hi' ? 'hi-IN' : 'en-US';
+}
+
+// ── Speech recognition ────────────────────────────────────
 if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
     var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     chatRecognition = new SpeechRecognition();
@@ -162,13 +262,20 @@ if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
 
 function toggleChat() {
     chatOpen = !chatOpen;
-    document.getElementById('chat-modal').classList.toggle('open', chatOpen);
+    var modal = document.getElementById('chat-modal');
+    modal.classList.toggle('open', chatOpen);
+    if (chatOpen) initChatWelcome(); // refresh language each time opened
 }
 
 function toggleChatMic() {
-    if (!chatRecognition) { addChatMsg("Voice not supported. Use Chrome.", 'bot'); return; }
+    if (!chatRecognition) { addChatMsg(getLang().voiceError, 'bot'); return; }
     if (chatListening) { chatRecognition.stop(); }
-    else { chatRecognition.start(); chatListening = true; document.getElementById('chat-mic').classList.add('listening'); }
+    else {
+        chatRecognition.lang = getChatLang() === 'hi' ? 'hi-IN' : 'en-US';
+        chatRecognition.start();
+        chatListening = true;
+        document.getElementById('chat-mic').classList.add('listening');
+    }
 }
 
 function addChatMsg(text, sender) {
@@ -193,35 +300,16 @@ function hideChatTyping() { var t = document.getElementById('chat-typing'); if (
 
 function chatSpeak(text) {
     if (!chatVoiceEnabled) return;
-    speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+    var utt = new SpeechSynthesisUtterance(text);
+    utt.lang = getChatLang() === 'hi' ? 'hi-IN' : 'en-US';
+    speechSynthesis.speak(utt);
 }
 
 function getChatResponse(query) {
     var q = query.toLowerCase();
-    var kb = {
-        'hello':'Hello! How can I assist you today?',
-        'hi':'Hi there! What can I help you with?',
-        'hey':'Hey! How can I help you?',
-        'who are you':'I am an AI assistant for the Nirmaan platform, here to help with internships and more.',
-        'what can you do':'I can help with AI matching, skill gaps, resume building, internships, careers, and general knowledge.',
-        'help':'I can help with AI matching, skill gap analysis, roadmap generation, resume building, and finding internships.',
-        'internship':'Nirmaan helps you find AI-matched internships. Go to "AI Matches" to see opportunities based on your skills.',
-        'resume':'Use the Resume Builder in your dashboard to create professional resumes with AI optimization.',
-        'skill':'Add skills in your profile to improve AI matching. The Skill Gap feature shows what you need to learn.',
-        'job':'Internships are entry-level positions for students. Nirmaan focuses on internship matching.',
-        'ai':'Nirmaan uses AI to match students with internships based on skills, interests, and career goals.',
-        'thank':'You\'re welcome! Let me know if you need anything else.',
-        'thanks':'No problem! Happy to help.',
-        'bye':'Goodbye! Feel free to come back anytime.',
-        'date':'Today is May 18, 2026.',
-        'python':'Python is a popular programming language used in AI, web development, and data science.',
-        'javascript':'JavaScript is a programming language for web development, enabling interactive websites.',
-        'java':'Java is a widely-used programming language for enterprise applications and Android development.',
-        'react':'React is a JavaScript library for building user interfaces, particularly single-page applications.',
-        'thank you':'Happy to help!',
-    };
+    var kb = getLang().kb;
     for (var key in kb) { if (q.includes(key)) return kb[key]; }
-    return "Great question! I can help with internships, AI matching, skill gaps, resume building, and coding. What would you like to know?";
+    return getLang().fallback;
 }
 
 function sendChatMsg() {
@@ -239,14 +327,22 @@ function sendChatMsg() {
     }, 800);
 }
 
-// 💬 Floating button
+// ── Floating 💬 button ────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+    // Set initial welcome
+    initChatWelcome();
+
     var fab = document.createElement('button');
     fab.innerHTML = '💬';
-    fab.title = 'Open AI Chat';
+    fab.id = 'chat-fab-external';
     fab.style.cssText = 'position:fixed;bottom:20px;right:20px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#6366F1,#8B5CF6);color:white;font-size:24px;border:none;cursor:pointer;box-shadow:0 4px 20px rgba(99,102,241,0.4);z-index:9999;';
     fab.onclick = toggleChat;
     document.body.appendChild(fab);
+
+    // Keep fab title in sync with language
+    setInterval(function() {
+        fab.title = getLang().fabTitle;
+    }, 1000);
 });
 </script>
 
