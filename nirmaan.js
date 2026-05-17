@@ -1,7 +1,7 @@
 // ══════════════════════ STATE ══════════════════════
 const S={
-  page:'home',user:null,lang:'en',dark:false,langChosen:false,cookieAccepted:localStorage.getItem('nirmaan_cookies')==='1',
-  chatOpen:false,chatMsgs:[],chatTyping:false,
+  page:'home',user:null,lang:localStorage.getItem('nirmaan_lang')||'en',dark:localStorage.getItem('nirmaan_dark')==='1',langChosen:localStorage.getItem('nirmaan_lang_chosen')==='1',cookieAccepted:localStorage.getItem('nirmaan_cookies')==='1',
+  chatOpen:false,chatMsgs:[],chatTyping:false,chatHintDismissed:false,
   voiceActive:false,
   notifs:[],notifId:0,
   savedIds:[],appliedIds:[],
@@ -272,7 +272,7 @@ function t(key){ return (T[S.lang]||T.en)[key]||(T.en[key]||key); }
 // ── Language popup builder ──
 function buildCookieBanner(){
   if(S.cookieAccepted)return '';
-  return `<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8888;padding:.85rem 1rem calc(.85rem + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--b);box-shadow:0 -4px 24px rgba(0,0,0,.10);animation:slideUp .3s cubic-bezier(.34,1.2,.64,1)">
+  return `<div id="cookie-banner" style="position:fixed;bottom:0;left:0;right:0;z-index:8000;pointer-events:none;padding:.85rem 1rem calc(.85rem + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--b);box-shadow:0 -4px 24px rgba(0,0,0,.10);animation:slideUp .3s cubic-bezier(.34,1.2,.64,1);pointer-events:auto">
     <div style="max-width:900px;margin:0 auto;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
       <span style="font-size:1.4rem;flex-shrink:0">🍪</span>
       <div style="flex:1;min-width:200px">
@@ -313,13 +313,13 @@ function buildLangPopup(){
           ${S.lang==='hi'?`<div style="font-size:.65rem;color:var(--p);font-weight:800;margin-top:.4rem">✓ चुना गया</div>`:''}
         </button>
       </div>
-      <button onclick="S.langChosen=true;render()" style="width:100%;padding:.82rem;border-radius:12px;background:var(--p);color:#fff;border:none;font-size:.92rem;font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.01em;-webkit-tap-highlight-color:transparent">${isHi?'जारी रखें ✦':'Continue ✦'}</button>
+      <button onclick="S.langChosen=true;localStorage.setItem('nirmaan_lang_chosen','1');localStorage.setItem('nirmaan_lang',S.lang);render()" style="width:100%;padding:.82rem;border-radius:12px;background:var(--p);color:#fff;border:none;font-size:.92rem;font-weight:700;cursor:pointer;font-family:var(--fb);letter-spacing:.01em;-webkit-tap-highlight-color:transparent">${isHi?'जारी रखें ✦':'Continue ✦'}</button>
       <p style="text-align:center;margin-top:.85rem;font-size:.7rem;color:var(--t3)">${isHi?'✦ Nirmaan — भारत का AI इंटर्नशिप प्लेटफॉर्म':'✦ Nirmaan — AI Internship Platform for India'}</p>
     </div>
   </div>`;
 }
 
-function setLang(l){S.lang=l;render();}
+function setLang(l){S.lang=l;localStorage.setItem('nirmaan_lang',l);render();}
 window.setLang=setLang;
 
 
@@ -417,61 +417,1134 @@ function chatVoice(){
   try{recog.start();}catch(e){S.voiceActive=false;}render();
 }
 
-// ══════════════════════ CHAT ══════════════════════
+// ══════════════════════ ARYA AI BRAIN ══════════════════════
 const BRAIN={
-  resume:['Strong resume tips:\n\n1. Keep to 1 page\n2. Lead with skills section\n3. Use action verbs: Built, Designed, Reduced\n4. Quantify: "Improved load time by 40%"\n5. Add GitHub + project links\n\nUse the Resume Builder page for AI-assisted creation!'],
-  skill:['Your skill gaps: Node.js, TypeScript, Docker.\n\nHead to Skill Gap Analyzer for personalized courses and a roadmap to close each gap!'],
-  apply:['Smart application tips:\n\n• Apply within 24hrs of posting\n• Customize your intro for each company\n• Mention something specific you love about them\n• Follow up after 5 business days'],
-  intern:['Your top matches:\n\n🏆 Google – Frontend Dev (94%)\n🥈 Microsoft – ML Research (88%)\n🥉 Flipkart – Full Stack (79%)\n\nHead to Recommendations to apply!'],
-  salary:['2025 stipends in India:\n\n💰 FAANG-tier: ₹50k–₹2L/mo\n💵 Mid-tier: ₹15k–₹40k/mo\n💸 Startups: ₹8k–₹25k/mo\n\nYour current matches average ₹32k/mo'],
-  interview:['Interview prep plan:\n\n📚 DSA: LeetCode easy+medium\n🧩 System Design: basics for intern level\n💻 Projects: walk through your code clearly\n🤝 HR: research the company deeply\n\nUse the Career Roadmap for a full plan!'],
-  network:['Networking tips:\n\n• Connect with seniors in target companies\n• Join college alumni groups on LinkedIn\n• Attend hackathons and tech events\n• Ask for informational interviews\n\nCheck your Networking Hub for curated connections!'],
-  roadmap:['Your career roadmap:\n\n✅ Week 1: Build foundation (done!)\n✅ Week 2: Skill assessment (done!)\n🔄 Week 3: First applications (in progress)\n🔄 Week 4: Interview prep\n🔒 Week 5+: Tech sprint & networking\n\nGo to Career Roadmap for full details!'],
-  profile:['Profile completion tips:\n\n• Profile score: 74% — almost there!\n• Missing: Resume upload, LinkedIn link\n• Adding resume boosts matches by 22%\n• LinkedIn link gets 3.2× more company views\n\nGo to My Profile to complete it!'],
-  google:['Google internship details:\n\n💼 Role: Frontend Dev Intern\n📍 Bangalore (Remote)\n💰 ₹35,000/month\n⏱ 3 months\n🎯 Match: 94% — You\'re in top 5%!\n\nDeadline: 4 days left. Apply now!'],
-  microsoft:['Microsoft internship details:\n\n💼 Role: ML Research Intern\n📍 Hyderabad (Hybrid)\n💰 ₹40,000/month\n⏱ 6 months\n🎯 Match: 88%\n\nRequires: Python, PyTorch, NLP basics'],
-  course:['Recommended courses for you:\n\n📘 Node.js – Udemy (24h, ⭐4.8)\n🍃 MongoDB – MongoDB Uni (18h, ⭐4.9)\n💙 TypeScript – Frontend Masters (20h, ⭐4.7)\n🐳 Docker – Udemy (16h, ⭐4.8)\n\nGo to Skill Gap page to enroll!'],
-  cgpa:['Does CGPA matter?\n\n• FAANG: 7.5+ preferred, not strict\n• Startups: Projects > CGPA always\n• PSUs: Strict 60–65% cutoffs\n• Overall: Skills + projects > marks\n\nFocus on building strong GitHub projects!'],
-  hackathon:['Hackathon strategy:\n\n🏆 Good ones: Smart India, Google Summer of Code, MLH, Devfolio\n• Build something deployable in 24–48h\n• Focus on real-world problem\n• Add to your resume and GitHub\n• Great for networking too!\n\nHackathons increase match score by ~8%'],
-  dsa:['DSA preparation plan:\n\n📚 LeetCode: 50 easy + 30 medium is enough for intern\n🎯 Focus topics: Arrays, Strings, Trees, DP basics\n⏰ Timeline: 3–4 weeks consistent practice\n🔧 Languages: Python or Java preferred by most\n\nTip: Attempt at least 1 problem daily!'],
-  linkedin:['LinkedIn profile tips:\n\n• Professional photo (3× more views)\n• Headline: "CSE Student | React | AI/ML"\n• About: 3–4 lines, keywords-rich\n• Add all projects with links\n• Connect with 5+ professionals/week\n\nComplete LinkedIn → unlock network boost!'],
-  saved:[`Your saved internships:\n\n🔖 Manage saved internships from the Saved section.\n\nCurrently ${INTERNS.filter(x=>x.saved).length} saved. Tap any to apply!`],
-  hi:['Hey there! 👋 I\'m Arya, your AI career assistant.\n\nHere\'s what I can help with:\n• 🎯 Internship matches & recommendations\n• 📄 Resume tips & building\n• 📊 Skill gap analysis\n• 🗺️ Career roadmap\n• 💰 Salary & stipend info\n• 🎙️ Interview prep & DSA\n• 🤝 Networking & LinkedIn\n• 🏆 Hackathon tips\n\nJust ask anything! I\'m here 24/7 🤖'],
-  help:['Here\'s everything I can help with:\n\n🎯 "show my matches" – top internships\n📄 "resume tips" – improve your resume\n📊 "skill gap" – what to learn next\n💰 "salary info" – stipend ranges\n🎙️ "interview prep" – get ready\n🗺️ "roadmap" – weekly plan\n🤝 "networking tips" – build connections\n🏆 "hackathon tips" – compete & win\n📘 "recommend courses" – what to study\n🔍 "google internship" – specific roles\n📈 "linkedin tips" – profile boost\n\nTry any of these!'],
-  default:['Hi! I\'m Arya 🤖 — your AI career assistant.\n\nI can help with internship tips, resume advice, skill gaps, interview prep, salary info, roadmap, networking, hackathons & more.\n\nTry: "help", "show my matches", or "interview prep"'],
+
+  // ── GREETINGS ──
+  hi:`Hey there! 👋 I'm **Arya**, your AI career assistant on Nirmaan.
+
+Here's what I can help you with:
+🎯 Internship matches & how to find them
+📄 Resume tips, ATS, and building
+📊 Skill gap analysis & courses
+🗺️ Career roadmap & weekly planning
+💰 Salary, stipend & negotiation
+🎙️ Interview prep, DSA & system design
+🤝 Networking, LinkedIn & referrals
+🏆 Hackathons, open source & projects
+🌐 Visa, remote & international internships
+🧠 AI/ML, Web Dev, Data Science career paths
+💼 Company-specific internship details
+📱 App dev, Blockchain, Cybersecurity careers
+
+Just type anything naturally — I understand full sentences! 🤖`,
+
+  help:`Here's everything I can answer:
+
+**Internships & Jobs**
+• "show my matches" • "how to apply" • "Google internship" • "Microsoft internship" • "startup vs FAANG" • "off-campus internships" • "internship without experience"
+
+**Resume & Profile**
+• "resume tips" • "ATS resume" • "resume for fresher" • "portfolio tips" • "GitHub profile tips" • "cover letter"
+
+**Skills & Learning**
+• "skill gap" • "what to learn for web dev" • "AI/ML roadmap" • "data science skills" • "best courses" • "DSA prep" • "system design"
+
+**Interview**
+• "interview prep" • "HR questions" • "technical interview" • "how to crack FAANG" • "behavioral questions" • "coding round tips"
+
+**Career Paths**
+• "web development career" • "AI career" • "data science" • "product management" • "DevOps career" • "cybersecurity" • "blockchain"
+
+**Networking**
+• "LinkedIn tips" • "cold email" • "referral tips" • "how to network" • "alumni connect"
+
+**Money**
+• "salary info" • "stipend negotiation" • "freelancing" • "best paying companies"
+
+**Miscellaneous**
+• "CGPA matters?" • "hackathon tips" • "open source contribution" • "study abroad" • "gap year" • "higher studies vs job"
+
+Try any of these! 🚀`,
+
+  // ── INTERNSHIP MATCHING ──
+  intern:`Your top AI matches right now:
+
+🏆 **Google** – Frontend Dev Intern (94% match)
+   📍 Bangalore | 💰 ₹35k/mo | ⏱ 3 months
+
+🥈 **Microsoft** – ML Research Intern (88%)
+   📍 Hyderabad | 💰 ₹40k/mo | ⏱ 6 months
+
+🥉 **Flipkart** – Full Stack Intern (79%)
+   📍 Remote | 💰 ₹25k/mo | ⏱ 3 months
+
+🌟 **Adobe** – UX Research Intern (83%)
+   📍 Noida | 💰 ₹30k/mo | ⏱ 4 months
+
+Head to **AI Matches** page to apply! ✨`,
+
+  apply:`Smart application strategy:
+
+✅ **Apply fast** — within 24hrs of posting (5× higher response rate)
+✅ **Customize every intro** — mention something specific about the company
+✅ **Follow the JD closely** — mirror their exact keywords in your resume
+✅ **Apply in batches** — 10–15 per week minimum
+✅ **Follow up** — after 5 business days, send a polite email
+✅ **Track applications** — use a Google Sheet to track status
+
+📌 *Pro tip: Applying Tuesday–Thursday gets 34% more responses than Monday/Friday!*`,
+
+  noexperience:`No experience? No problem! Here's your roadmap:
+
+1. **Build projects** — even 2–3 solid GitHub projects beat 0 experience
+2. **Contribute to open source** — comment on issues, fix small bugs
+3. **Participate in hackathons** — Smart India, MLH, Devfolio
+4. **Freelance small projects** — Fiverr, Upwork, college projects
+5. **Do free internships** — NGOs, college clubs, student startups
+6. **Get certifications** — Google, AWS, Meta certifications add credibility
+
+📌 *Most companies care more about what you built than where you worked!*`,
+
+  offcampus:`Off-campus internship strategy:
+
+🔍 **Where to find them:**
+• LinkedIn Jobs (filter: Internship, India)
+• Internshala — India's #1 intern platform
+• AngelList / Wellfound — startups
+• Unstop (formerly Dare2Compete)
+• Company career pages directly
+• GitHub Job Board
+
+📩 **Cold outreach that works:**
+• Find hiring manager on LinkedIn
+• Send a 4-line message: who you are, what you built, why them, ask for 15 min
+• Response rate: 15–25% if personalized
+
+📌 *70% of internships are never posted publicly — networking is key!*`,
+
+  startup:`Startup vs FAANG internships:
+
+**Startups** 🚀
+✅ More responsibility, learn faster
+✅ See full product lifecycle
+✅ Better for product/generalist roles
+❌ Less brand name
+❌ Lower stipend (₹10k–25k typically)
+❌ Less structured mentorship
+
+**FAANG / Big Tech** 🏢
+✅ Brand name helps future applications
+✅ Higher stipend (₹50k–2L/mo)
+✅ Structured program, good mentorship
+❌ Narrow scope of work
+❌ Very competitive to get in
+❌ Slower pace
+
+📌 *If you're early in college: Startup. Final year: FAANG for the brand.*`,
+
+  // ── RESUME ──
+  resume:`Top resume tips for 2025:
+
+📄 **Format**
+• 1 page max (2 pages only for 3+ years exp)
+• ATS-friendly: No tables, no columns, no graphics
+• Font: 11–12pt Calibri, Arial, or Georgia
+• Sections order: Summary → Skills → Projects → Education
+
+🔤 **Content**
+• Lead every bullet with action verbs: Built, Designed, Reduced, Increased
+• Quantify everything: "Improved load time by 40%" beats "Improved performance"
+• Include GitHub link and live project URLs
+• Tailor skills section to the JD keywords
+
+🚫 **Avoid**
+• Objective statements (outdated)
+• Irrelevant hobbies
+• "References available on request"
+• Fancy templates that break ATS
+
+📌 *Use the Resume Builder on Nirmaan for an AI-assisted resume!*`,
+
+  ats:`ATS (Applicant Tracking System) tips:
+
+🤖 **How ATS works:** It scans your resume for keywords before a human sees it. ~75% of resumes are filtered out before a recruiter reads them.
+
+✅ **To pass ATS:**
+• Copy exact keywords from the job description
+• Use standard section headers: "Experience", "Skills", "Education"
+• No images, columns, headers/footers, or tables
+• Save as .docx or .pdf (not .pages or .jpg)
+• Spell out acronyms: "Machine Learning (ML)"
+
+🔧 **Free ATS checkers:** Jobscan.co, Resume Worded, Enhancv
+
+📌 *Pro tip: Paste JD into a word cloud → use those words in your resume!*`,
+
+  coverLetter:`Cover letter that gets read:
+
+**Structure (4 paragraphs, under 250 words):**
+
+1️⃣ **Hook** — Start with something specific about the company, not "I am writing to apply for…"
+   *"When I saw Google's Gemini launch, I immediately started building a side project using your API…"*
+
+2️⃣ **Why you** — 2 specific achievements with numbers
+   *"At my last project, I reduced API latency by 35%…"*
+
+3️⃣ **Why them** — Show you researched them
+   *"Your focus on responsible AI aligns with my thesis work on…"*
+
+4️⃣ **CTA** — Confident close
+   *"I'd love to discuss how I can contribute. Available for a call this week."*
+
+📌 *Cover letters are read only 26% of the time — make the first line unforgettable!*`,
+
+  portfolio:`Portfolio tips:
+
+🌐 **What to include:**
+• 3–5 projects (quality > quantity)
+• Live demo link + GitHub code
+• Brief case study: problem → solution → impact
+• Screenshot / video walkthrough
+
+🎨 **Design:**
+• Use Vercel or Netlify for free hosting
+• Templates: Astro, Next.js portfolio starters
+• Keep it fast — under 2 second load time
+• Mobile responsive (50%+ visitors are mobile)
+
+📌 *Recruiters spend avg 8 seconds on portfolio. Make the headline count!*`,
+
+  github:`GitHub profile tips:
+
+⭐ **Must-haves:**
+• Professional photo + bio with skills and location
+• Pinned repos: pick your 6 best projects
+• README.md for every project (explain what it does, how to run it)
+• Green contribution graph (aim for 5+ days/week)
+• At least 1 project with 10+ stars
+
+📁 **Good project ideas:**
+• Clone + improve a popular app
+• Automate a boring task (script, bot)
+• API-powered app (OpenAI, Maps, etc.)
+• Data visualization dashboard
+• Chrome extension
+
+📌 *A strong GitHub is worth more than a 9 CGPA for tech roles!*`,
+
+  // ── SKILLS & LEARNING ──
+  skill:`Your current skill gaps (vs Full Stack Intern roles):
+
+❌ **Missing:** Node.js, TypeScript, Docker, MongoDB
+✅ **You have:** React, JavaScript, Python, CSS
+
+**Priority order to learn:**
+1. Node.js (highest demand, closes 2 gaps)
+2. TypeScript (used in 80% of modern JS projects)
+3. MongoDB (pairs with Node.js perfectly)
+4. Docker (adds 15% salary premium)
+
+**Estimated time:** 6–8 weeks consistent study
+
+Go to **Skill Gap Analyzer** for personalized courses! 📊`,
+
+  webdev:`Web Development career path:
+
+**Frontend:**
+HTML → CSS → JavaScript → React/Vue → TypeScript → Next.js
+
+**Backend:**
+Python/Node.js → Express/FastAPI → SQL + MongoDB → REST APIs → GraphQL
+
+**Full Stack** (most in-demand):
+React + Node.js + PostgreSQL + Docker
+
+**Timeline:** 6–12 months to job-ready from scratch
+
+💰 **Stipends:** ₹15k–₹50k/mo for interns
+💼 **Top hirers:** Razorpay, Zepto, Google, Microsoft, startups
+
+📌 *React is in 68% of frontend job postings in India right now!*`,
+
+  aiml:`AI/ML career path:
+
+**Foundation:**
+Python → NumPy/Pandas → Statistics → Scikit-learn → ML algorithms
+
+**Deep Learning:**
+PyTorch or TensorFlow → CNNs, RNNs → Transformers
+
+**Specialisations:**
+• NLP (most in demand post-ChatGPT)
+• Computer Vision
+• Reinforcement Learning
+• MLOps (deploying models)
+
+**Timeline:** 8–14 months to internship-ready
+
+💰 **Stipends:** ₹25k–₹1.5L/mo
+💼 **Top hirers:** Google DeepMind, Microsoft Research, Fractal, Walmart Labs
+
+📌 *Learn Hugging Face + LangChain — 90% of AI companies use them!*`,
+
+  datascience:`Data Science career path:
+
+**Core skills:**
+Python → Pandas → SQL → Tableau/Power BI → Statistics → ML basics
+
+**Advanced:**
+PySpark → Cloud (AWS/GCP) → A/B Testing → Feature Engineering
+
+**Portfolio projects:**
+• EDA on Kaggle dataset
+• End-to-end ML pipeline
+• Dashboard with real data
+• Predictive model with business impact
+
+💰 **Stipends:** ₹20k–₹80k/mo
+💼 **Top hirers:** Swiggy, Zomato, Razorpay, Walmart, CRED
+
+📌 *SQL is tested in 85% of data science interviews — master it first!*`,
+
+  devops:`DevOps career path:
+
+**Learn in order:**
+Linux basics → Git → Docker → Kubernetes → CI/CD (GitHub Actions) → Cloud (AWS/Azure/GCP) → Terraform
+
+**Certifications worth getting:**
+• AWS Solutions Architect Associate
+• CKA (Kubernetes)
+• HashiCorp Terraform
+
+💰 **Stipends:** ₹25k–₹80k/mo
+💼 **Top hirers:** ThoughtWorks, Razorpay, Freshworks, MNCs
+
+📌 *DevOps has the lowest competition-to-jobs ratio among all tech roles!*`,
+
+  cyber:`Cybersecurity career path:
+
+**Foundation:**
+Networking basics → Linux → Python scripting → Ethical Hacking basics
+
+**Certifications:**
+• CompTIA Security+ (entry level)
+• CEH (Certified Ethical Hacker)
+• OSCP (for penetration testing)
+
+**Practice platforms:**
+HackTheBox, TryHackMe, PicoCTF, VulnHub
+
+💰 **Stipends:** ₹20k–₹60k/mo
+💼 **Top hirers:** CERT-In, Razorpay, banks, government, startups
+
+📌 *Bug bounty programs — report vulnerabilities to Google/Meta and earn $500–$30,000!*`,
+
+  blockchain:`Blockchain/Web3 career path:
+
+**Learn:**
+JavaScript → Solidity (smart contracts) → Ethereum/Polygon → Hardhat/Foundry → IPFS → DeFi protocols
+
+**Good resources:**
+• CryptoZombies (free Solidity tutorial)
+• Buildspace.so
+• Patrick Collins on YouTube
+
+💰 **Stipends:** ₹30k–₹1.5L/mo (volatile market)
+💼 **Top hirers:** Polygon, CoinDCX, WazirX, Coinbase
+
+📌 *Web3 market is cyclical — build skills during bear market, get hired in bull!*`,
+
+  product:`Product Management career path:
+
+**Skills needed:**
+User research → Wireframing (Figma) → PRD writing → SQL basics → A/B testing → Roadmapping → Stakeholder management
+
+**No coding required but helpful:**
+Basic SQL, reading API docs, understanding tech constraints
+
+**Get in:**
+• APM programs: Google APM, Microsoft APM, Uber APM
+• Start with PM roles in startups
+• MBA from IIM/ISB opens doors to senior PM
+
+💰 **Stipends:** ₹20k–₹60k/mo
+💼 **Top hirers:** Google, Flipkart, PhonePe, Razorpay, startups
+
+📌 *Most PMs come from engineering or design backgrounds — leverage that!*`,
+
+  // ── DSA & INTERVIEW ──
+  dsa:`DSA preparation plan:
+
+📚 **What to study:**
+• Arrays & Strings (most frequent)
+• Linked Lists, Stacks, Queues
+• Trees & Binary Search Trees
+• Graphs (BFS, DFS)
+• Dynamic Programming (DP basics)
+• Sorting & Searching
+• Recursion & Backtracking
+
+🎯 **Target for internships:** 50 Easy + 30 Medium on LeetCode
+⏰ **Timeline:** 4–6 weeks (1.5–2 hrs daily)
+🔧 **Preferred languages:** Python (concise) or Java (OOP heavy)
+
+📖 **Resources:**
+• Striver's SDE Sheet (free, structured)
+• NeetCode.io (best video explanations)
+• LeetCode Discuss (company-wise questions)
+
+📌 *Focus on patterns, not memorizing solutions!*`,
+
+  systemdesign:`System Design for interns:
+
+You don't need deep system design for most internships, but knowing the basics helps:
+
+**Intern-level concepts:**
+• Client-server architecture
+• REST APIs vs GraphQL
+• Databases: SQL vs NoSQL (when to use which)
+• Caching basics (Redis)
+• Load balancing concept
+• CDN (Content Delivery Network)
+
+**Good resources:**
+• "System Design Primer" on GitHub (free)
+• Grokking System Design (paid but worth it)
+• ByteByteGo YouTube channel
+
+📌 *For FAANG internships, they may ask simple design questions like "design a URL shortener"*`,
+
+  interview:`Interview preparation guide:
+
+**📋 Rounds you'll face:**
+1. **Online Assessment (OA)** — DSA problems (LeetCode style)
+2. **Technical Round** — Code + concept questions
+3. **Project Discussion** — Deep dive into your resume
+4. **HR Round** — Behavioral questions
+
+**✅ Technical prep:**
+• DSA: 80 LeetCode problems minimum
+• Know your resume projects inside-out
+• Practice explaining code aloud (think out loud!)
+• Revise OS, DBMS, Networking basics
+
+**✅ HR prep (STAR method):**
+• Tell me about yourself (2 min, practised)
+• Why this company? (research specific things)
+• Strength/Weakness (be genuine)
+• Where do you see yourself in 5 years?
+
+📌 *Record yourself answering — most people are surprised how they sound!*`,
+
+  behavioral:`Behavioral interview questions & how to answer:
+
+Use the **STAR method:** Situation → Task → Action → Result
+
+**Common questions:**
+1. "Tell me about yourself" — 60-sec elevator pitch
+2. "Biggest challenge you faced" — Show growth mindset
+3. "Why do you want to work here" — Specific research
+4. "Tell me about a failure" — Own it + what you learned
+5. "How do you handle conflict" — Collaboration focus
+6. "Where do you see yourself in 5 years" — Ambitious but realistic
+
+📌 *Write out 5 STAR stories from your projects/life — they cover 90% of questions!*`,
+
+  coding:`Coding round tips:
+
+**Before you start:**
+• Read the entire problem twice
+• Clarify edge cases out loud
+• State your approach before coding
+
+**While coding:**
+• Think out loud — interviewers want to see your thinking
+• Start with brute force, then optimize
+• Use meaningful variable names
+• Handle edge cases: empty input, null, single element
+
+**Time/Space complexity:**
+• Always state it when done
+• Know: O(n), O(n log n), O(n²) differences
+
+**If you get stuck:**
+• Say "I'm thinking…" — don't go silent
+• Ask for a hint — it's okay
+• Solve a simpler version first
+
+📌 *Asking good clarifying questions impresses interviewers more than getting the right answer immediately!*`,
+
+  faang:`How to crack FAANG internships:
+
+**Timeline (12 months out):**
+• Month 1–3: Strengthen DSA (Striver's sheet)
+• Month 4–6: Build 2–3 strong projects
+• Month 7–8: Mock interviews (Pramp, Interviewing.io)
+• Month 9–10: Apply + prep company-specific questions
+• Month 11–12: Interview season
+
+**FAANG-specific tips:**
+• Google: Heavy on algorithms, read "Cracking the Coding Interview"
+• Microsoft: Mix of DSA + project discussion
+• Amazon: 14 Leadership Principles — learn them all
+• Meta: Pair coding, very fast pace
+• Apple: Deep OS/systems knowledge helpful
+
+📌 *A referral from a current employee increases your chance by 10×!*`,
+
+  // ── COMPANIES ──
+  google:`Google Internship details:
+
+💼 **Role:** Software Engineering Intern (STEP / SWE)
+📍 **Location:** Bangalore, Hyderabad (some remote)
+💰 **Stipend:** ₹1.5L–₹2L/month (top paying in India)
+⏱ **Duration:** 3–4 months (summer)
+🎯 **Your match:** 94% — You're in top 5%!
+
+**Requirements:**
+• Strong DSA (LeetCode hard level for SWE)
+• CS fundamentals (OS, Networks, DBMS)
+• Good communication in interviews
+• Referral helps a lot
+
+**Interview process:**
+1. Online Assessment (2 DSA problems, 90 min)
+2. 2× Technical interviews (45 min each)
+3. Sometimes a project/experience round
+
+⚠️ **Deadline:** 4 days left — Apply NOW!`,
+
+  microsoft:`Microsoft Internship details:
+
+💼 **Role:** Software Engineering Intern / ML Research Intern
+📍 **Location:** Hyderabad (IDC), Noida
+💰 **Stipend:** ₹40k–₹80k/month
+⏱ **Duration:** 2–6 months
+🎯 **Your match:** 88%
+
+**Requirements:**
+• DSA medium-level (LeetCode 50+ mediums)
+• OOP concepts (Java/C#/Python)
+• Good project experience
+
+**Interview process:**
+1. Online Assessment
+2. 2–3 Technical rounds
+3. HR discussion
+
+💡 **Tip:** Microsoft values Leadership Principles + project explanation!`,
+
+  amazon:`Amazon Internship details:
+
+💼 **Role:** SDE Intern / Business Analyst Intern
+📍 **Location:** Bangalore, Hyderabad, Chennai
+💰 **Stipend:** ₹60k–₹1L/month
+⏱ **Duration:** 2–6 months
+
+**Requirements:**
+• DSA (medium-hard)
+• Learn all 14 Leadership Principles
+• OOP, System Design basics
+
+**Interview process:**
+1. Online Assessment (2 DSA + debugging)
+2. 2 Technical rounds + LP questions in each
+3. Bar Raiser round (values-focused)
+
+📌 *Amazon asks behavioral questions in EVERY technical round — prepare LP stories!*`,
+
+  flipkart:`Flipkart Internship details:
+
+💼 **Role:** SDE Intern / Product Intern / Data Science Intern
+📍 **Location:** Bangalore (mostly on-site)
+💰 **Stipend:** ₹25k–₹60k/month
+⏱ **Duration:** 3–6 months
+🎯 **Your match:** 79%
+
+**Requirements:**
+• DSA medium level
+• Full stack or backend preferred
+• Good project portfolio
+
+💡 **Tip:** Flipkart values startup mentality — show ownership in interviews!`,
+
+  adobe:`Adobe Internship details:
+
+💼 **Role:** SWE Intern / UX Research Intern / Data Science Intern
+📍 **Location:** Noida, Bangalore
+💰 **Stipend:** ₹30k–₹60k/month
+⏱ **Duration:** 3–6 months
+🎯 **Your match:** 83%
+
+**Requirements:**
+• Strong in your domain (web/ML/design)
+• Creative problem solving
+• Portfolio/projects required for UX roles
+
+💡 **Tip:** Adobe loves people passionate about creative tools and design!`,
+
+  razorpay:`Razorpay Internship details:
+
+💼 **Role:** SDE Intern / PM Intern / Data Analyst
+📍 **Location:** Bangalore (hybrid)
+💰 **Stipend:** ₹30k–₹60k/month
+⏱ **Duration:** 2–6 months
+
+**Why Razorpay:**
+• One of India's best fintech companies
+• Fast-paced, high ownership culture
+• Strong alumni network
+
+💡 **Tip:** Know payments infrastructure and APIs — they'll ask domain questions!`,
+
+  // ── SALARY & MONEY ──
+  salary:`2025–26 Internship Stipends in India:
+
+💎 **FAANG & Top MNCs:** ₹80k–₹2L/month
+🏅 **Mid-tier MNCs:** ₹30k–₹60k/month
+🚀 **Good Startups:** ₹15k–₹35k/month
+🌱 **Early Startups:** ₹5k–₹15k/month
+
+**By role:**
+• AI/ML: ₹35k–₹1.5L/mo
+• SDE: ₹25k–₹1L/mo
+• Data Science: ₹20k–₹80k/mo
+• Product: ₹20k–₹60k/mo
+• UX Design: ₹15k–₹40k/mo
+
+**Your current matches average:** ₹32,000/month
+
+📌 *Don't just chase stipend — FAANG brand + experience often worth more long-term!*`,
+
+  negotiate:`Stipend negotiation tips:
+
+💡 **When to negotiate:** After receiving an offer, before accepting
+
+**How to negotiate:**
+1. Research market rate first (use the salary info above)
+2. Counter with a number 15–20% higher than their offer
+3. Justify with: competing offers, your specific skills, market data
+4. Ask for benefits if stipend is fixed: WFH, equipment, PPO preference
+
+**Script:**
+*"Thank you for the offer! Based on my research and the skills I'm bringing, I was expecting around ₹X. Is there flexibility there?"*
+
+📌 *60% of offers are negotiable — always ask politely!*`,
+
+  freelance:`Freelancing as a student:
+
+🌐 **Platforms:**
+• **Fiverr** — Start here (simple gigs, build reviews)
+• **Upwork** — Better pay, need portfolio
+• **Toptal** — Top 3% developers (after experience)
+• **Freelancer.in** — Indian clients, lower rates
+• **LinkedIn** — Direct outreach to SMEs
+
+💰 **Realistic earnings:**
+• Month 1–3: ₹5k–₹15k
+• Month 4–12: ₹20k–₹60k
+• After 1 year: ₹80k+ possible
+
+**Best niches for students:**
+• WordPress/Shopify websites (quick turnaround)
+• Social media automation
+• Simple Android apps
+• Data scraping & analysis
+
+📌 *Build a Fiverr gig BEFORE you need money — takes 1 month to get first review!*`,
+
+  // ── NETWORKING ──
+  network:`Networking strategy that actually works:
+
+**LinkedIn (most important):**
+• Connect with seniors from your college at target companies
+• Comment value-add on posts (not just "Great post!")
+• Post your projects/learnings 1×/week
+• DM with a 3-line message (see cold email tip)
+
+**In-person:**
+• Hackathons — you meet company reps directly
+• College tech fests — alumni come back
+• Tech meetups (Meetup.com) — free, valuable
+
+**Alumni network:**
+• Email college alumni office for database access
+• LinkedIn filter: College + Company
+• Mention your college first — instant rapport
+
+📌 *Weak ties (acquaintances) get you jobs more than close friends!*`,
+
+  coldemail:`Cold email/DM template that gets replies:
+
+**LinkedIn DM (under 300 chars):**
+"Hi [Name], I'm [Your name], CSE 3rd year at [College]. I saw you work at [Company] on [Team]. I'm working on [project related to their work] and would love to hear your experience. Would you have 15 min for a quick call? 🙏"
+
+**Email subject line:**
+"[College] student → passionate about [their product/team]"
+
+**Email body (4 sentences max):**
+1. Who you are + 1 impressive thing
+2. Why them specifically (research shows)
+3. A specific question they can answer easily
+4. Soft CTA: "Happy to share my project if useful"
+
+📌 *Send on Tuesday or Wednesday morning for 40% higher open rate!*`,
+
+  linkedin:`LinkedIn profile that gets recruiter DMs:
+
+**Profile basics:**
+• Professional photo (3× more profile views)
+• Banner: College name + graduation year + key skills
+• Headline: "CSE'26 @ [College] | React · Python · AI | Looking for SDE/ML Internship"
+
+**About section (3 lines):**
+"[Role] passionate about [specific area]. Built [project with metric]. Open to [internship type] opportunities starting [month]."
+
+**Sections to fill:**
+✅ All projects with live links
+✅ Skills (add 15+ relevant ones)
+✅ Certifications
+✅ Recommendations from professors/peers
+✅ Featured section with your best project
+
+📌 *Recruiters search keywords — pack your profile with relevant tech terms!*`,
+
+  referral:`Getting referrals:
+
+🎯 **Why referrals work:** 10× higher chance of interview vs cold apply
+
+**Step by step:**
+1. Find employees at target companies on LinkedIn
+2. Connect (don't message yet)
+3. After they accept, send: "Hi, I'm applying to [role] at [company] and would love a referral if my profile seems like a fit. Here's my resume: [link]. No pressure either way!"
+4. Most will check your profile — make it strong
+
+**Who to ask:**
+• College seniors (most willing to help!)
+• Professors who know company contacts
+• Former internship managers
+• Hackathon connections
+
+📌 *Alumni from your college are the easiest — they feel connected to you!*`,
+
+  // ── COURSES & LEARNING ──
+  course:`Recommended courses for your skill gaps:
+
+📘 **Node.js** — Udemy by Maximilian (42hrs, ⭐4.8) — ₹499
+🍃 **MongoDB** — MongoDB University (free, ⭐4.9)
+💙 **TypeScript** — Frontend Masters (20hrs, ⭐4.7) — Free trial
+🐳 **Docker** — Udemy (16hrs, ⭐4.8) — ₹499
+🤖 **ML** — Andrew Ng on Coursera (⭐4.9) — Free audit
+⚛️ **React** — Scrimba (free, interactive) — Best for beginners
+🐍 **Python** — CS50P on edX (free, Harvard) — Best Python course
+
+**Free resources:**
+• The Odin Project (web dev, completely free)
+• FreeCodeCamp (YouTube + platform)
+• MIT OpenCourseWare (CS fundamentals)
+
+📌 *Completion > certificate — build projects while learning!*`,
+
+  // ── HACKATHONS ──
+  hackathon:`Hackathon guide:
+
+🏆 **Top hackathons to target:**
+• Smart India Hackathon (government, prestigious)
+• Google Summer of Code (paid open source, ₹2L–₹5L)
+• MLH (Major League Hacking) — global
+• Devfolio platform (India focused)
+• Hackerearth / HackerRank challenges
+• Unstop competitions
+
+**How to win:**
+1. Solve a real, specific problem (not too broad)
+2. Have a working demo — always (judges love demos)
+3. Good presentation > perfect code
+4. Team of 3–4 with diverse skills
+5. Pitch the business impact, not just tech
+
+**Benefits:**
+• Meet recruiters directly at events
+• Add to resume (3× more calls when listed)
+• Build network with talented peers
+• Cash prizes + goodies
+
+📌 *Participate in at least 3 hackathons before graduation — each one builds your skills!*`,
+
+  opensource:`Open source contribution guide:
+
+**Why contribute:**
+• Shows real-world collaboration skills
+• Recruiters love it (especially FAANG)
+• Build your GitHub green graph
+• Get mentorship from experienced devs
+
+**How to start (step by step):**
+1. Pick a repo you use (React, VS Code extensions, etc.)
+2. Look for "good first issue" label on GitHub
+3. Comment "I'd like to work on this" before coding
+4. Fork → Code → Test → PR with clear description
+5. Be patient — maintainers are volunteers
+
+**Good beginner repos:**
+• freeCodeCamp (1000+ good first issues)
+• EddieHub community
+• Microsoft VS Code
+• Any tool you use daily
+
+📌 *Google Summer of Code (GSoC) — earn ₹2–5 lakhs while contributing!*`,
+
+  // ── ACADEMIC ──
+  cgpa:`Does CGPA matter?
+
+**The honest answer:**
+
+✅ **When CGPA matters:**
+• FAANG shortlisting: 7.5+ CGPA preferred (some cutoff)
+• Campus placements: Companies filter by CGPA on Day 0
+• PSU/Government: Strict 60% cutoffs
+• Masters (MS/MTech): 8+ CGPA needed for good colleges
+
+❌ **When CGPA doesn't matter:**
+• Startups: Projects > CGPA always
+• Off-campus applications: Portfolio and skills win
+• After your first job: Nobody ever asks again
+
+📊 **Rule of thumb:** 7.0 CGPA + strong projects beats 9.5 CGPA + no projects at most tech companies
+
+📌 *Minimum viable CGPA: Stay above 7.0 so you're not filtered out. Then focus on skills and projects!*`,
+
+  higherstudies:`Higher studies vs Job/Internship:
+
+**Masters (MS) abroad:**
+✅ Research + career in US/Europe/Canada
+✅ Higher long-term earnings
+❌ 2 years + high cost (₹40–80L)
+❌ GRE + SOP + recommendations needed
+Best for: AI/ML/Research roles, academic interest
+
+**MTech in India (IIT/IISc):**
+✅ Affordable (₹50k–₹2L total)
+✅ Research exposure + brand name
+❌ Lower immediate stipend
+Best for: Research + staying in India
+
+**MBA:**
+✅ Non-tech roles (consulting, finance, product)
+✅ CAT/GMAT → IIM opens big doors
+Best for: Career switchers, business roles
+
+**Job first:**
+✅ Earn while you learn
+✅ 2–3 years experience + MBA is optimal path
+Best for: Most people
+
+📌 *If unsure: take the best job/internship you can get, then decide after 1–2 years!*`,
+
+  gapyear:`Gap year advice:
+
+A gap year can be valuable if used intentionally:
+
+✅ **Good reasons:**
+• Preparing for competitive exams (GATE, CAT, GRE)
+• Building a startup
+• Health/family reasons
+• Deep skill building (bootcamp, courses)
+
+❌ **Bad reasons:**
+• Avoiding the job search
+• "Travelling" without a plan
+
+**If you took a gap year:**
+• Be upfront and confident about it
+• Frame it as: "I used that time to [specific skill/project]"
+• Recruiters care more about what you did than why you paused
+
+📌 *A gap year with 3 strong projects is better than 1 year of irrelevant work!*`,
+
+  // ── REMOTE & INTERNATIONAL ──
+  remote:`Remote internships guide:
+
+🌐 **Best platforms:**
+• We Work Remotely
+• Remote.co
+• AngelList (US startups)
+• Toptal (after building portfolio)
+• LinkedIn (filter remote)
+• Internshala Remote section
+
+💰 **International remote stipends (USD):**
+• US startups: $500–$2000/month
+• EU companies: €400–€1500/month
+• This is ₹40k–₹1.6L — much higher than Indian companies!
+
+**Time zone tips:**
+• Overlap 4+ hours with US East Coast or US Pacific
+• Morning shift: IST 6pm–2am (US morning)
+• Afternoon shift: IST 9pm–5am (US afternoon)
+
+📌 *Build English communication skills + async work habits (written updates, documentation) to land remote roles!*`,
+
+  visa:`Study/work visa guide:
+
+**For international internships:**
+• **US J-1 Visa** — for internship/training programs
+• **UK Graduate Visa** — after graduation
+• **Germany Aufenthaltserlaubnis** — work permit
+
+**For MS abroad:**
+• US F-1 Student Visa (most common for Indian students)
+• UK Student Visa
+• Canada Study Permit
+• Germany Student Visa (free tuition!)
+
+**Requirements typically:**
+I-20 from university + bank statement (₹30–50L usually) + English test (IELTS/TOEFL) + SOP
+
+📌 *Germany offers free tuition at public universities + paid internships — massively underrated by Indian students!*`,
+
+  // ── MENTAL HEALTH & MISC ──
+  stress:`Dealing with internship search stress:
+
+It's completely normal to feel stressed. Here's what helps:
+
+**Practical:**
+• Set a daily limit: apply to 5–10 places, then stop and do something else
+• Track rejections in a spreadsheet — patterns help you improve
+• Celebrate small wins (got a response? That's progress!)
+
+**Mindset:**
+• Rejection is data, not judgment — most companies reject 95%+ of applicants
+• One yes is all you need
+• Comparison kills joy — everyone's timeline is different
+
+**Take care of yourself:**
+• Sleep 7–8 hours (sleep affects memory and problem solving)
+• Exercise — even 20 min/day reduces stress significantly
+• Talk to someone — friends, family, or a counselor
+
+📌 *The average job seeker applies to 27 places before getting hired. Keep going!*`,
+
+  motivation:`You've got this! 💪
+
+Some truths about the internship search:
+
+🌟 **Every expert was once a beginner**
+🌟 **The best time to start was yesterday; second best is now**
+🌟 **Skills compound — every day you learn, you're more valuable**
+🌟 **One right opportunity changes everything**
+
+**What separates those who get internships:**
+1. Consistency (not talent)
+2. Building in public (projects + LinkedIn)
+3. Actually applying (most people don't)
+4. Asking for help (referrals, mentors)
+
+You're already on Nirmaan — that puts you ahead. Keep going! 🚀`,
+
+  thanks:`You're welcome! 😊
+
+Is there anything else I can help with?
+
+💡 **Try asking:**
+• "How to apply to Google"
+• "Resume tips for fresher"
+• "What is system design"
+• "How to get a referral"
+• "Best courses for ML"
+• "Hackathon tips"
+• "LinkedIn profile tips"
+
+I'm here 24/7! 🤖`,
+
+  nirmaan:`About Nirmaan:
+
+✦ **Nirmaan** is India's AI-powered internship matching platform.
+
+**How it works:**
+1. Build your profile (skills, projects, education)
+2. Our AI uses semantic matching (not just keywords) to rank internships by how well they fit YOU
+3. Get a personalised career roadmap, skill gap analysis, and resume builder
+4. Connect with seniors and professionals for referrals
+
+**Key features:**
+• AI Recommendations (40+ matching dimensions)
+• Skill Gap Analyzer with curated courses
+• Week-by-week Career Roadmap
+• Resume Builder with AI assistance
+• Networking Hub
+• Voice assistant (me! 👋)
+
+**Team:**
+• Shiwanshu Singh — Founder
+• Shivam Gupta — CTO & AI Lead
+• Utsav Sharma — Head of Product & Design
+
+Built with ❤️ in India 🇮🇳`,
+
+  default:`I'm not sure I understood that fully, but I'll try to help!
+
+**Popular topics I can help with:**
+• 🎯 "Show my internship matches"
+• 📄 "Resume tips"
+• 💰 "Salary info"
+• 🎙️ "Interview prep"
+• 📊 "Skill gap analysis"
+• 🗺️ "Career roadmap"
+• 🏆 "Hackathon tips"
+• 🤝 "How to get a referral"
+• 🧠 "AI/ML career path"
+• 🌐 "Remote internships"
+
+Or type **"help"** to see everything I can answer! 🤖`,
 };
-function processChat(txt){
+
+// ══════════════════════ PROCESS CHAT ══════════════════════
+function processChat(msg){
   S.chatTyping=true;render();
-  const lo=txt.toLowerCase();
-  let r=BRAIN.default[0];
-  // order matters — check longer/more specific first
-  const keys=[
-    ['help',BRAIN.help[0]],
-    ['hi',BRAIN.hi[0]],['hello',BRAIN.hi[0]],['hey',BRAIN.hi[0]],
-    ['roadmap',BRAIN.roadmap[0]],
-    ['google',BRAIN.google[0]],
-    ['microsoft',BRAIN.microsoft[0]],
-    ['hackathon',BRAIN.hackathon[0]],
-    ['linkedin',BRAIN.linkedin[0]],
-    ['dsa',BRAIN.dsa[0]],['leetcode',BRAIN.dsa[0]],
-    ['cgpa',BRAIN.cgpa[0]],['grade',BRAIN.cgpa[0]],['gpa',BRAIN.cgpa[0]],
-    ['course',BRAIN.course[0]],['learn',BRAIN.course[0]],['study',BRAIN.course[0]],
-    ['profile',BRAIN.profile[0]],
-    ['resume',BRAIN.resume[0]],
-    ['skill',BRAIN.skill[0]],['gap',BRAIN.skill[0]],
-    ['apply',BRAIN.apply[0]],['application',BRAIN.apply[0]],
-    ['intern',BRAIN.intern[0]],['match',BRAIN.intern[0]],['recommend',BRAIN.intern[0]],
-    ['salary',BRAIN.salary[0]],['stipend',BRAIN.salary[0]],['pay',BRAIN.salary[0]],
-    ['interview',BRAIN.interview[0]],['prep',BRAIN.interview[0]],
-    ['network',BRAIN.network[0]],['connect',BRAIN.network[0]],
-    ['saved',BRAIN.saved[0]],['bookmark',BRAIN.saved[0]],
+  const lo=msg.toLowerCase().trim();
+
+  // ── Navigation commands (instant redirect) ──
+  const nav=[
+    [['open roadmap','go to roadmap','career roadmap','roadmap page'],'roadmap','Opening Career Roadmap 🗺️'],
+    [['open skill gap','skill gap page','skillgap','go to skill gap'],'skillgap','Opening Skill Gap Analyzer 📊'],
+    [['open matches','go to matches','recommendations','show recommendations'],'recs','Opening AI Matches ✨'],
+    [['open profile','my profile','go to profile'],'profile','Opening your Profile 👤'],
+    [['open resume','resume builder','go to resume'],'resume','Opening Resume Builder 📄'],
+    [['open network','networking hub','go to network'],'network','Opening Networking Hub 🤝'],
+    [['open saved','saved internships'],'saved','Opening Saved Internships 🔖'],
   ];
-  for(const[k,resp] of keys){if(lo.includes(k)){r=resp;break;}}
-  // navigate commands
-  if(lo.includes('open roadmap')||lo==='roadmap'){setTimeout(()=>{S.chatTyping=false;S.chatMsgs.push({r:'b',t:'Opening Career Roadmap for you! 🗺️'});render();go('roadmap');},600);return;}
-  if(lo.includes('open skill gap')||lo.includes('skill gap')){setTimeout(()=>{S.chatTyping=false;S.chatMsgs.push({r:'b',t:'Opening Skill Gap Analyzer! 📊'});render();go('skillgap');},600);return;}
-  setTimeout(()=>{S.chatTyping=false;S.chatMsgs.push({r:'b',t:r});render();const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;},850);
+  for(const[triggers,page,reply] of nav){
+    if(triggers.some(t=>lo.includes(t))){
+      setTimeout(()=>{S.chatTyping=false;S.chatMsgs.push({r:'b',t:reply});render();go(page);},600);
+      return;
+    }
+  }
+
+  // ── Knowledge matching ──
+  const rules=[
+    // Greeting
+    [['hi','hello','hey','namaste','sup','good morning','good evening','hii','hiii'],BRAIN.hi],
+    [['help','what can you','what do you','commands','options','menu'],BRAIN.help],
+
+    // Internships
+    [['no experience','without experience','fresher','zero experience','beginner'],BRAIN.noexperience],
+    [['off campus','off-campus','find internship','where to find','job portal'],BRAIN.offcampus],
+    [['startup vs','startup or faang','which is better company','big company vs startup'],BRAIN.startup],
+    [['google internship','google intern','apply google','google swe','google step'],BRAIN.google],
+    [['microsoft internship','microsoft intern','microsoft idc','apply microsoft'],BRAIN.microsoft],
+    [['amazon internship','amazon intern','apply amazon','amazon sde'],BRAIN.amazon],
+    [['flipkart internship','flipkart intern','apply flipkart'],BRAIN.flipkart],
+    [['adobe internship','adobe intern','apply adobe'],BRAIN.adobe],
+    [['razorpay internship','razorpay intern','apply razorpay'],BRAIN.razorpay],
+    [['faang','top companies','crack faang','how to get faang','big tech'],BRAIN.faang],
+    [['how to apply','application tips','apply tips','when to apply','application strategy'],BRAIN.apply],
+    [['match','recommendation','show match','my match','internship for me','best internship'],BRAIN.intern],
+
+    // Resume
+    [['ats','applicant tracking','resume scan','resume filter'],BRAIN.ats],
+    [['cover letter','covering letter'],BRAIN.coverLetter],
+    [['portfolio','personal website','portfolio tips'],BRAIN.portfolio],
+    [['github profile','github tips','github setup'],BRAIN.github],
+    [['resume','cv tips','cv format','build resume','resume for fresher'],BRAIN.resume],
+
+    // Skills
+    [['web dev','web development','frontend','backend','full stack','mern','react developer'],BRAIN.webdev],
+    [['ai career','machine learning','ml career','deep learning','nlp career','llm','generative ai'],BRAIN.aiml],
+    [['data science','data analyst','data engineering','analytics career','business intelligence'],BRAIN.datascience],
+    [['devops','cloud','kubernetes','docker career','sre','infrastructure'],BRAIN.devops],
+    [['cybersecurity','ethical hacking','penetration testing','security career','bug bounty'],BRAIN.cyber],
+    [['blockchain','web3','solidity','nft','defi','crypto career'],BRAIN.blockchain],
+    [['product management','pm career','product manager','apm program'],BRAIN.product],
+    [['skill gap','what to learn','missing skill','improve skills','upskill'],BRAIN.skill],
+
+    // DSA & Interview
+    [['dsa','data structure','algorithm','leetcode','coding practice','competitive programming'],BRAIN.dsa],
+    [['system design','design system','architect','scalability','high level design'],BRAIN.systemdesign],
+    [['behavioral','hr questions','hr interview','tell me about yourself','star method'],BRAIN.behavioral],
+    [['coding round','coding interview','coding test','online assessment','oa round'],BRAIN.coding],
+    [['interview prep','interview tips','prepare interview','mock interview','technical interview'],BRAIN.interview],
+
+    // Money
+    [['salary','stipend','how much','pay','compensation','ctc','lpa'],BRAIN.salary],
+    [['negotiate','negotiation','bargain','counter offer'],BRAIN.negotiate],
+    [['freelance','freelancing','fiverr','upwork','earn money','side income'],BRAIN.freelance],
+
+    // Networking
+    [['cold email','cold dm','cold message','reach out','contact recruiter'],BRAIN.coldemail],
+    [['referral','refer me','get referred','employee referral'],BRAIN.referral],
+    [['linkedin tips','linkedin profile','linkedin optimization'],BRAIN.linkedin],
+    [['network','networking','connect with','build network'],BRAIN.network],
+
+    // Courses
+    [['course','courses','best course','recommend course','learn online','udemy','coursera'],BRAIN.course],
+
+    // Hackathon / Open source
+    [['hackathon','hack','competition','coding competition'],BRAIN.hackathon],
+    [['open source','contribute','gsoc','google summer of code','github contribution'],BRAIN.opensource],
+
+    // Academic
+    [['cgpa','gpa','percentage','marks','grades','academics matter'],BRAIN.cgpa],
+    [['higher studies','masters','ms abroad','mtech','mba','phd','pg'],BRAIN.higherstudies],
+    [['gap year','career gap','year gap'],BRAIN.gapyear],
+
+    // Remote & international
+    [['remote internship','work from home','wfh internship','international internship','foreign internship'],BRAIN.remote],
+    [['visa','work visa','study visa','f1 visa','j1 visa','germany','canada study'],BRAIN.visa],
+
+    // About
+    [['what is nirmaan','about nirmaan','how nirmaan works','tell me about nirmaan'],BRAIN.nirmaan],
+
+    // Mental health
+    [['stress','anxiety','worried','depressed','burnout','overwhelmed','rejection'],BRAIN.stress],
+    [['motivat','discouraged','giving up','lost hope','not getting','no response'],BRAIN.motivation],
+    [['thank','thanks','thank you','great','awesome','helpful','nice','good bot'],BRAIN.thanks],
+  ];
+
+  let response=null;
+  for(const[triggers,reply] of rules){
+    if(triggers.some(kw=>lo.includes(kw))){
+      response=reply;
+      break;
+    }
+  }
+
+  // ── Hindi language support ──
+  if(!response){
+    const hiRules=[
+      [['नमस्ते','नमस्कार','हेलो','हाय'],BRAIN.hi],
+      [['मदद','सहायता','क्या कर सकते'],BRAIN.help],
+      [['रिज्यूम','resume बनाओ'],BRAIN.resume],
+      [['इंटर्नशिप','internship दिखाओ','मैच'],BRAIN.intern],
+      [['सैलरी','स्टाइपेंड','वेतन'],BRAIN.salary],
+      [['स्किल','कौशल','क्या सीखें'],BRAIN.skill],
+      [['इंटरव्यू','साक्षात्कार'],BRAIN.interview],
+      [['नेटवर्क','जुड़ें','कनेक्ट'],BRAIN.network],
+      [['रोडमैप','योजना'],BRAIN.roadmap],
+      [['हैकाथॉन'],BRAIN.hackathon],
+      [['थैंक','शुक्रिया','धन्यवाद'],BRAIN.thanks],
+    ];
+    for(const[triggers,reply] of hiRules){
+      if(triggers.some(kw=>lo.includes(kw))){
+        response=reply;
+        break;
+      }
+    }
+  }
+
+  if(!response)response=BRAIN.default;
+
+  const delay=400+Math.random()*600;
+  setTimeout(()=>{
+    S.chatTyping=false;
+    S.chatMsgs.push({r:'b',t:response});
+    render();
+    const cm=document.getElementById('chatmsgs');
+    if(cm)cm.scrollTop=cm.scrollHeight;
+  },delay);
 }
+
 
 // ══════════════════════ AUTO LOGIN ══════════════════════
 let autoTimer=null;
@@ -522,7 +1595,7 @@ function doGLogin(){
 function doLogout(){
   clearInterval(autoTimer);
   S.user=null;S.appliedIds=[];S.savedIds=[];INTERNS.forEach(i=>i.saved=false);
-  S.chatMsgs=[];S.chatOpen=false;S.autoLoginActive=true;S.loginRole='student';
+  S.chatMsgs=[];S.chatOpen=false;S.autoLoginActive=true;S.loginRole='student';S.chatHintDismissed=false;
   notif('Logged out','in');
   go('home');
 }
@@ -618,6 +1691,25 @@ function render(){
   const savedEnd=active&&active.selectionEnd!=null?active.selectionEnd:null;
 
   document.getElementById('root').innerHTML=buildApp();
+  // Wire chat buttons via event listeners (more reliable than inline onclick)
+  const fab=document.getElementById('chat-fab-btn');
+  if(fab)fab.addEventListener('click',function(){S.chatOpen=!S.chatOpen;S.chatHintDismissed=true;render();});
+  const closeBtn=document.getElementById('chat-close-btn');
+  if(closeBtn)closeBtn.addEventListener('click',function(){S.chatOpen=false;render();});
+  const clearBtn=document.getElementById('chat-clear-btn');
+  if(clearBtn)clearBtn.addEventListener('click',function(){S.chatMsgs=[];render();});
+  const hintBubble=document.getElementById('chat-hint-bubble');
+  if(hintBubble)hintBubble.addEventListener('click',function(){S.chatOpen=true;S.chatHintDismissed=true;render();});
+  const hintClose=document.getElementById('chat-hint-close');
+  if(hintClose)hintClose.addEventListener('click',function(e){e.stopPropagation();S.chatHintDismissed=true;render();});
+  const voiceBtn=document.getElementById('chat-voice-btn');
+  if(voiceBtn)voiceBtn.addEventListener('click',function(){chatVoice();});
+  const sendBtn=document.getElementById('chat-send-btn');
+  if(sendBtn)sendBtn.addEventListener('click',function(){const inp=document.getElementById('chatinp');const v=inp?.value?.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});inp.value='';processChat(v);}});
+  const inp=document.getElementById('chatinp');
+  if(inp)inp.addEventListener('keydown',function(e){if(e.key==='Enter'){const v=this.value.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});this.value='';processChat(v);}}});
+  document.querySelectorAll('[data-chatq]').forEach(function(el){el.addEventListener('click',function(){const q=this.getAttribute('data-chatq');S.chatMsgs.push({r:'u',t:q});processChat(q);});});
+  const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
   attachEv();
 
   if(savedId){
@@ -1516,14 +2608,33 @@ function buildContact(){
 
 // ══════════════════════ CHAT ══════════════════════
 function buildChat(){
-  const msgs=S.chatMsgs.length===0?[{r:'b',t:'Hi! I\'m Arya 🤖 — your AI career assistant.\n\nI can help with:\n• Internship matches & recommendations\n• Resume tips & skill gap analysis\n• Interview prep, DSA & hackathons\n• Salary info, roadmap & networking\n• LinkedIn tips, course recommendations\n\nTry "help" to see all commands!'}]:S.chatMsgs;
-  return `<button class="cfab ${S.voiceActive?'rec':''}" onclick="S.chatOpen=!S.chatOpen;render()">${S.voiceActive?'🔴':'💬'}</button>
-  ${S.chatOpen?`<div class="cw"><div class="ch"><div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</div><div style="flex:1"><div style="color:#fff;font-weight:700;font-size:.88rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.7);font-size:.68rem">● Online · Voice enabled</div></div><button onclick="S.chatOpen=false;render()" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:25px;height:25px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem">×</button></div>
-  <div class="cms" id="chatmsgs">${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\n/g,'<br>')}</div>`).join('')}${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}</div>
-  <div class="cqb">${['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help'].map(q=>`<div class="cq" onclick="S.chatMsgs.push({r:'u',t:'${q}'});processChat('${q.toLowerCase()}')">${q}</div>`).join('')}</div>
-  <div class="cir"><button class="cvb ${S.voiceActive?'on':''}" onclick="chatVoice()" title="Voice input">🎙️</button><input class="cinp" id="chatinp" placeholder="Ask anything…" onkeydown="if(event.key==='Enter'){const v=this.value.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});this.value='';processChat(v);}}"/><button class="csnd" onclick="const v=document.getElementById('chatinp')?.value?.trim();if(v&&!S.chatTyping){S.chatMsgs.push({r:'u',t:v});document.getElementById('chatinp').value='';processChat(v);}">➤</button></div>
-  </div>`:''}`;
+  const msgs=S.chatMsgs.length===0?[{r:'b',t:t('chatWelcome')||BRAIN.hi}]:S.chatMsgs;
+  const hint=S.lang==='hi'?'मैं क्या मदद कर सकता हूं? 👋':'What can I help you with? 👋';
+  const ph=t('chatPlaceholder')||'Ask me anything…';
+  return `
+    ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
+    <button id="chat-fab-btn" class="cfab ${S.voiceActive?'rec':''}">${S.voiceActive?'🔴':'🤖'}</button>
+    ${S.chatOpen?`<div class="cw">
+      <div class="ch">
+        <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
+        <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.65);font-size:.67rem">● Online · 50+ topics</div></div>
+        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.18rem .5rem;font-size:.65rem;cursor:pointer;font-family:var(--fb)">🗑</button>
+        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+      </div>
+      <div class="cms" id="chatmsgs">
+        ${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
+        ${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}
+      </div>
+      <div class="cqb">${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']).map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}</div>
+      <div class="cir">
+        <button id="chat-voice-btn" class="cvb ${S.voiceActive?'on':''}" title="Voice">🎙️</button>
+        <input class="cinp" id="chatinp" placeholder="${ph}"/>
+        <button id="chat-send-btn" class="csnd">➤</button>
+      </div>
+    </div>`:''}
+  `;
 }
+
 
 // ══════════════════════ NOTIFS ══════════════════════
 function buildNotifs(){
@@ -1609,6 +2720,7 @@ function buildFooter(){
 
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
+window.render=render;window.chatVoice=chatVoice;window.notif=notif;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});

@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --bg: #0D0E1A;
+            --bg2: #181A32;
+            --bg3: #232646;
+            --text: #E8E9FF;
+            --text2: #9295B8;
+            --green: #10B981;
+            --red: #EF4444;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary), #8B5CF6);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: move;
+            -webkit-app-region: drag;
+        }
+        .header * {
+            -webkit-app-region: no-drag;
+        }
+        .bot-icon {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+        .header-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            margin-left: auto;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .message {
+            max-width: 85%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .user-msg {
+            background: var(--primary);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        .bot-msg {
+            background: var(--bg3);
+            color: var(--text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: var(--bg3);
+            border-radius: 16px;
+            align-self: flex-start;
+        }
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: var(--text2);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+        .input-area {
+            padding: 12px 16px;
+            background: var(--bg2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-top: 1px solid var(--bg3);
+        }
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 24px;
+            background: var(--bg3);
+            color: var(--text);
+            font-size: 13px;
+            outline: none;
+        }
+        .input-area input::placeholder {
+            color: var(--text2);
+        }
+        .mic-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .mic-btn:hover {
+            background: var(--primary-dark);
+            transform: scale(1.05);
+        }
+        .mic-btn.listening {
+            background: var(--red);
+            animation: pulse-ring 1s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.5); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .send-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .send-btn:hover {
+            background: var(--primary-dark);
+        }
+        .voice-toggle {
+            position: fixed;
+            top: 12px;
+            right: 60px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="bot-icon">🤖</div>
+        <span class="header-title">AI Assistant</span>
+        <button class="voice-toggle" id="voiceToggle" onclick="toggleVoice()">🔊 Voice: ON</button>
+        <div class="status-dot"></div>
+    </div>
+    <div class="chat-area" id="chatArea">
+        <div class="message bot-msg">Hello! I'm your AI assistant. I can help answer questions, provide information, and assist with various tasks. You can type or use voice input. How can I help you?</div>
+    </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Type your message..." onkeypress="handleKeyPress(event)">
+        <button class="mic-btn" id="micBtn" onclick="toggleMic()">🎤</button>
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <script>
+        let recognition;
+        let isListening = false;
+        let voiceEnabled = true;
+        const chatArea = document.getElementById('chatArea');
+        const userInput = document.getElementById('userInput');
+        const micBtn = document.getElementById('micBtn');
+
+        // Initialize Speech Recognition
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+
+            recognition.onresult = function(event) {
+                const transcript = Array.from(event.results)
+                    .map(result => result[0].transcript)
+                    .join('');
+                userInput.value = transcript;
+                if (event.results[0].isFinal) {
+                    sendMessage();
+                }
+            };
+
+            recognition.onend = function() {
+                isListening = false;
+                micBtn.classList.remove('listening');
+            };
+
+            recognition.onerror = function(event) {
+                isListening = false;
+                micBtn.classList.remove('listening');
+            };
+        }
+
+        function toggleMic() {
+            if (!recognition) {
+                addMessage("Voice recognition not supported in this browser. Try Chrome.", 'bot');
+                return;
+            }
+            if (isListening) {
+                recognition.stop();
+            } else {
+                recognition.start();
+                isListening = true;
+                micBtn.classList.add('listening');
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function toggleVoice() {
+            voiceEnabled = !voiceEnabled;
+            document.getElementById('voiceToggle').textContent = voiceEnabled ? '🔊 Voice: ON' : '🔇 Voice: OFF';
+        }
+
+        function speak(text) {
+            if (!voiceEnabled) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            speechSynthesis.speak(utterance);
+        }
+
+        function addMessage(text, sender) {
+            const msg = document.createElement('div');
+            msg.className = `message ${sender}-msg`;
+            msg.textContent = text;
+            chatArea.appendChild(msg);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function showTyping() {
+            const typing = document.createElement('div');
+            typing.className = 'typing';
+            typing.id = 'typingIndicator';
+            typing.innerHTML = '<span></span><span></span><span></span';
+            chatArea.appendChild(typing);
+            chatArea.scrollTop = chatArea.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            addMessage(message, 'user');
+            userInput.value = '';
+            showTyping();
+
+            try {
+                const response = await getAIResponse(message);
+                hideTyping();
+                addMessage(response, 'bot');
+                speak(response);
+            } catch (error) {
+                hideTyping();
+                addMessage("Sorry, I couldn't process your request. Please try again.", 'bot');
+            }
+        }
+
+        // Optimized Knowledge Base for Maximum Questions
+        function getAIResponse(query) {
+            const q = query.toLowerCase();
+            const knowledgeBase = {
+                // Greetings
+                'hello': 'Hello! How can I assist you today?',
+                'hi': 'Hi there! What can I help you with?',
+                'hey': 'Hey! How can I help you?',
+                'good morning': 'Good morning! How can I assist you?',
+                'good evening': 'Good evening! What can I help you with?',
+
+                // About
+                'who are you': 'I am an AI assistant designed to help answer your questions and provide information on various topics.',
+                'what are you': 'I am an AI-powered chatbot programmed to assist with questions, provide information, and help with tasks.',
+                'your name': 'I am your AI Assistant, here to help you with any questions you have.',
+
+                // Help
+                'help': 'I can help you with: information retrieval, answering questions, explanations, calculations, and general assistance. What do you need help with?',
+                'can you help': 'Absolutely! I can assist with many things - just ask your question.',
+                'what can you do': 'I can answer questions, provide explanations, help with calculations, give suggestions, and much more. Just ask!',
+
+                // Technology
+                'javascript': 'JavaScript is a programming language used for web development. It enables interactive web pages and runs on both client and server sides.',
+                'python': 'Python is a high-level programming language known for its simplicity and readability. It is widely used in AI, data science, web development, and automation.',
+                'html': 'HTML (HyperText Markup Language) is the standard language for creating web pages. It defines the structure of web content.',
+                'css': 'CSS (Cascading Style Sheets) is used to style and layout web pages. It controls colors, fonts, spacing, and more.',
+                'coding': 'Coding involves writing instructions in a programming language to tell computers what to do. It is used to build websites, apps, and software.',
+                'programming': 'Programming is the process of creating instructions for computers. Popular languages include Python, JavaScript, Java, C++, and more.',
+                'how to code': 'To start coding: 1) Choose a language (Python is beginner-friendly), 2) Use an online editor or install one, 3) Learn basics (variables, loops, functions), 4) Practice with small projects.',
+
+                // AI & Machine Learning
+                'ai': 'Artificial Intelligence (AI) is technology that enables machines to mimic human intelligence - learning, reasoning, and problem-solving.',
+                'machine learning': 'Machine Learning is a subset of AI where computers learn from data without being explicitly programmed. It is used in recommendations, predictions, and more.',
+                'what is ml': 'Machine Learning is a type of AI where systems learn from data to improve performance on tasks without explicit programming.',
+                'deep learning': 'Deep Learning uses neural networks with many layers to learn from large amounts of data. It powers image recognition, NLP, and more.',
+
+                // Science
+                'water': 'Water (H2O) is essential for life. It consists of two hydrogen atoms and one oxygen atom. It makes up about 60% of the human body.',
+                'sun': 'The Sun is a star at the center of our solar system. It provides light and heat essential for life on Earth.',
+                'earth': 'Earth is the third planet from the Sun and the only known planet with life. It has a diverse ecosystem and is about 71% covered in water.',
+                'moon': 'The Moon is Earth\'s natural satellite. It affects tides and has been visited by humans during the Apollo missions.',
+                'physics': 'Physics is the study of matter, energy, and the fundamental forces of nature. It explains how the universe works.',
+                'chemistry': 'Chemistry studies the composition, structure, properties, and changes of matter.',
+                'biology': 'Biology is the study of living organisms - their structure, function, growth, and evolution.',
+
+                // Math
+                'math': 'Mathematics is the study of numbers, quantities, shapes, and patterns. It includes arithmetic, algebra, geometry, calculus, and more.',
+                'pi': 'Pi (π) is approximately 3.14159. It is the ratio of a circle\'s circumference to its diameter.',
+                'prime number': 'A prime number is a number greater than 1 that has only two divisors: 1 and itself. Examples: 2, 3, 5, 7, 11, 13.',
+                'fibonacci': 'The Fibonacci sequence is a series where each number is the sum of the two preceding ones: 0, 1, 1, 2, 3, 5, 8, 13, 21...',
+
+                // History
+                'world war': 'World War I (1914-1918) and World War II (1939-1945) were global conflicts that reshaped the world order.',
+                'india': 'India is a country in South Asia with a rich history spanning thousands of years. It is known for its culture, diversity, and economic growth.',
+                'internet': 'The internet is a global network of computers that enables communication and information sharing worldwide.',
+
+                // Time
+                'time': 'Time is a continuous progression of events from past to present to future. It is measured in seconds, minutes, hours, days, and more.',
+                'date': 'Today\'s date is May 17, 2026.',
+                'what day': 'Today is Sunday, May 17, 2026.',
+
+                // Weather
+                'weather': 'Weather refers to atmospheric conditions like temperature, humidity, wind, and precipitation in a specific place at a specific time.',
+
+                // General Knowledge
+                'capital of india': 'The capital of India is New Delhi.',
+                'capital of usa': 'The capital of the United States is Washington, D.C.',
+                'largest country': 'Russia is the largest country by area.',
+                ' tallest building': 'The tallest building is Burj Khalifa in Dubai (828 meters).',
+                'ocean': 'The Pacific Ocean is the largest, covering about 63 million square miles.',
+                'continent': 'There are 7 continents: Africa, Antarctica, Asia, Europe, North America, South America, and Oceania.',
+                'country': 'There are 195 countries in the world.',
+
+                // Education & Career
+                'job': 'I can help with career advice. What field are you interested in?',
+                'career': 'Popular career fields include: Technology, Healthcare, Finance, Education, Marketing, and Creative Arts. What interests you?',
+                'study': 'Effective study tips: 1) Create a schedule, 2) Take breaks, 3) Use active recall, 4) Practice regularly, 5) Stay organized.',
+                'learn': 'To learn effectively: set clear goals, practice consistently, use multiple resources, teach others, and stay curious!',
+
+                // Tips & Advice
+                'tip': 'Here\'s a tip: Consistent small efforts lead to big results. Keep learning and growing every day!',
+                'advice': 'My advice: Stay curious, keep learning, and never stop asking questions. Growth comes from challenges!',
+                'motivation': 'You are capable of amazing things! Keep pushing forward and believe in yourself.',
+
+                // Health
+                'health': 'Good health tips: 1) Sleep 7-8 hours, 2) Exercise regularly, 3) Eat balanced meals, 4) Stay hydrated, 5) Manage stress.',
+                'exercise': 'Recommended exercise: 150 minutes of moderate aerobic activity per week, plus strength training twice a week.',
+                'sleep': 'Adults need 7-9 hours of sleep per night for optimal health and cognitive function.',
+                'water drink': 'It\'s recommended to drink about 8 glasses (2 liters) of water daily.',
+
+                // Food
+                'food': 'A balanced diet includes: fruits, vegetables, whole grains, proteins, and healthy fats.',
+                'healthy': 'Healthy eating: focus on whole foods, limit processed foods, eat plenty of vegetables and fruits.',
+
+                // Thanks
+                'thank': 'You\'re welcome! Let me know if you need anything else.',
+                'thanks': 'No problem! Happy to help.',
+                'thank you': 'You\'re welcome! Feel free to ask more questions.',
+
+                // Goodbye
+                'bye': 'Goodbye! Feel free to come back if you have more questions.',
+                'goodbye': 'Goodbye! Have a great day!',
+                'see you': 'See you later! Come back anytime you need help.',
+
+                // Default responses for unmatched queries
+                'default': 'That\'s an interesting question! Let me think... Based on my knowledge, I can tell you that I\'m here to help with a wide range of questions. Could you provide more details about what you\'d like to know?'
+            };
+
+            // Search for matching keywords
+            for (const [key, value] of Object.entries(knowledgeBase)) {
+                if (q.includes(key)) {
+                    return value;
+                }
+            }
+
+            // Generate contextual responses for unknown queries
+            const contextualResponses = [
+                `I understand you're asking about "${query}". While I may not have specific information on that, I'm designed to help with many topics including technology, science, math, general knowledge, health, and more. Is there something else I can help you with?`,
+                `That's a great question! I have knowledge on many subjects. Could you try rephrasing or ask about a specific topic?`,
+                `I see you're curious about "${query}". I can help with factual questions, explanations, and general assistance. What other topics interest you?`
+            ];
+
+            return contextualResponses[Math.floor(Math.random() * contextualResponses.length)];
+        }
+    </script>
+</body>
+</html>
