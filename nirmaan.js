@@ -1605,7 +1605,7 @@ function performDemoLogin(role){
   S.user={...d,role};
   notif(`Auto-logged in as ${d.name} 👋`);
   speak(`Welcome ${d.name.split(' ')[0]}`);
-  if(role!=='admin'){S.tourStep=0;S.tourActive=true;}
+  if(role==='student'){S.tourStep=0;S.tourActive=true;}
   go(role==='company'?'codash':role==='admin'?'admin':'dash');
 }
 function cancelAutoLogin(){clearInterval(autoTimer);S.autoLoginActive=false;render();}
@@ -1623,7 +1623,7 @@ function doLogin(){
   else if(role==='admin'||em.includes('admin')){role='admin';name='Admin User';}
   S.user={name,email:em,role};
   notif(`Welcome, ${name.split(' ')[0]}! 👋`);
-  if(role!=='admin'){S.tourStep=0;S.tourActive=true;}
+  if(role==='student'){S.tourStep=0;S.tourActive=true;}
   go(role==='company'?'codash':role==='admin'?'admin':'dash');
 }
 function doGLogin(){
@@ -1690,7 +1690,7 @@ function completeSignup(){
   S.user={name:name||'New User',email:S.email||'user@test.com',role:S.signupRole,coName:S.coName};
   notif(S.signupRole==='company'?`Welcome aboard, ${S.coName||S.firstName}! Let's find great talent 🚀`:`Welcome to Nirmaan, ${S.firstName||'friend'}! 🎉`);
   speak(`Welcome ${S.firstName||''}`);
-  S.tourStep=0;S.tourActive=true;
+  if(S.signupRole==='student'){S.tourStep=0;S.tourActive=true;}
   go(S.signupRole==='company'?'codash':'dash');
 }
 function sendOtp(){
@@ -1830,6 +1830,23 @@ function render(){
     }
   }
 }
+function wireTourSpotlight(){
+  // Run positioning after paint so tooltip has layout
+  if(S.tourActive&&S.tourStep>0){
+    requestAnimationFrame(function(){
+      requestAnimationFrame(tourPositionSpotlight);
+    });
+  }
+  // Clicking the dark overlay (not tooltip/ring) advances tour
+  const overlay=document.getElementById('tour-overlay');
+  if(overlay&&S.tourStep>0){
+    overlay.addEventListener('click',function(e){
+      if(e.target===overlay||e.target.id==='tour-svg-mask'||e.tagName==='rect'||e.tagName==='svg'){
+        tourNext();
+      }
+    });
+  }
+}
 function openMobMenu(){
   const d=document.getElementById('mob-drawer');
   if(d){d.style.display='flex';requestAnimationFrame(()=>{d.classList.add('open');});}
@@ -1842,6 +1859,7 @@ function closeMobMenu(){
 }
 function attachEv(){
   const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
+  wireTourSpotlight();
   // Wire More button — no render() call so global click handler can't fight it
   const moreBtn=document.getElementById('mob-more-btn');
   const drawer=document.getElementById('mob-drawer');
@@ -1963,7 +1981,7 @@ function buildNav(){
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
       ${S.user?`<div style="position:relative">
-        <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
+        <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" id="tour-bell" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
           ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:var(--red);color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
         </button>
@@ -2012,14 +2030,14 @@ function sb(role){
     </div>
     <div class="sb-sec"><div class="sb-lbl">Main</div>
       <button class="sb-item ${S.page==='dash'?'on':''}" onclick="go('dash')"><span class="sb-ic">⚡</span>${t('sbDash')}</button>
-      <button class="sb-item ${S.page==='recs'?'on':''}" onclick="go('recs')"><span class="sb-ic">✨</span>${t('sbRecs')}<span class="sb-badge">${INTERNS.length}</span></button>
-      <button class="sb-item ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span class="sb-ic">📊</span>${t('sbSkillGap')}</button>
+      <button class="sb-item ${S.page==='recs'?'on':''}" id="tour-sb-recs" onclick="go('recs')"><span class="sb-ic">✨</span>${t('sbRecs')}<span class="sb-badge">${INTERNS.length}</span></button>
+      <button class="sb-item ${S.page==='skillgap'?'on':''}" id="tour-sb-skill" onclick="go('skillgap')"><span class="sb-ic">📊</span>${t('sbSkillGap')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}<span class="sb-badge ${INTERNS.filter(x=>x.saved).length===0?'r':''}">${INTERNS.filter(x=>x.saved).length}</span></button>
     </div>
     <div class="sb-sec"><div class="sb-lbl">Growth</div>
       <button class="sb-item ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span class="sb-ic">🗺️</span>${t('sbRoadmap')}</button>
       <button class="sb-item ${S.page==='resume'?'on':''}" onclick="go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
-      <button class="sb-item ${S.page==='network'?'on':''}" onclick="go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='network'?'on':''}" id="tour-sb-net" onclick="go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
@@ -2402,7 +2420,7 @@ function buildDash(){
     </div>
 
     <!-- Metrics: horizontal scroll on mobile -->
-    <div style="display:flex;gap:.65rem;overflow-x:auto;padding-bottom:.5rem;margin-bottom:1.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none" class="dash-metrics">
+    <div style="display:flex;gap:.65rem;overflow-x:auto;padding-bottom:.5rem;margin-bottom:1.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none" class="dash-metrics" id="tour-metrics">
       ${(()=>{const ml=t('metrics')||['AI Matches','Applied','Saved','Top Match','Profile'];const ms=t('metricSubs')||['↑ 3 today','Track all','Bookmarks','Google','Completion'];return[['⚡',INTERNS.length,0,'var(--p)'],['📝',S.appliedIds.length,1,'var(--cyan)'],['🔖',INTERNS.filter(x=>x.saved).length,2,'var(--amber)'],['🏆','94%',3,'var(--green)'],['📊','74%',4,'var(--p2)']].map(([ico,v,i,c])=>`
       <div style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:1rem 1.1rem;min-width:120px;flex-shrink:0;cursor:pointer;position:relative;overflow:hidden;transition:all .15s" onclick="go('recs')">
         <div style="position:absolute;top:-12px;right:-12px;width:50px;height:50px;border-radius:50%;background:${c};opacity:.07"></div>
@@ -2416,7 +2434,7 @@ function buildDash(){
     <!-- Main grid: stacks on mobile -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem" class="dash-grid-2">
       <!-- Profile strength -->
-      <div class="card">
+      <div class="card" id="tour-profile">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">${t('profile')}</h3>
           <span class="bdg bi">${pct}%</span>
@@ -2429,7 +2447,7 @@ function buildDash(){
       </div>
 
       <!-- Top matches -->
-      <div class="card">
+      <div class="card" id="tour-matches">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">${t('topMatches')}</h3>
           <span style="font-size:.73rem;color:var(--p);cursor:pointer;font-weight:700" onclick="go('recs')">All →</span>
@@ -2449,18 +2467,18 @@ function buildDash(){
     <!-- Activity + Quick Actions: stacks on mobile -->
     <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1rem;margin-bottom:1rem" class="dash-grid-act">
       <div class="card">
-        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:1rem">${t('weeklyActivity')}</h3>
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:1rem" id="tour-activity-lbl">${t('weeklyActivity')}</h3>
         <div class="bch">${[{l:'Mon',v:45,h:38},{l:'Tue',v:82,h:68},{l:'Wed',v:60,h:50},{l:'Thu',v:95,h:79},{l:'Fri',v:75,h:62},{l:'Sat',v:110,h:91},{l:'Sun',v:88,h:73}].map(d=>`<div class="bc"><div class="bv">${d.v}</div><div class="bb" style="height:${d.h}px"></div><div class="bl">${d.l}</div></div>`).join('')}</div>
         <div style="font-size:.69rem;color:var(--t3);margin-top:.55rem">Profile views · this week</div>
       </div>
       <div class="card">
-        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem">${t('quickActions')}</h3>
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem" id="tour-quick">${t('quickActions')}</h3>
         ${[['🗺️','Roadmap','roadmap'],['📄','Resume','resume'],['🤝','Network','network'],['📊','Skill Gap','skillgap']].map(([ico,lbl,pg])=>`<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem;font-size:.79rem" onclick="go('${pg}')">${ico} ${lbl}</button>`).join('')}
       </div>
     </div>
 
     <!-- AI Insights -->
-    <div class="aic">
+    <div class="aic" id="tour-insights">
       <div class="aih">🤖 AI Insights</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.75rem">
         ${(t('insights')||[['📈','Trending','React Native & TypeScript are the most requested skills.'],['🎯','Tip','GitHub increases recruiter views 3.2×.'],['⚡','Apply Now!','Google closes in 4 days.']]).map(([ico,ti,d])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.8rem .9rem;border:1px solid var(--b)"><div style="font-size:1.1rem;margin-bottom:.4rem">${ico}</div><div style="font-size:.78rem;font-weight:700;color:var(--t);margin-bottom:.28rem">${ti}</div><div style="font-size:.72rem;color:var(--t2);line-height:1.5">${d}</div></div>`).join('')}
@@ -2715,43 +2733,63 @@ function buildRoadmap(){
   const statusBadge={done:'bg',active:'bi',locked:'bgr'};
   const filterLabel={all:t('rmAll'),done:t('rmDone'),active:t('rmActive'),locked:t('rmLocked')};
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.65rem;flex-wrap:wrap;gap:.9rem">
+
+    <!-- Header -->
+    <div class="rm-header">
       <div>
-        <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('rmTitle')}</h1>
-        <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('rmSub')}</p>
+        <h1 class="rm-page-title">${t('rmTitle')}</h1>
+        <p style="color:var(--t3);font-size:.82rem;margin-top:.18rem">${t('rmSub')}</p>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="notif('Roadmap PDF exported! 📄','ok')">${t('rmExport')}</button>
+      <button class="btn btn-ghost btn-sm rm-export-btn" onclick="notif('Roadmap PDF exported! 📄','ok')">${t('rmExport')}</button>
     </div>
-    <div class="aic" style="margin-bottom:1.5rem">
-      <div class="aih">${t('rmAiAnalysis')}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.9rem">
-        ${[[t('rmProgress'),pct+'%'],[t('rmCompleted'),done+'/'+ROADMAP.length+' '+t('rmSteps')],[t('rmEstTime'),t('rmTimeLeft')],[t('rmMatchBoost'),t('rmBoost')]].map(([l,v])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.78rem .9rem;border:1px solid var(--b)"><div style="font-size:.68rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.07em">${l}</div><div style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--t);margin-top:.22rem">${v}</div></div>`).join('')}
-        <div style="background:var(--bg2);border-radius:var(--r);padding:.78rem .9rem;border:1px solid var(--b);grid-column:1/-1"><div style="font-size:.69rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.45rem">${t('rmOverall')}</div><div class="pb tk"><div class="pf" style="width:${pct}%"></div></div></div>
+
+    <!-- Overall progress bar (always visible) -->
+    <div class="rm-progress-strip">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <span style="font-size:.78rem;font-weight:700;color:var(--t)">${t('rmOverall')}</span>
+        <span style="font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--p)">${pct}%</span>
       </div>
+      <div class="pb tk"><div class="pf" style="width:${pct}%"></div></div>
+      <div style="font-size:.72rem;color:var(--t3);margin-top:.35rem">${done} of ${ROADMAP.length} steps completed</div>
     </div>
-    <div style="display:flex;gap:.5rem;margin-bottom:1.35rem;flex-wrap:wrap">
-      ${filterKeys.map(f=>`<button class="btn ${S.rmFilter===f?'btn-p':'btn-ghost'} btn-sm" onclick="S.rmFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+
+    <!-- AI stats: horizontal scroll chips on mobile -->
+    <div class="rm-stats-strip">
+      ${[[t('rmProgress'),pct+'%','var(--p)'],[t('rmCompleted'),done+'/'+ROADMAP.length,'var(--green)'],[t('rmEstTime'),t('rmTimeLeft'),'var(--amber)'],[t('rmMatchBoost'),t('rmBoost'),'var(--cyan)']].map(([l,v,c])=>`
+      <div class="rm-stat-chip">
+        <div class="rm-stat-val" style="color:${c}">${v}</div>
+        <div class="rm-stat-lbl">${l}</div>
+      </div>`).join('')}
     </div>
+
+    <!-- Filter pills: horizontal scroll -->
+    <div class="rm-filter-bar">
+      ${filterKeys.map(f=>`<button class="nh-filter-pill ${S.rmFilter===f?'on':''}" onclick="S.rmFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+      <span class="nh-count">${shown.length} ${shown.length===1?'step':'steps'}</span>
+    </div>
+
+    <!-- Timeline -->
     <div class="rm-track">
-      ${shown.map(node=>`<div class="rm-node ${node.status}">
+      ${shown.length===0?`<div style="text-align:center;padding:2.5rem;color:var(--t3)"><div style="font-size:2rem;margin-bottom:.5rem">✅</div><div style="font-weight:700;color:var(--t)">All done here!</div></div>`:''}
+      ${shown.map(node=>`
+      <div class="rm-node ${node.status}">
         <div class="rm-card">
-          <div style="display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:.65rem;margin-bottom:.5rem">
-            <div>
-              <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.22rem">
-                <span class="bdg ${statusBadge[node.status]}">${statusLabel[node.status]}</span>
-                <span style="font-size:.7rem;color:var(--t3);font-weight:600">${node.time}</span>
-              </div>
-              <div class="rm-title">${node.title}</div>
-              <div class="rm-sub">${node.sub}</div>
+          <!-- Top row: badge + time + action button -->
+          <div class="rm-card-top">
+            <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;flex:1">
+              <span class="bdg ${statusBadge[node.status]}">${statusLabel[node.status]}</span>
+              <span style="font-size:.7rem;color:var(--t3);font-weight:600">${node.time}</span>
             </div>
-            <div style="display:flex;gap:.38rem;flex-shrink:0">
+            <div style="flex-shrink:0">
               ${node.status==='active'?`<button class="btn btn-p btn-sm" onclick="notif('Marked complete! 🎉','ok')">${t('rmMarkDone')}</button>`:''}
               ${node.status==='locked'?`<button class="btn btn-ghost btn-sm" onclick="notif('Complete previous steps first','wn')">${t('rmLockedBtn')}</button>`:''}
               ${node.status==='done'?`<button class="btn btn-success btn-sm" onclick="notif('Reviewing…','in')">${t('rmReview')}</button>`:''}
             </div>
           </div>
+          <div class="rm-title">${node.title}</div>
+          <div class="rm-sub">${node.sub}</div>
           <div class="rm-skills">${node.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-          ${node.status==='active'?`<div style="margin-top:.85rem"><div class="pb sl"><div class="pf" style="width:45%"></div></div><div style="font-size:.7rem;color:var(--t3);margin-top:.25rem">${t('rmComplete')}</div></div>`:''}
+          ${node.status==='active'?`<div class="rm-progress-row"><div class="pb sl" style="flex:1"><div class="pf" style="width:45%"></div></div><span style="font-size:.7rem;color:var(--t3);white-space:nowrap">${t('rmComplete')}</span></div>`:''}
         </div>
       </div>`).join('')}
     </div>
@@ -2985,30 +3023,42 @@ function buildChat(){
   const msgs=S.chatMsgs.length===0?[{r:'b',t:t('chatWelcome')||BRAIN.hi}]:S.chatMsgs;
   const hint=S.lang==='hi'?'मैं क्या मदद कर सकता हूं? 👋':'What can I help you with? 👋';
   const ph=t('chatPlaceholder')||'Ask me anything…';
+  const quickBtns=(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']);
   return `
     ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
     <button id="chat-fab-btn" style="display:none"></button>
     ${S.chatOpen?`<div class="cw">
+      <!-- Header -->
       <div class="ch">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
-        <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.65);font-size:.67rem">● Online · 50+ topics</div></div>
-        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.18rem .5rem;font-size:.65rem;cursor:pointer;font-family:var(--fb)">🗑</button>
-        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+        <div style="flex:1;min-width:0">
+          <div style="color:#fff;font-weight:700;font-size:.88rem;font-family:var(--fh)">Arya AI</div>
+          <div style="color:rgba(255,255,255,.65);font-size:.65rem">● Online · 50+ topics</div>
+        </div>
+        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.16rem .45rem;font-size:.62rem;cursor:pointer;font-family:var(--fb);flex-shrink:0">🗑</button>
+        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.35rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
       </div>
+
+      <!-- Messages -->
       <div class="cms" id="chatmsgs">
         ${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
         ${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}
       </div>
-      <div class="cqb">${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']).map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}</div>
-      <div class="cir">
-        <button id="chat-voice-btn" class="cvb ${S.voiceActive?'on':''}" title="Voice">🎙️</button>
-        <input class="cinp" id="chatinp" placeholder="${ph}"/>
+
+      <!-- Quick buttons: horizontal scroll, no wrap -->
+      <div class="cqb">
+        ${quickBtns.map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}
+      </div>
+
+      <!-- Input row -->
+      <div class="cif">
+        <button id="chat-voice-btn" class="cvb" title="Voice input">🎤</button>
+        <input class="cinp" id="chatinp" placeholder="${ph}" autocomplete="off"/>
         <button id="chat-send-btn" class="csnd">➤</button>
       </div>
     </div>`:''}
   `;
 }
-
 
 // ══════════════════════ NOTIFS ══════════════════════
 function buildNotifs(){
@@ -3077,6 +3127,7 @@ function buildCookiePolicyModal(){
   </div>`;
 }
 
+/* ── SPOTLIGHT TOUR ── */
 function buildTour(){
   if(!S.tourActive||!S.user)return'';
   const isComp=S.user.role==='company';
@@ -3087,57 +3138,104 @@ function buildTour(){
   if(!step)return'';
   const isLast=i===total-1;
   const progress=(i+1)/total*100;
+  const dots=steps.map((_,di)=>`<div class="tour-dot${di===i?' on':''}"></div>`).join('');
+  const featureGrid=`<div class="tour-features">${(isComp?[['➕','Post Roles'],['👥','AI Ranking'],['📈','Analytics'],['🏢','Profile']]:[['⚡','Dashboard'],['🤖','AI Match'],['📊','Skill Gap'],['🗺️','Roadmap'],['🎙️','Arya AI'],['🤝','Network']]).map(([ico,lbl])=>`<div class="tour-feat-chip"><span>${ico}</span><span>${lbl}</span></div>`).join('')}</div>`;
 
-  // Feature preview grid for step 0
-  const featureGrid=`
-    <div class="tour-features">
-      ${(isComp?
-        [['➕','Post Roles'],['👥','AI Ranking'],['📈','Analytics'],['🏢','Profile']]:
-        [['⚡','Dashboard'],['🤖','AI Match'],['📊','Skill Gap'],['🗺️','Roadmap'],['🎙️','Arya AI'],['🤝','Network']]
-      ).map(([ico,lbl])=>`<div class="tour-feat-chip"><span>${ico}</span><span>${lbl}</span></div>`).join('')}
-    </div>`;
-
-  return `
-  <div class="tour-overlay" id="tour-overlay">
-    <div class="tour-card" id="tour-card">
-
-      <!-- Skip -->
+  if(i===0){
+    return `<div class="tour-overlay tour-centered" id="tour-overlay"><div class="tour-card" id="tour-card">
       <button class="tour-skip" onclick="tourSkip()">${t('tourSkip')} ✕</button>
-
-      <!-- Progress bar -->
       <div class="tour-progress-track"><div class="tour-progress-fill" style="width:${progress}%"></div></div>
-
-      <!-- Step indicator dots -->
-      <div class="tour-dots">
-        ${steps.map((_,di)=>`<div class="tour-dot${di===i?' on':''}"></div>`).join('')}
-      </div>
-
-      <!-- Icon -->
-      <div class="tour-ico-wrap">
-        <div class="tour-ico">${step.ico}</div>
-        ${i===0?`<div class="tour-ico-ring"></div>`:''}
-      </div>
-
-      <!-- Content -->
+      <div class="tour-dots">${dots}</div>
+      <div class="tour-ico-wrap"><div class="tour-ico">${step.ico}</div><div class="tour-ico-ring"></div></div>
       <h2 class="tour-title">${step.title}</h2>
       <p class="tour-body">${step.body}</p>
-      ${i===0?featureGrid:''}
+      ${featureGrid}
       <p class="tour-cta">${step.cta}</p>
-
-      <!-- Step counter -->
       <div class="tour-step-lbl">${i+1} ${t('tourOf')} ${total}</div>
+      <div class="tour-nav"><div></div><button class="btn btn-p tour-btn-next" onclick="tourNext()">${t('tourNext')}</button></div>
+    </div></div>`;
+  }
 
-      <!-- Nav buttons -->
-      <div class="tour-nav">
-        ${i>0?`<button class="btn btn-ghost tour-btn-back" onclick="tourPrev()">${t('tourPrev')}</button>`:`<div></div>`}
-        <button class="btn btn-p tour-btn-next" onclick="${isLast?'tourSkip()':'tourNext()'}">${isLast?t('tourFinish'):t('tourNext')}</button>
+  return `<div class="tour-overlay tour-spotlight" id="tour-overlay">
+    <svg class="tour-svg-mask" id="tour-svg-mask" xmlns="http://www.w3.org/2000/svg" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2001">
+      <defs><mask id="tour-hole-mask">
+        <rect width="100%" height="100%" fill="white"/>
+        <rect id="tour-hole-rect" x="0" y="0" width="0" height="0" rx="14" fill="black"/>
+      </mask></defs>
+      <rect width="100%" height="100%" fill="rgba(10,10,30,0.75)" mask="url(#tour-hole-mask)"/>
+    </svg>
+    <div class="tour-spotlight-ring" id="tour-spotlight-ring"></div>
+    <div class="tour-tooltip" id="tour-tooltip" data-step="${i}" style="opacity:0">
+      <div class="tour-progress-track" style="margin-bottom:.75rem"><div class="tour-progress-fill" style="width:${progress}%"></div></div>
+      <div class="tour-dots" style="margin-bottom:.75rem">${dots}</div>
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem">
+        <div class="tour-tip-ico">${step.ico}</div>
+        <h3 class="tour-tip-title">${step.title}</h3>
       </div>
-
+      <p class="tour-tip-body">${step.body}</p>
+      <p class="tour-cta" style="margin:.65rem 0">${step.cta}</p>
+      <div class="tour-step-lbl" style="margin-bottom:.65rem">${i+1} ${t('tourOf')} ${total}</div>
+      <div class="tour-nav">
+        <button class="btn btn-ghost tour-btn-back" onclick="tourPrev()">${t('tourPrev')}</button>
+        <button class="btn btn-p tour-btn-next" onclick="${isLast?'tourSkip()':'tourNext()'}">
+${isLast?t('tourFinish'):t('tourNext')}</button>
+      </div>
     </div>
   </div>`;
 }
 
-function tourNext(){if(S.tourStep<((t(S.user?.role==='company'?'tourStepsCompany':'tourStepsStudent')||[]).length-1)){S.tourStep++;render();}}
+const TOUR_TARGETS_STUDENT=[null,'tour-metrics','tour-sb-recs','tour-sb-skill','tour-profile','chat-fab-btn','tour-sb-net'];
+const TOUR_TARGETS_COMPANY=[null,'tour-metrics','tour-matches','tour-insights','tour-bell'];
+
+function tourPositionSpotlight(){
+  if(!S.tourActive||S.tourStep===0)return;
+  const isComp=S.user&&S.user.role==='company';
+  const targets=isComp?TOUR_TARGETS_COMPANY:TOUR_TARGETS_STUDENT;
+  const targetId=targets[Math.min(S.tourStep,targets.length-1)];
+  if(!targetId)return;
+  const el=document.getElementById(targetId);
+  const holeRect=document.getElementById('tour-hole-rect');
+  const ring=document.getElementById('tour-spotlight-ring');
+  const tooltip=document.getElementById('tour-tooltip');
+  if(!el||!holeRect||!ring||!tooltip)return;
+  const pad=14;
+  const r=el.getBoundingClientRect();
+  const vw=window.innerWidth;
+  const vh=window.innerHeight;
+  // Hole
+  holeRect.setAttribute('x',r.left-pad);
+  holeRect.setAttribute('y',r.top-pad);
+  holeRect.setAttribute('width',r.width+pad*2);
+  holeRect.setAttribute('height',r.height+pad*2);
+  // Ring
+  ring.style.cssText=`position:fixed;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;border-radius:14px;border:2.5px solid var(--p);box-shadow:0 0 0 4px rgba(99,102,241,.2),0 0 28px rgba(99,102,241,.35);z-index:2003;pointer-events:none;animation:tourRingPulse 1.8s ease-in-out infinite`;
+  // Tooltip positioning
+  const tipW=Math.min(300,vw-24);
+  const tipH=tooltip.offsetHeight||240;
+  const gap=16;
+  let tx,ty;
+  if(vw<=600){
+    // Mobile: pin above mob-nav
+    tx=8; ty=Math.max(8,vh-tipH-80);
+    tooltip.style.width=(vw-16)+'px';
+  } else {
+    tooltip.style.width=tipW+'px';
+    if(r.bottom+gap+tipH<vh){ty=r.bottom+gap;tx=Math.max(12,Math.min(r.left,vw-tipW-12));}
+    else if(r.top-gap-tipH>0){ty=r.top-gap-tipH;tx=Math.max(12,Math.min(r.left,vw-tipW-12));}
+    else if(r.right+gap+tipW<vw){tx=r.right+gap;ty=Math.max(12,Math.min(r.top,vh-tipH-12));}
+    else{tx=Math.max(12,r.left-gap-tipW);ty=Math.max(12,Math.min(r.top,vh-tipH-12));}
+  }
+  tooltip.style.left=tx+'px';
+  tooltip.style.top=ty+'px';
+  tooltip.style.opacity='1';
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function tourNext(){
+  const isComp=S.user&&S.user.role==='company';
+  const total=(t(isComp?'tourStepsCompany':'tourStepsStudent')||[]).length;
+  if(S.tourStep<total-1){S.tourStep++;render();}
+}
 function tourPrev(){if(S.tourStep>0){S.tourStep--;render();}}
 function tourSkip(){S.tourActive=false;render();}
 
