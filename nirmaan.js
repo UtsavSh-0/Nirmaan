@@ -21,6 +21,7 @@ const S={
   rmFilter:'all',
   rbData:{name:'Priya Sharma',title:'Frontend Developer',email:'priya@example.com',phone:'+91 98765 43210',summary:'Passionate frontend developer with strong skills in React, TypeScript and UI design. Looking for opportunities to contribute to impactful products.',skills:['React','JavaScript','Python','CSS','Git'],exp:[{co:'Freelance Projects',role:'Frontend Dev',period:'2023–Present',desc:'Built 5+ client websites using React and Next.js'}],edu:'B.Tech Computer Science – IIT Delhi (2025)'},
   autoLoginCountdown:5,autoLoginActive:true,autoLoginRole:'student',
+  tourStep:0,tourActive:false,
   nhFilter:'all',
   nhMsg:{},
   bellOpen:false,
@@ -148,6 +149,24 @@ const T={
     nhCompaniesHiring:'Companies Hiring',nhMutual:'mutual connections',
     nhConnect:'Connect',nhConnectedBtn:'✓ Connected',nhMessage:'Message',nhView:'View',
     nhAutoConnect:'Auto-connect to all →',nhAiText:'Connect with recommended professionals in your field. Professionals with mutual connections are 4x more likely to refer you.',
+    // Tour
+    tourSkip:'Skip Tour',tourNext:'Next →',tourPrev:'← Back',tourFinish:"Let's Go! 🚀",tourOf:'of',
+    tourStepsStudent:[
+      {ico:'🎉',title:'Welcome to Nirmaan!',body:'Your AI-powered career platform. We help students across India find the perfect internship — based on your skills, not just your college.',cta:'Take a 2-minute tour to see what\'s possible.'},
+      {ico:'⚡',title:'Your Smart Dashboard',body:'See your AI match score, recent activity, profile strength, and personalized insights — all in one place. Your career command center.',cta:'Everything you need, right when you need it.'},
+      {ico:'🤖',title:'AI Internship Matching',body:'Our AI compares your skills, projects, and interests against 40+ dimensions of each role. Every match shows exactly why you\'re a great fit.',cta:'Find internships that truly match your potential.'},
+      {ico:'📊',title:'Skill Gap Analyzer',body:'See exactly which skills each company wants and which ones you\'re missing. Get curated course recommendations to close every gap fast.',cta:'Know precisely what to learn next.'},
+      {ico:'🗺️',title:'Personal Career Roadmap',body:'A week-by-week action plan built just for you — from polishing your profile to landing your first offer. Never feel lost again.',cta:'Your roadmap to placement starts here.'},
+      {ico:'🎙️',title:'Arya — Your AI Assistant',body:'Ask Arya anything: interview prep, resume tips, salary info, DSA help, or just navigate the platform with your voice. Works in English and Hindi.',cta:'Tap the ✦ button at any time to chat with Arya.'},
+      {ico:'🤝',title:'Networking Hub',body:'Connect with seniors, alumni, and professionals at your target companies. A referral makes you 4× more likely to get an interview.',cta:'Your network is your net worth — start building it.'},
+    ],
+    tourStepsCompany:[
+      {ico:'🎉',title:'Welcome to Nirmaan!',body:'India\'s AI-powered internship platform. Post roles, get AI-ranked candidates, and hire your next intern in under 48 hours.',cta:'Let us show you around in 2 minutes.'},
+      {ico:'➕',title:'Post Internship Roles',body:'Create detailed listings with role, skills, stipend, perks, and deadlines. Your listing is instantly visible to 10,000+ active students.',cta:'Go live in under 5 minutes.'},
+      {ico:'👥',title:'AI-Ranked Candidates',body:'No more sifting through hundreds of applications. Our AI automatically ranks candidates by match score for your specific role requirements.',cta:'Your best-fit candidates, surfaced instantly.'},
+      {ico:'📈',title:'Hiring Analytics',body:'Track applications, shortlists, and match quality in real time. Understand which skills are most available in the candidate pool.',cta:'Make data-driven hiring decisions.'},
+      {ico:'🏢',title:'Your Employer Profile',body:'Candidates see your company culture, team size, perks, and open roles. A strong profile attracts better applications.',cta:'First impressions matter — make yours count.'},
+    ],
   },
   hi:{
     // Nav
@@ -266,6 +285,24 @@ const T={
     nhCompaniesHiring:'भर्ती कर रही कंपनियां',nhMutual:'आपसी कनेक्शन',
     nhConnect:'जुड़ें',nhConnectedBtn:'✓ जुड़े हुए',nhMessage:'संदेश',nhView:'देखें',
     nhAutoConnect:'सभी से ऑटो-कनेक्ट करें →',nhAiText:'अपने क्षेत्र के अनुशंसित पेशेवरों से जुड़ें। आपसी कनेक्शन वाले पेशेवर रेफरल देने की 4 गुना अधिक संभावना रखते हैं।',
+    // Tour Hindi
+    tourSkip:'टूर छोड़ें',tourNext:'आगे →',tourPrev:'← पीछे',tourFinish:'चलो शुरू करें! 🚀',tourOf:'में से',
+    tourStepsStudent:[
+      {ico:'🎉',title:'Nirmaan में स्वागत है!',body:'आपका AI-संचालित करियर प्लेटफॉर्म। हम भारत भर के छात्रों को सही इंटर्नशिप खोजने में मदद करते हैं — केवल कॉलेज के आधार पर नहीं, बल्कि आपकी स्किल्स के आधार पर।',cta:'2 मिनट का टूर लें और देखें क्या संभव है।'},
+      {ico:'⚡',title:'आपका स्मार्ट डैशबोर्ड',body:'AI मैच स्कोर, हाल की गतिविधि, प्रोफ़ाइल ताकत और व्यक्तिगत सुझाव — सब एक जगह। आपका करियर कंट्रोल सेंटर।',cta:'जो चाहिए वो जब चाहिए, वहीं मिलेगा।'},
+      {ico:'🤖',title:'AI इंटर्नशिप मैचिंग',body:'हमारा AI आपकी स्किल्स, प्रोजेक्ट्स और रुचि को हर रोल के 40+ आयामों से तुलना करता है। हर मैच बताता है कि आप क्यों सही हैं।',cta:'वो इंटर्नशिप खोजें जो सच में आपके लिए बनी है।'},
+      {ico:'📊',title:'स्किल गैप विश्लेषण',body:'देखें कि कंपनी किन स्किल्स की तलाश करती है और आपमें क्या कमी है। हर कमी को जल्दी भरने के लिए कोर्स सुझाव पाएं।',cta:'जानें अगला कदम क्या सीखना है।'},
+      {ico:'🗺️',title:'व्यक्तिगत करियर रोडमैप',body:'आपके लिए विशेष रूप से बना हफ्ता-दर-हफ्ता एक्शन प्लान — प्रोफ़ाइल बनाने से लेकर पहला ऑफर पाने तक। अब दिशा साफ है।',cta:'यहाँ से शुरू होता है आपकी प्लेसमेंट का सफर।'},
+      {ico:'🎙️',title:'Arya — आपका AI सहायक',body:'Arya से कुछ भी पूछें: इंटरव्यू तैयारी, रेज़्यूमे टिप्स, सैलरी जानकारी, DSA मदद, या अपनी आवाज़ से प्लेटफॉर्म नेविगेट करें। हिन्दी और English दोनों में।',cta:'किसी भी समय ✦ बटन दबाएं और Arya से बात करें।'},
+      {ico:'🤝',title:'नेटवर्किंग हब',body:'सीनियर्स, पूर्व छात्रों और टार्गेट कंपनियों के पेशेवरों से जुड़ें। रेफरल मिलने पर इंटरव्यू की संभावना 4 गुना बढ़ जाती है।',cta:'आपका नेटवर्क ही आपकी असली ताकत है।'},
+    ],
+    tourStepsCompany:[
+      {ico:'🎉',title:'Nirmaan में स्वागत है!',body:'भारत का AI-संचालित इंटर्नशिप प्लेटफॉर्म। रोल पोस्ट करें, AI-रैंक्ड उम्मीदवार पाएं, और 48 घंटों में अपना अगला इंटर्न हायर करें।',cta:'2 मिनट में हम आपको सब दिखाते हैं।'},
+      {ico:'➕',title:'इंटर्नशिप रोल पोस्ट करें',body:'रोल, स्किल्स, स्टाइपेंड, सुविधाएं और डेडलाइन के साथ विस्तृत लिस्टिंग बनाएं। आपकी लिस्टिंग तुरंत 10,000+ सक्रिय छात्रों को दिखाई देती है।',cta:'5 मिनट से कम में लाइव हो जाएं।'},
+      {ico:'👥',title:'AI-रैंक्ड उम्मीदवार',body:'सैकड़ों आवेदनों को छानने की जरूरत नहीं। हमारा AI आपकी रोल की जरूरतों के हिसाब से उम्मीदवारों को स्वचालित रूप से रैंक करता है।',cta:'सबसे उपयुक्त उम्मीदवार, तुरंत सामने।'},
+      {ico:'📈',title:'हायरिंग एनालिटिक्स',body:'आवेदन, शॉर्टलिस्ट और मैच क्वालिटी रियल टाइम में ट्रैक करें। जानें उम्मीदवारों में कौन सी स्किल्स सबसे ज्यादा उपलब्ध हैं।',cta:'डेटा के आधार पर स्मार्ट हायरिंग निर्णय लें।'},
+      {ico:'🏢',title:'आपका एम्प्लॉयर प्रोफ़ाइल',body:'उम्मीदवार आपकी कंपनी की संस्कृति, टीम का आकार, सुविधाएं और खुले रोल देखते हैं। एक मजबूत प्रोफ़ाइल बेहतर आवेदन आकर्षित करती है।',cta:'पहली छाप ही सबसे जरूरी होती है।'},
+    ],
   }
 };
 function t(key){ return (T[S.lang]||T.en)[key]||(T.en[key]||key); }
@@ -1568,6 +1605,7 @@ function performDemoLogin(role){
   S.user={...d,role};
   notif(`Auto-logged in as ${d.name} 👋`);
   speak(`Welcome ${d.name.split(' ')[0]}`);
+  if(role!=='admin'){S.tourStep=0;S.tourActive=true;}
   go(role==='company'?'codash':role==='admin'?'admin':'dash');
 }
 function cancelAutoLogin(){clearInterval(autoTimer);S.autoLoginActive=false;render();}
@@ -1585,12 +1623,14 @@ function doLogin(){
   else if(role==='admin'||em.includes('admin')){role='admin';name='Admin User';}
   S.user={name,email:em,role};
   notif(`Welcome, ${name.split(' ')[0]}! 👋`);
+  if(role!=='admin'){S.tourStep=0;S.tourActive=true;}
   go(role==='company'?'codash':role==='admin'?'admin':'dash');
 }
 function doGLogin(){
   clearInterval(autoTimer);
   S.user={name:'Priya Sharma',email:'priya@gmail.com',role:'student'};
   notif('Signed in with Google! 🎉');
+  S.tourStep=0;S.tourActive=true;
   go('dash');
 }
 function doLogout(){
@@ -1650,6 +1690,7 @@ function completeSignup(){
   S.user={name:name||'New User',email:S.email||'user@test.com',role:S.signupRole,coName:S.coName};
   notif(S.signupRole==='company'?`Welcome aboard, ${S.coName||S.firstName}! Let's find great talent 🚀`:`Welcome to Nirmaan, ${S.firstName||'friend'}! 🎉`);
   speak(`Welcome ${S.firstName||''}`);
+  S.tourStep=0;S.tourActive=true;
   go(S.signupRole==='company'?'codash':'dash');
 }
 function sendOtp(){
@@ -1789,8 +1830,47 @@ function render(){
     }
   }
 }
+function openMobMenu(){
+  const d=document.getElementById('mob-drawer');
+  if(d){d.style.display='flex';requestAnimationFrame(()=>{d.classList.add('open');});}
+}
+function closeMobMenu(){
+  const d=document.getElementById('mob-drawer');
+  if(!d)return;
+  d.classList.remove('open');
+  setTimeout(()=>{if(!d.classList.contains('open'))d.style.display='none';},260);
+}
 function attachEv(){
   const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
+  // Wire More button — no render() call so global click handler can't fight it
+  const moreBtn=document.getElementById('mob-more-btn');
+  const drawer=document.getElementById('mob-drawer');
+  const panel=document.getElementById('mob-panel');
+  const closeBtn=document.getElementById('mob-drawer-close');
+  if(drawer){drawer.style.display='none';} // hide by default after every render
+  if(moreBtn){moreBtn.onclick=function(e){e.stopPropagation();openMobMenu();};}
+  if(closeBtn){closeBtn.onclick=function(e){e.stopPropagation();closeMobMenu();};}
+  if(drawer){drawer.onclick=function(){closeMobMenu();};}
+  if(panel){panel.onclick=function(e){e.stopPropagation();};}
+  // Bell panel: wire mobile bottom-sheet bell if present
+  const mobBellBtn=document.getElementById('mob-bell-btn');
+  if(mobBellBtn){mobBellBtn.onclick=function(e){e.stopPropagation();openMobBell();};}
+  const mobBellClose=document.getElementById('mob-bell-close');
+  if(mobBellClose){mobBellClose.onclick=function(e){e.stopPropagation();closeMobBell();};}
+  const mobBellDrawer=document.getElementById('mob-bell-drawer');
+  if(mobBellDrawer){mobBellDrawer.style.display='none';mobBellDrawer.onclick=function(){closeMobBell();};}
+  const mobBellPanel=document.getElementById('mob-bell-panel');
+  if(mobBellPanel){mobBellPanel.onclick=function(e){e.stopPropagation();};}
+}
+function openMobBell(){
+  const d=document.getElementById('mob-bell-drawer');
+  if(d){d.style.display='flex';requestAnimationFrame(()=>d.classList.add('open'));}
+}
+function closeMobBell(){
+  const d=document.getElementById('mob-bell-drawer');
+  if(!d)return;
+  d.classList.remove('open');
+  setTimeout(()=>{if(!d.classList.contains('open'))d.style.display='none';},260);
 }
 function buildMobNav(){
   const isDash=['dash','recs','skillgap','saved','profile','roadmap','resume','network','codash','admin'].includes(S.page)&&S.user;
@@ -1801,27 +1881,71 @@ function buildMobNav(){
     ${S.user?`<button class="mob-nav-btn" onclick="go('dash')"><span>⚡</span><span>${t('sbDash')}</span></button>`:`<button class="mob-nav-btn ${S.page==='login'?'on':''}" onclick="go('login')"><span>🔑</span><span>${t('login')}</span></button>`}
     <button class="mob-nav-btn" onclick="S.langChosen=false;render()"><span>🌐</span><span>${S.lang==='hi'?'हि':'EN'}</span></button>
   </nav>`;
+  // Always render drawer; toggle visibility via openMobMenu() — no render() call on toggle avoids race with global click handler
   return`<nav class="mob-nav">
     <button class="mob-nav-btn ${S.page==='dash'?'on':''}" onclick="go('dash')"><span>⚡</span><span>${t('mobHome')}</span></button>
     <button class="mob-nav-btn ${S.page==='recs'?'on':''}" onclick="go('recs')"><span>✨</span><span>${t('mobMatches')}</span></button>
     <button class="mob-nav-btn ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span>📊</span><span>${t('mobSkills')}</span></button>
     <button class="mob-nav-btn ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span>🗺️</span><span>${t('mobRoadmap')}</span></button>
-    <button class="mob-nav-btn" onclick="S.mobMenu=!S.mobMenu;render()"><span>☰</span><span>${t('mobMore')}</span></button>
+    <button class="mob-nav-btn" id="mob-more-btn" style="position:relative"><span>☰</span><span>${t('mobMore')}</span>
+      ${S.user&&S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+    </button>
+    ${S.user?`<button class="mob-nav-btn" id="mob-bell-btn" style="position:relative"><span>🔔</span><span>Alerts</span>
+      ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+    </button>`:''}
   </nav>
-  ${S.mobMenu?`<div class="mob-menu-drawer" onclick="S.mobMenu=false;render()"><div class="mob-menu-panel" onclick="event.stopPropagation()">
-    <div class="mob-pill"></div>
-    <button class="sb-item ${S.page==='resume'?'on':''}" onclick="S.mobMenu=false;go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
-    <button class="sb-item ${S.page==='network'?'on':''}" onclick="S.mobMenu=false;go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
-    <button class="sb-item ${S.page==='saved'?'on':''}" onclick="S.mobMenu=false;go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
-    <button class="sb-item ${S.page==='profile'?'on':''}" onclick="S.mobMenu=false;go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;toggleDark();"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
-  </div></div>`:''}`;
+  <div class="mob-menu-drawer" id="mob-drawer">
+    <div class="mob-menu-panel" id="mob-panel">
+      <div class="mob-pill"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;padding:0 .25rem">
+        <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">Menu</span>
+        <button id="mob-drawer-close" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+      <button class="sb-item ${S.page==='resume'?'on':''}" onclick="closeMobMenu();go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
+      <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
+      <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
+      <button class="sb-item" onclick="closeMobMenu();S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
+      <button class="sb-item" onclick="closeMobMenu();toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
+      <button class="sb-item" style="color:var(--red)" onclick="closeMobMenu();doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
+    </div>
+  </div>
+  ${S.user?`
+  <div class="mob-menu-drawer" id="mob-bell-drawer">
+    <div class="mob-menu-panel" id="mob-bell-panel" style="max-height:80vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,1.5rem)">
+      <div class="mob-pill"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;padding:0 .25rem;flex-shrink:0">
+        <div>
+          <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">${t('notifications')}</span>
+          ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="background:var(--red);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .38rem;margin-left:.4rem">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          ${S.appNotifs.length>0?`<button onclick="markAllRead()" style="font-size:.73rem;color:var(--p);font-weight:700;background:none;border:none;cursor:pointer;font-family:var(--fb)">${t('markAllRead')}</button>`:''}
+          <button id="mob-bell-close" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center">×</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+        ${S.appNotifs.length===0?`<div style="padding:2.5rem;text-align:center;color:var(--t3)"><div style="font-size:2.2rem;margin-bottom:.6rem">🎉</div><div style="font-size:.85rem;font-weight:600">All caught up!</div></div>`:
+        S.appNotifs.map(n=>`<div style="display:flex;align-items:start;gap:.75rem;padding:.85rem .25rem;border-bottom:1px solid var(--b);background:${n.read?'transparent':'var(--pl)'}">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--bg3);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${n.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:${n.read?'600':'800'};color:var(--t);margin-bottom:.15rem">${n.title}</div>
+            <div style="font-size:.76rem;color:var(--t2);line-height:1.5;margin-bottom:.22rem">${n.body}</div>
+            <div style="font-size:.68rem;color:var(--t3)">${n.time}</div>
+          </div>
+          <button onclick="dismissAppNotif(${n.id})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:.15rem;flex-shrink:0;line-height:1">×</button>
+        </div>`).join('')}
+      </div>
+      <div style="padding:.75rem .25rem 0;border-top:1px solid var(--b);text-align:center;flex-shrink:0">
+        <span style="font-size:.76rem;color:var(--p);font-weight:700;cursor:pointer" onclick="notif('Notification settings coming soon!','in')">⚙️ Notification Settings</span>
+      </div>
+    </div>
+  </div>`:''}`;
 }
 function buildApp(){
   if(!('mobMenu' in S))S.mobMenu=false;
-  return `${buildNav()}${buildBody()}${buildMobNav()}${buildChat()}${S.voiceActive?`<div class="vi"><div class="vd"></div><div class="vw">${[1,2,3,4,5].map(i=>`<div class="vb"></div>`).join('')}</div><span>Listening…</span></div>`:''}${buildNotifs()}${S.modal?buildModal():''}${buildCookieBanner()}${buildLangPopup()}`;
+  return `${buildNav()}${buildBody()}${buildMobNav()}${buildChat()}${S.voiceActive?`<div class="vi"><div class="vd"></div><div class="vw">${[1,2,3,4,5].map(i=>`<div class="vb"></div>`).join('')}</div><span>Listening…</span></div>`:''}${buildNotifs()}${S.modal?buildModal():''}${buildTour()}${buildCookieBanner()}${buildLangPopup()}`;
 }
 
 // ══════════════════════ NAV ══════════════════════
@@ -1843,7 +1967,7 @@ function buildNav(){
           🔔
           ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:var(--red);color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
         </button>
-        ${S.bellOpen?`<div style="position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);box-shadow:var(--shl);z-index:9999;overflow:hidden" onclick="event.stopPropagation()">
+        ${S.bellOpen?`<div class="bell-desktop-panel" style="position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);box-shadow:var(--shl);z-index:9999;overflow:hidden" onclick="event.stopPropagation()">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;border-bottom:1px solid var(--b)">
             <div style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t)">${t('notifications')} <span style="background:var(--red);color:#fff;border-radius:99px;font-size:.62rem;padding:.1rem .38rem;margin-left:.3rem">${S.appNotifs.filter(n=>!n.read).length}</span></div>
             <button onclick="markAllRead()" style="font-size:.73rem;color:var(--p);font-weight:700;background:none;border:none;cursor:pointer">${t('markAllRead')}</button>
@@ -2358,34 +2482,34 @@ function buildRecs(){
 
   function bigCard(i){
     const col=i.match>=90?'var(--green)':i.match>=85?'var(--cyan)':'var(--amber)';
-    return `<div class="ic" style="padding:1.75rem;display:flex;flex-direction:column;gap:1.1rem;position:relative;overflow:hidden">
+    return `<div class="ic rec-big-card" style="display:flex;flex-direction:column;gap:1rem;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${i.match>=90?'var(--g1)':i.match>=85?'var(--g4)':'var(--g3)'}"></div>
-      <div style="display:flex;align-items:start;justify-content:space-between;gap:.75rem">
-        <div style="display:flex;align-items:center;gap:.85rem">
-          <div class="il" style="width:58px;height:58px;border-radius:14px;font-size:1.7rem">${i.logo}</div>
-          <div>
-            <div style="font-family:var(--fh);font-size:1.05rem;font-weight:700;color:var(--t);margin-bottom:.18rem">${i.title}</div>
-            <div style="font-size:.84rem;color:var(--t3);font-weight:600">${i.co}</div>
-            ${i.match>=90?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(99,102,241,.1);color:var(--p);border:1px solid rgba(99,102,241,.2);border-radius:99px;padding:.14rem .58rem;font-size:.68rem;font-weight:800;margin-top:.3rem">${t('perfectMatch')}</span>`:''}
+      <div style="display:flex;align-items:start;justify-content:space-between;gap:.6rem">
+        <div style="display:flex;align-items:center;gap:.75rem;flex:1;min-width:0">
+          <div class="il" style="width:52px;height:52px;border-radius:13px;font-size:1.5rem;flex-shrink:0">${i.logo}</div>
+          <div style="min-width:0">
+            <div style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t);margin-bottom:.14rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</div>
+            <div style="font-size:.81rem;color:var(--t3);font-weight:600">${i.co}</div>
+            ${i.match>=90?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(99,102,241,.1);color:var(--p);border:1px solid rgba(99,102,241,.2);border-radius:99px;padding:.12rem .5rem;font-size:.65rem;font-weight:800;margin-top:.28rem">${t('perfectMatch')}</span>`:''}
           </div>
         </div>
         <div style="text-align:center;flex-shrink:0">
-          <div style="width:68px;height:68px;border-radius:50%;background:conic-gradient(${col} ${i.match*3.6}deg,var(--bg3) 0);display:flex;align-items:center;justify-content:center">
-            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:.88rem;font-weight:800;color:${col}">${i.match}%</div>
+          <div style="width:56px;height:56px;border-radius:50%;background:conic-gradient(${col} ${i.match*3.6}deg,var(--bg3) 0);display:flex;align-items:center;justify-content:center">
+            <div style="width:42px;height:42px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:.82rem;font-weight:800;color:${col}">${i.match}%</div>
           </div>
-          <div style="font-size:.67rem;color:var(--t3);margin-top:.3rem;font-weight:700">${t('aiMatch')}</div>
+          <div style="font-size:.62rem;color:var(--t3);margin-top:.25rem;font-weight:700">${t('aiMatch')}</div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.45rem">
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">📍 ${i.loc}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">💻 ${typeLabel[i.type]||i.type}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--green);font-weight:700">💰 ${i.pay}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">⏱ ${i.dur}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.38rem">
+        <span class="rec-pill">📍 ${i.loc}</span>
+        <span class="rec-pill">💻 ${typeLabel[i.type]||i.type}</span>
+        <span class="rec-pill rec-pill-green">💰 ${i.pay}</span>
+        <span class="rec-pill">⏱ ${i.dur}</span>
       </div>
-      <div style="display:flex;gap:.3rem;flex-wrap:wrap">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.74rem;padding:.22rem .7rem">${s}</span>`).join('')}</div>
-      <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.12);border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:var(--t2);line-height:1.6">🧠 <strong style="color:var(--p)">${t('whyYou')}</strong> ${i.why}</div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-top:.25rem;border-top:1px solid var(--b)">
-        <button class="btn btn-p" style="flex:1;justify-content:center;padding:.6rem" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled style="opacity:.55;cursor:default;flex:1;justify-content:center;padding:.6rem"':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
+      <div style="display:flex;gap:.28rem;flex-wrap:wrap">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.72rem;padding:.2rem .6rem">${s}</span>`).join('')}</div>
+      <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.12);border-radius:10px;padding:.65rem .9rem;font-size:.78rem;color:var(--t2);line-height:1.6">🧠 <strong style="color:var(--p)">${t('whyYou')}</strong> ${i.why}</div>
+      <div class="rec-actions">
+        <button class="btn btn-p rec-apply-btn" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
         <button class="btn ${i.saved?'btn-success':'btn-ghost'} btn-sm" onclick="saveInt(${i.id})">${i.saved?t('savedBtn'):t('saveBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="go('skillgap')">${t('gapBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="notif('Opening ${i.co}…','in')">🏢</button>
@@ -2394,28 +2518,28 @@ function buildRecs(){
   }
 
   function smallCard(i){
-    return `<div class="ic" style="padding:1.35rem">
-      <div style="display:flex;gap:.85rem;align-items:start;margin-bottom:.9rem">
-        <div class="il" style="width:48px;height:48px;border-radius:11px;font-size:1.4rem">${i.logo}</div>
+    return `<div class="ic rec-small-card">
+      <div style="display:flex;gap:.75rem;align-items:start;margin-bottom:.75rem">
+        <div class="il" style="width:46px;height:46px;border-radius:11px;font-size:1.35rem;flex-shrink:0">${i.logo}</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:start;justify-content:space-between;gap:.5rem">
-            <div>
-              <div style="font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--t)">${i.title}</div>
-              <div style="font-size:.79rem;color:var(--t3)">${i.co}</div>
+          <div style="display:flex;align-items:start;justify-content:space-between;gap:.4rem">
+            <div style="min-width:0">
+              <div style="font-family:var(--fh);font-size:.92rem;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</div>
+              <div style="font-size:.77rem;color:var(--t3)">${i.co}</div>
             </div>
-            <span style="background:rgba(245,158,11,.1);color:var(--amber);border-radius:99px;padding:.2rem .6rem;font-size:.74rem;font-weight:800;white-space:nowrap;flex-shrink:0">${i.match}%</span>
+            <span style="background:rgba(245,158,11,.1);color:var(--amber);border-radius:99px;padding:.18rem .58rem;font-size:.72rem;font-weight:800;white-space:nowrap;flex-shrink:0">${i.match}%</span>
           </div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.7rem">
-        <span class="ipill">📍 ${i.loc}</span>
-        <span class="ipill">💻 ${typeLabel[i.type]||i.type}</span>
-        <span class="ipill">💰 ${i.pay}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.28rem;margin-bottom:.6rem">
+        <span class="rec-pill">📍 ${i.loc}</span>
+        <span class="rec-pill">💻 ${typeLabel[i.type]||i.type}</span>
+        <span class="rec-pill rec-pill-green">💰 ${i.pay}</span>
       </div>
-      <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.75rem">${i.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-      <div style="font-size:.76rem;color:var(--t2);line-height:1.5;background:var(--bg3);border-radius:8px;padding:.55rem .75rem;margin-bottom:.85rem">🧠 ${i.why.split('.')[0]}.</div>
-      <div style="display:flex;gap:.4rem">
-        <button class="btn btn-p btn-sm" style="flex:1;justify-content:center" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled style="opacity:.55;cursor:default"':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
+      <div style="display:flex;gap:.28rem;flex-wrap:wrap;margin-bottom:.65rem">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.72rem">${s}</span>`).join('')}</div>
+      <div style="font-size:.75rem;color:var(--t2);line-height:1.5;background:var(--bg3);border-radius:8px;padding:.5rem .72rem;margin-bottom:.75rem">🧠 ${i.why.split('.')[0]}.</div>
+      <div style="display:flex;gap:.38rem">
+        <button class="btn btn-p btn-sm" style="flex:1;justify-content:center" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
         <button class="btn ${i.saved?'btn-success':'btn-ghost'} btn-sm" onclick="saveInt(${i.id})">${i.saved?t('savedBtn'):t('saveBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="go('skillgap')">${t('gapBtn')}</button>
       </div>
@@ -2426,31 +2550,32 @@ function buildRecs(){
   const filterLabels={all:t('filterAll'),Remote:t('remote'),Hybrid:t('hybrid'),'On-site':t('onsite')};
 
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="margin-bottom:1.5rem">
-      <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('recsTitle')}</h1>
-      <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('recsSub')} · <strong style="color:var(--p)">${shown.length} ${t('recsMatches')}</strong></p>
+    <div style="margin-bottom:1.25rem">
+      <h1 style="font-family:var(--fh);font-size:clamp(1.2rem,4vw,1.55rem);font-weight:700;color:var(--t);letter-spacing:-.03em">${t('recsTitle')}</h1>
+      <p style="color:var(--t3);font-size:.82rem;margin-top:.2rem">${t('recsSub')} · <strong style="color:var(--p)">${shown.length} ${t('recsMatches')}</strong></p>
     </div>
-    <div style="display:flex;gap:.9rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap">
-      <div class="pill-tog">${filterTypes.map(ft=>`<button class="pill-btn ${S.fType===ft?'on':''}" onclick="S.fType='${ft}';render()">${filterLabels[ft]}</button>`).join('')}</div>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="notif('${t('filterSort')}','in')">${t('filterSort')}</button>
+    <!-- Filter bar: scrolls horizontally on mobile, no wrap -->
+    <div style="display:flex;gap:.55rem;align-items:center;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+      <div class="pill-tog" style="flex-shrink:0">${filterTypes.map(ft=>`<button class="pill-btn ${S.fType===ft?'on':''}" onclick="S.fType='${ft}';render()">${filterLabels[ft]}</button>`).join('')}</div>
+      <button class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap" onclick="notif('${t('filterSort')}','in')">⇅ ${t('filterSort')}</button>
     </div>
     ${shown.length===0?`<div class="card" style="text-align:center;padding:3rem"><div style="font-size:2.5rem;margin-bottom:.75rem">🔍</div><p style="font-weight:700;color:var(--t)">${t('noResults')}</p><button class="btn btn-p btn-sm" style="margin-top:1rem" onclick="S.fType='all';S.srchQ='';render()">${t('clearFilters')}</button></div>`:`
     ${perfect.length>0?`
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem">
-        <div style="font-family:var(--fh);font-size:.82rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em">${t('perfectMatches')}</div>
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.9rem">
+        <div style="font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${t('perfectMatches')}</div>
         <span class="bdg bi">${perfect.length} ${t('found')}</span>
         <div style="flex:1;height:1px;background:var(--b)"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:1.1rem;margin-bottom:2rem">
+      <div class="rec-grid">
         ${perfect.map(i=>bigCard(i)).join('')}
       </div>`:''}
     ${others.length>0?`
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem">
-        <div style="font-family:var(--fh);font-size:.82rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em">${t('otherMatches')}</div>
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.9rem;margin-top:${perfect.length>0?'1.5rem':'0'}">
+        <div style="font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${t('otherMatches')}</div>
         <span class="bdg bgr">${others.length} ${t('more')}</span>
         <div style="flex:1;height:1px;background:var(--b)"></div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="rec-list">
         ${others.map(i=>smallCard(i)).join('')}
       </div>`:''}
     `}
@@ -2703,50 +2828,105 @@ function buildNetwork(){
   if(S.nhFilter==='connected')shown=NETWORK.filter(p=>p.conn);
   if(S.nhFilter==='online')shown=NETWORK.filter(p=>p.online);
   const filterLabel={all:t('nhAll'),connected:t('nhConnected'),online:t('nhOnline')};
+  const stats=[[`👥`,t('nhConnections'),NETWORK.filter(p=>p.conn).length],['👁️',t('nhProfileViews'),'142'],['📩',t('nhMessages'),'3 '+t('nhUnread')],['🔔',t('nhRequests'),'2 '+t('nhPending')]];
+  const companies=[['🔵','Google','SWE Intern open'],['🟦','Microsoft','ML Intern open'],['🟡','Flipkart','Full Stack open']];
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.65rem;flex-wrap:wrap;gap:.9rem">
+
+    <!-- ── Page Header ── -->
+    <div class="nh-header">
       <div>
-        <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('nhTitle')}</h1>
-        <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('nhSub')}</p>
+        <h1 class="nh-title">${t('nhTitle')}</h1>
+        <p style="color:var(--t3);font-size:.82rem;margin-top:.18rem">${t('nhSub')}</p>
       </div>
-      <button class="btn btn-p btn-sm" onclick="notif('Posting in Feed…','in')">${t('nhShareUpdate')}</button>
+      <button class="btn btn-p btn-sm nh-share-btn" onclick="notif('Posting in Feed…','in')">${t('nhShareUpdate')}</button>
     </div>
-    <div class="aic" style="margin-bottom:1.5rem">
+
+    <!-- ── Stats strip: horizontal scroll on mobile ── -->
+    <div class="nh-stats-strip">
+      ${stats.map(([ico,lbl,val])=>`
+      <div class="nh-stat-chip">
+        <span class="nh-stat-ico">${ico}</span>
+        <div>
+          <div class="nh-stat-val">${val}</div>
+          <div class="nh-stat-lbl">${lbl}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <!-- ── AI Banner ── -->
+    <div class="aic nh-ai-banner">
       <div class="aih">${t('nhAiSuggestions')}</div>
-      <div style="font-size:.8rem;color:var(--t2);line-height:1.65">${t('nhAiText')} <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')">${t('nhAutoConnect')}</span></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.35rem" class="dash-grid-2">
-      <div style="display:flex;flex-direction:column;gap:.9rem">
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:1rem">${t('nhConnections')}</h3>
-          ${[[t('nhConnections'),NETWORK.filter(p=>p.conn).length],['👁️ '+t('nhProfileViews'),'142'],['📩 '+t('nhMessages'),'3 '+t('nhUnread')],['🔔 '+t('nhRequests'),'2 '+t('nhPending')]].map(([l,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:.52rem 0;border-bottom:1px solid var(--b);font-size:.83rem"><span style="color:var(--t2)">👥 ${l}</span><span style="font-weight:700;color:var(--t)">${v}</span></div>`).join('')}
-        </div>
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.85rem">${t('nhFilter')}</h3>
-          ${filterKeys.map(f=>`<button class="btn ${S.nhFilter===f?'btn-p':'btn-ghost'} btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.4rem" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
-        </div>
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.85rem">${t('nhCompaniesHiring')}</h3>
-          ${[['🔵','Google','SWE Intern open'],['🟦','Microsoft','ML Intern open'],['🟡','Flipkart','Full Stack open']].map(([ico,co,role])=>`<div style="display:flex;align-items:center;gap:.65rem;padding:.5rem 0;border-bottom:1px solid var(--b)"><span style="font-size:1.2rem">${ico}</span><div style="flex:1"><div style="font-size:.82rem;font-weight:700;color:var(--t)">${co}</div><div style="font-size:.71rem;color:var(--green)">${role}</div></div><button class="btn btn-ghost btn-xs" onclick="go('recs')">${t('nhView')}</button></div>`).join('')}
-        </div>
+      <div style="font-size:.8rem;color:var(--t2);line-height:1.6">${t('nhAiText')}
+        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')"> ${t('nhAutoConnect')}</span>
       </div>
-      <div>
-        <div class="nh-grid">
-          ${shown.map(p=>`<div class="ncard">
-            <div class="ncard-av" style="background:${p.col}">${p.name.split(' ').map(x=>x[0]).join('')}${p.online?'<div class="online-dot"></div>':''}</div>
-            <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.18rem">${p.name}</div>
-            <div style="font-size:.73rem;color:var(--p);font-weight:600;margin-bottom:.2rem">${p.role}</div>
-            <div style="font-size:.7rem;color:var(--t3);margin-bottom:.6rem">${p.college}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:.28rem;justify-content:center;margin-bottom:.75rem">${p.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-            <div style="font-size:.7rem;color:var(--t3);margin-bottom:.75rem">${p.mutual} ${t('nhMutual')}</div>
-            <div style="display:flex;gap:.4rem;width:100%">
-              <button class="btn ${p.conn?'btn-success':'btn-p'} btn-sm" style="flex:1;justify-content:center" onclick="toggleConn(${p.id})">${p.conn?t('nhConnectedBtn'):t('nhConnect')}</button>
-              <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="S.modal='msg_${p.id}';render()">${t('nhMessage')}</button>
+    </div>
+
+    <!-- ── Filter pills: scrollable on mobile ── -->
+    <div class="nh-filter-bar">
+      ${filterKeys.map(f=>`<button class="nh-filter-pill ${S.nhFilter===f?'on':''}" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+      <span class="nh-count">${shown.length} ${shown.length===1?'person':'people'}</span>
+    </div>
+
+    <!-- ── Main layout: sidebar + grid ── -->
+    <div class="nh-layout">
+
+      <!-- Sidebar (desktop only; hidden on mobile) -->
+      <div class="nh-sidebar">
+        <div class="card" style="margin-bottom:.9rem">
+          <h3 class="nh-side-h">${t('nhCompaniesHiring')}</h3>
+          ${companies.map(([ico,co,role])=>`
+          <div style="display:flex;align-items:center;gap:.65rem;padding:.5rem 0;border-bottom:1px solid var(--b)">
+            <span style="font-size:1.15rem">${ico}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.81rem;font-weight:700;color:var(--t)">${co}</div>
+              <div style="font-size:.7rem;color:var(--green);font-weight:600">${role}</div>
             </div>
+            <button class="btn btn-ghost btn-xs" onclick="go('recs')">${t('nhView')}</button>
           </div>`).join('')}
         </div>
+        <div class="card">
+          <h3 class="nh-side-h" style="margin-bottom:.6rem">${t('nhFilter')}</h3>
+          ${filterKeys.map(f=>`<button class="btn ${S.nhFilter===f?'btn-p':'btn-ghost'} btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- People grid -->
+      <div class="nh-grid">
+        ${shown.length===0?`<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--t3)"><div style="font-size:2.2rem;margin-bottom:.6rem">😶</div><div style="font-weight:700;color:var(--t);margin-bottom:.4rem">No results</div><button class="btn btn-ghost btn-sm" onclick="S.nhFilter='all';render()">Clear filter</button></div>`:''}
+        ${shown.map(p=>`
+        <div class="ncard">
+          <div class="ncard-top">
+            <div class="ncard-av" style="background:${p.col}">${p.name.split(' ').map(x=>x[0]).join('')}${p.online?'<div class="online-dot"></div>':''}</div>
+            <div class="ncard-info">
+              <div class="ncard-name">${p.name}</div>
+              <div class="ncard-role">${p.role}</div>
+              <div class="ncard-college">${p.college}</div>
+            </div>
+          </div>
+          <div class="ncard-skills">${p.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
+          <div class="ncard-mutual">${p.mutual} ${t('nhMutual')}</div>
+          <div class="ncard-actions">
+            <button class="btn ${p.conn?'btn-success':'btn-p'} btn-sm ncard-btn" onclick="toggleConn(${p.id})">${p.conn?t('nhConnectedBtn'):t('nhConnect')}</button>
+            <button class="btn btn-ghost btn-sm ncard-btn" onclick="S.modal='msg_${p.id}';render()">${t('nhMessage')}</button>
+          </div>
+        </div>`).join('')}
       </div>
     </div>
+
+    <!-- ── Companies Hiring: mobile-only bottom strip ── -->
+    <div class="nh-companies-mobile">
+      <div class="nh-side-h" style="margin-bottom:.75rem">🏢 ${t('nhCompaniesHiring')}</div>
+      <div class="nh-companies-scroll">
+        ${companies.map(([ico,co,role])=>`
+        <div class="nh-co-chip" onclick="go('recs')">
+          <span style="font-size:1.3rem">${ico}</span>
+          <div style="font-size:.78rem;font-weight:700;color:var(--t)">${co}</div>
+          <div style="font-size:.67rem;color:var(--green);font-weight:600">${role}</div>
+          <span class="btn btn-ghost btn-xs" style="margin-top:.35rem">${t('nhView')}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
   </div></div>`;
 }
 
@@ -2897,6 +3077,70 @@ function buildCookiePolicyModal(){
   </div>`;
 }
 
+function buildTour(){
+  if(!S.tourActive||!S.user)return'';
+  const isComp=S.user.role==='company';
+  const steps=t(isComp?'tourStepsCompany':'tourStepsStudent')||[];
+  const total=steps.length;
+  const i=Math.min(S.tourStep,total-1);
+  const step=steps[i];
+  if(!step)return'';
+  const isLast=i===total-1;
+  const progress=(i+1)/total*100;
+
+  // Feature preview grid for step 0
+  const featureGrid=`
+    <div class="tour-features">
+      ${(isComp?
+        [['➕','Post Roles'],['👥','AI Ranking'],['📈','Analytics'],['🏢','Profile']]:
+        [['⚡','Dashboard'],['🤖','AI Match'],['📊','Skill Gap'],['🗺️','Roadmap'],['🎙️','Arya AI'],['🤝','Network']]
+      ).map(([ico,lbl])=>`<div class="tour-feat-chip"><span>${ico}</span><span>${lbl}</span></div>`).join('')}
+    </div>`;
+
+  return `
+  <div class="tour-overlay" id="tour-overlay">
+    <div class="tour-card" id="tour-card">
+
+      <!-- Skip -->
+      <button class="tour-skip" onclick="tourSkip()">${t('tourSkip')} ✕</button>
+
+      <!-- Progress bar -->
+      <div class="tour-progress-track"><div class="tour-progress-fill" style="width:${progress}%"></div></div>
+
+      <!-- Step indicator dots -->
+      <div class="tour-dots">
+        ${steps.map((_,di)=>`<div class="tour-dot${di===i?' on':''}"></div>`).join('')}
+      </div>
+
+      <!-- Icon -->
+      <div class="tour-ico-wrap">
+        <div class="tour-ico">${step.ico}</div>
+        ${i===0?`<div class="tour-ico-ring"></div>`:''}
+      </div>
+
+      <!-- Content -->
+      <h2 class="tour-title">${step.title}</h2>
+      <p class="tour-body">${step.body}</p>
+      ${i===0?featureGrid:''}
+      <p class="tour-cta">${step.cta}</p>
+
+      <!-- Step counter -->
+      <div class="tour-step-lbl">${i+1} ${t('tourOf')} ${total}</div>
+
+      <!-- Nav buttons -->
+      <div class="tour-nav">
+        ${i>0?`<button class="btn btn-ghost tour-btn-back" onclick="tourPrev()">${t('tourPrev')}</button>`:`<div></div>`}
+        <button class="btn btn-p tour-btn-next" onclick="${isLast?'tourSkip()':'tourNext()'}">${isLast?t('tourFinish'):t('tourNext')}</button>
+      </div>
+
+    </div>
+  </div>`;
+}
+
+function tourNext(){if(S.tourStep<((t(S.user?.role==='company'?'tourStepsCompany':'tourStepsStudent')||[]).length-1)){S.tourStep++;render();}}
+function tourPrev(){if(S.tourStep>0){S.tourStep--;render();}}
+function tourSkip(){S.tourActive=false;render();}
+
 function buildModal(){
   if(S.modal==='cookiePolicy')return buildCookiePolicyModal();
   if(S.modal==='project') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal"><button class="mcl" onclick="S.modal=null;render()">×</button><div class="mh">Add Project</div><p style="font-size:.82rem;color:var(--t3);margin-bottom:1.35rem">Showcase your work to boost AI match score</p><div class="fg"><label class="fl">Project Name</label><input class="fi" id="mpn" placeholder="AI Chat App"/></div><div class="fg"><label class="fl">Technologies Used</label><input class="fi" id="mpt" placeholder="React, Node.js, OpenAI"/></div><div class="fg"><label class="fl">Project Link</label><input class="fi" id="mpl" placeholder="github.com/you/project"/></div><div class="fg"><label class="fl">Description</label><textarea class="fta" rows="3" placeholder="What does it do? What did you build?"></textarea></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="addProject()">Add Project ✓</button><button class="btn btn-ghost" onclick="S.modal=null;render()">Cancel</button></div></div></div>`;
@@ -2914,7 +3158,7 @@ function buildFooter(){
 
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
-window.render=render;window.chatVoice=chatVoice;window.notif=notif;
+window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
