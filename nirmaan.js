@@ -6,6 +6,16 @@ const S={
   notifs:[],notifId:0,
   savedIds:[],appliedIds:[],
   adminTab:'users',coTab:'post',
+  // ── PWA / Push ───────────────────────────────────
+  pwaInstallPrompt:null,   // deferred BeforeInstallPromptEvent
+  pwaInstalled: localStorage.getItem('nirmaan_pwa_installed')==='1',
+  pushPermission: (typeof Notification!=='undefined')?Notification.permission:'default',
+  pushSubscription:null,
+  pushBannerDismissed: localStorage.getItem('nirmaan_push_dismissed')==='1',
+  // Admin push composer
+  adminPushTab:'compose',
+  adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
+  adminPushTitle:'',adminPushBody:'',adminPushUrl:'',adminPushTarget:'all',adminPushIcon:'🔔',
   fType:'all',srchQ:'',
   skills:['JavaScript','React','Python'],
   interests:['Frontend','AI/ML'],
@@ -21,6 +31,7 @@ const S={
   rmFilter:'all',
   rbData:{name:'Priya Sharma',title:'Frontend Developer',email:'priya@example.com',phone:'+91 98765 43210',summary:'Passionate frontend developer with strong skills in React, TypeScript and UI design. Looking for opportunities to contribute to impactful products.',skills:['React','JavaScript','Python','CSS','Git'],exp:[{co:'Freelance Projects',role:'Frontend Dev',period:'2023–Present',desc:'Built 5+ client websites using React and Next.js'}],edu:'B.Tech Computer Science – IIT Delhi (2025)'},
   autoLoginCountdown:5,autoLoginActive:true,autoLoginRole:'student',
+  tourStep:0,tourActive:false,
   nhFilter:'all',
   nhMsg:{},
   bellOpen:false,
@@ -148,6 +159,24 @@ const T={
     nhCompaniesHiring:'Companies Hiring',nhMutual:'mutual connections',
     nhConnect:'Connect',nhConnectedBtn:'✓ Connected',nhMessage:'Message',nhView:'View',
     nhAutoConnect:'Auto-connect to all →',nhAiText:'Connect with recommended professionals in your field. Professionals with mutual connections are 4x more likely to refer you.',
+    // Tour
+    tourSkip:'Skip Tour',tourNext:'Next →',tourPrev:'← Back',tourFinish:"Let's Go! 🚀",tourOf:'of',
+    tourStepsStudent:[
+      {ico:'🎉',title:'Welcome to Nirmaan!',body:'Your AI-powered career platform. We help students across India find the perfect internship — based on your skills, not just your college.',cta:'Take a 2-minute tour to see what\'s possible.'},
+      {ico:'⚡',title:'Your Smart Dashboard',body:'See your AI match score, recent activity, profile strength, and personalized insights — all in one place. Your career command center.',cta:'Everything you need, right when you need it.'},
+      {ico:'🤖',title:'AI Internship Matching',body:'Our AI compares your skills, projects, and interests against 40+ dimensions of each role. Every match shows exactly why you\'re a great fit.',cta:'Find internships that truly match your potential.'},
+      {ico:'📊',title:'Skill Gap Analyzer',body:'See exactly which skills each company wants and which ones you\'re missing. Get curated course recommendations to close every gap fast.',cta:'Know precisely what to learn next.'},
+      {ico:'🗺️',title:'Personal Career Roadmap',body:'A week-by-week action plan built just for you — from polishing your profile to landing your first offer. Never feel lost again.',cta:'Your roadmap to placement starts here.'},
+      {ico:'🎙️',title:'Arya — Your AI Assistant',body:'Ask Arya anything: interview prep, resume tips, salary info, DSA help, or just navigate the platform with your voice. Works in English and Hindi.',cta:'Tap the ✦ button at any time to chat with Arya.'},
+      {ico:'🤝',title:'Networking Hub',body:'Connect with seniors, alumni, and professionals at your target companies. A referral makes you 4× more likely to get an interview.',cta:'Your network is your net worth — start building it.'},
+    ],
+    tourStepsCompany:[
+      {ico:'🎉',title:'Welcome to Nirmaan!',body:'India\'s AI-powered internship platform. Post roles, get AI-ranked candidates, and hire your next intern in under 48 hours.',cta:'Let us show you around in 2 minutes.'},
+      {ico:'➕',title:'Post Internship Roles',body:'Create detailed listings with role, skills, stipend, perks, and deadlines. Your listing is instantly visible to 10,000+ active students.',cta:'Go live in under 5 minutes.'},
+      {ico:'👥',title:'AI-Ranked Candidates',body:'No more sifting through hundreds of applications. Our AI automatically ranks candidates by match score for your specific role requirements.',cta:'Your best-fit candidates, surfaced instantly.'},
+      {ico:'📈',title:'Hiring Analytics',body:'Track applications, shortlists, and match quality in real time. Understand which skills are most available in the candidate pool.',cta:'Make data-driven hiring decisions.'},
+      {ico:'🏢',title:'Your Employer Profile',body:'Candidates see your company culture, team size, perks, and open roles. A strong profile attracts better applications.',cta:'First impressions matter — make yours count.'},
+    ],
   },
   hi:{
     // Nav
@@ -266,6 +295,24 @@ const T={
     nhCompaniesHiring:'भर्ती कर रही कंपनियां',nhMutual:'आपसी कनेक्शन',
     nhConnect:'जुड़ें',nhConnectedBtn:'✓ जुड़े हुए',nhMessage:'संदेश',nhView:'देखें',
     nhAutoConnect:'सभी से ऑटो-कनेक्ट करें →',nhAiText:'अपने क्षेत्र के अनुशंसित पेशेवरों से जुड़ें। आपसी कनेक्शन वाले पेशेवर रेफरल देने की 4 गुना अधिक संभावना रखते हैं।',
+    // Tour Hindi
+    tourSkip:'टूर छोड़ें',tourNext:'आगे →',tourPrev:'← पीछे',tourFinish:'चलो शुरू करें! 🚀',tourOf:'में से',
+    tourStepsStudent:[
+      {ico:'🎉',title:'Nirmaan में स्वागत है!',body:'आपका AI-संचालित करियर प्लेटफॉर्म। हम भारत भर के छात्रों को सही इंटर्नशिप खोजने में मदद करते हैं — केवल कॉलेज के आधार पर नहीं, बल्कि आपकी स्किल्स के आधार पर।',cta:'2 मिनट का टूर लें और देखें क्या संभव है।'},
+      {ico:'⚡',title:'आपका स्मार्ट डैशबोर्ड',body:'AI मैच स्कोर, हाल की गतिविधि, प्रोफ़ाइल ताकत और व्यक्तिगत सुझाव — सब एक जगह। आपका करियर कंट्रोल सेंटर।',cta:'जो चाहिए वो जब चाहिए, वहीं मिलेगा।'},
+      {ico:'🤖',title:'AI इंटर्नशिप मैचिंग',body:'हमारा AI आपकी स्किल्स, प्रोजेक्ट्स और रुचि को हर रोल के 40+ आयामों से तुलना करता है। हर मैच बताता है कि आप क्यों सही हैं।',cta:'वो इंटर्नशिप खोजें जो सच में आपके लिए बनी है।'},
+      {ico:'📊',title:'स्किल गैप विश्लेषण',body:'देखें कि कंपनी किन स्किल्स की तलाश करती है और आपमें क्या कमी है। हर कमी को जल्दी भरने के लिए कोर्स सुझाव पाएं।',cta:'जानें अगला कदम क्या सीखना है।'},
+      {ico:'🗺️',title:'व्यक्तिगत करियर रोडमैप',body:'आपके लिए विशेष रूप से बना हफ्ता-दर-हफ्ता एक्शन प्लान — प्रोफ़ाइल बनाने से लेकर पहला ऑफर पाने तक। अब दिशा साफ है।',cta:'यहाँ से शुरू होता है आपकी प्लेसमेंट का सफर।'},
+      {ico:'🎙️',title:'Arya — आपका AI सहायक',body:'Arya से कुछ भी पूछें: इंटरव्यू तैयारी, रेज़्यूमे टिप्स, सैलरी जानकारी, DSA मदद, या अपनी आवाज़ से प्लेटफॉर्म नेविगेट करें। हिन्दी और English दोनों में।',cta:'किसी भी समय ✦ बटन दबाएं और Arya से बात करें।'},
+      {ico:'🤝',title:'नेटवर्किंग हब',body:'सीनियर्स, पूर्व छात्रों और टार्गेट कंपनियों के पेशेवरों से जुड़ें। रेफरल मिलने पर इंटरव्यू की संभावना 4 गुना बढ़ जाती है।',cta:'आपका नेटवर्क ही आपकी असली ताकत है।'},
+    ],
+    tourStepsCompany:[
+      {ico:'🎉',title:'Nirmaan में स्वागत है!',body:'भारत का AI-संचालित इंटर्नशिप प्लेटफॉर्म। रोल पोस्ट करें, AI-रैंक्ड उम्मीदवार पाएं, और 48 घंटों में अपना अगला इंटर्न हायर करें।',cta:'2 मिनट में हम आपको सब दिखाते हैं।'},
+      {ico:'➕',title:'इंटर्नशिप रोल पोस्ट करें',body:'रोल, स्किल्स, स्टाइपेंड, सुविधाएं और डेडलाइन के साथ विस्तृत लिस्टिंग बनाएं। आपकी लिस्टिंग तुरंत 10,000+ सक्रिय छात्रों को दिखाई देती है।',cta:'5 मिनट से कम में लाइव हो जाएं।'},
+      {ico:'👥',title:'AI-रैंक्ड उम्मीदवार',body:'सैकड़ों आवेदनों को छानने की जरूरत नहीं। हमारा AI आपकी रोल की जरूरतों के हिसाब से उम्मीदवारों को स्वचालित रूप से रैंक करता है।',cta:'सबसे उपयुक्त उम्मीदवार, तुरंत सामने।'},
+      {ico:'📈',title:'हायरिंग एनालिटिक्स',body:'आवेदन, शॉर्टलिस्ट और मैच क्वालिटी रियल टाइम में ट्रैक करें। जानें उम्मीदवारों में कौन सी स्किल्स सबसे ज्यादा उपलब्ध हैं।',cta:'डेटा के आधार पर स्मार्ट हायरिंग निर्णय लें।'},
+      {ico:'🏢',title:'आपका एम्प्लॉयर प्रोफ़ाइल',body:'उम्मीदवार आपकी कंपनी की संस्कृति, टीम का आकार, सुविधाएं और खुले रोल देखते हैं। एक मजबूत प्रोफ़ाइल बेहतर आवेदन आकर्षित करती है।',cta:'पहली छाप ही सबसे जरूरी होती है।'},
+    ],
   }
 };
 function t(key){ return (T[S.lang]||T.en)[key]||(T.en[key]||key); }
@@ -1568,6 +1615,7 @@ function performDemoLogin(role){
   S.user={...d,role};
   notif(`Auto-logged in as ${d.name} 👋`);
   speak(`Welcome ${d.name.split(' ')[0]}`);
+  if(role==='student'){S.tourStep=0;S.tourActive=true;}
   go(role==='company'?'codash':role==='admin'?'admin':'dash');
 }
 function cancelAutoLogin(){clearInterval(autoTimer);S.autoLoginActive=false;render();}
@@ -1585,12 +1633,14 @@ function doLogin(){
   else if(role==='admin'||em.includes('admin')){role='admin';name='Admin User';}
   S.user={name,email:em,role};
   notif(`Welcome, ${name.split(' ')[0]}! 👋`);
+  if(role==='student'){S.tourStep=0;S.tourActive=true;}
   go(role==='company'?'codash':role==='admin'?'admin':'dash');
 }
 function doGLogin(){
   clearInterval(autoTimer);
   S.user={name:'Priya Sharma',email:'priya@gmail.com',role:'student'};
   notif('Signed in with Google! 🎉');
+  S.tourStep=0;S.tourActive=true;
   go('dash');
 }
 function doLogout(){
@@ -1650,6 +1700,7 @@ function completeSignup(){
   S.user={name:name||'New User',email:S.email||'user@test.com',role:S.signupRole,coName:S.coName};
   notif(S.signupRole==='company'?`Welcome aboard, ${S.coName||S.firstName}! Let's find great talent 🚀`:`Welcome to Nirmaan, ${S.firstName||'friend'}! 🎉`);
   speak(`Welcome ${S.firstName||''}`);
+  if(S.signupRole==='student'){S.tourStep=0;S.tourActive=true;}
   go(S.signupRole==='company'?'codash':'dash');
 }
 function sendOtp(){
@@ -1788,9 +1839,76 @@ function render(){
       if(savedStart!=null){try{el.setSelectionRange(savedStart,savedEnd);}catch(e){}}
     }
   }
+
+  // ── Inject PWA banners into body (outside root) ──
+  ['push-banner','install-banner'].forEach(id => {
+    const old = document.getElementById(id);
+    if (old) old.remove();
+  });
+  const pushHtml = buildPushBanner();
+  const installHtml = buildInstallBanner();
+  if (pushHtml) { const d=document.createElement('div'); d.innerHTML=pushHtml; document.body.appendChild(d.firstElementChild); }
+  if (installHtml) { const d=document.createElement('div'); d.innerHTML=installHtml; document.body.appendChild(d.firstElementChild); }
+}
+function wireTourSpotlight(){
+  // Run positioning after paint so tooltip has layout
+  if(S.tourActive&&S.tourStep>0){
+    requestAnimationFrame(function(){
+      requestAnimationFrame(tourPositionSpotlight);
+    });
+  }
+  // Clicking the dark overlay (not tooltip/ring) advances tour
+  const overlay=document.getElementById('tour-overlay');
+  if(overlay&&S.tourStep>0){
+    overlay.addEventListener('click',function(e){
+      if(e.target===overlay||e.target.id==='tour-svg-mask'||e.tagName==='rect'||e.tagName==='svg'){
+        tourNext();
+      }
+    });
+  }
+}
+function openMobMenu(){
+  const d=document.getElementById('mob-drawer');
+  if(d){d.style.display='flex';requestAnimationFrame(()=>{d.classList.add('open');});}
+}
+function closeMobMenu(){
+  const d=document.getElementById('mob-drawer');
+  if(!d)return;
+  d.classList.remove('open');
+  setTimeout(()=>{if(!d.classList.contains('open'))d.style.display='none';},260);
 }
 function attachEv(){
   const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
+  wireTourSpotlight();
+  // Wire More button — no render() call so global click handler can't fight it
+  const moreBtn=document.getElementById('mob-more-btn');
+  const drawer=document.getElementById('mob-drawer');
+  const panel=document.getElementById('mob-panel');
+  const closeBtn=document.getElementById('mob-drawer-close');
+  if(drawer){drawer.style.display='none';} // hide by default after every render
+  if(moreBtn){moreBtn.onclick=function(e){e.stopPropagation();openMobMenu();};}
+  if(closeBtn){closeBtn.onclick=function(e){e.stopPropagation();closeMobMenu();};}
+  if(drawer){drawer.onclick=function(){closeMobMenu();};}
+  if(panel){panel.onclick=function(e){e.stopPropagation();};}
+  // Bell panel: wire mobile bottom-sheet bell if present
+  const mobBellBtn=document.getElementById('mob-bell-btn');
+  if(mobBellBtn){mobBellBtn.onclick=function(e){e.stopPropagation();openMobBell();};}
+  const mobBellClose=document.getElementById('mob-bell-close');
+  if(mobBellClose){mobBellClose.onclick=function(e){e.stopPropagation();closeMobBell();};}
+  const mobBellDrawer=document.getElementById('mob-bell-drawer');
+  if(mobBellDrawer){mobBellDrawer.style.display='none';mobBellDrawer.onclick=function(){closeMobBell();};}
+  const mobBellPanel=document.getElementById('mob-bell-panel');
+  if(mobBellPanel){mobBellPanel.onclick=function(e){e.stopPropagation();};}
+}
+function openMobBell(){
+  const d=document.getElementById('mob-bell-drawer');
+  if(d){d.style.display='flex';requestAnimationFrame(()=>d.classList.add('open'));}
+}
+function closeMobBell(){
+  const d=document.getElementById('mob-bell-drawer');
+  if(!d)return;
+  d.classList.remove('open');
+  setTimeout(()=>{if(!d.classList.contains('open'))d.style.display='none';},260);
 }
 function buildMobNav(){
   const isDash=['dash','recs','skillgap','saved','profile','roadmap','resume','network','codash','admin'].includes(S.page)&&S.user;
@@ -1801,27 +1919,71 @@ function buildMobNav(){
     ${S.user?`<button class="mob-nav-btn" onclick="go('dash')"><span>⚡</span><span>${t('sbDash')}</span></button>`:`<button class="mob-nav-btn ${S.page==='login'?'on':''}" onclick="go('login')"><span>🔑</span><span>${t('login')}</span></button>`}
     <button class="mob-nav-btn" onclick="S.langChosen=false;render()"><span>🌐</span><span>${S.lang==='hi'?'हि':'EN'}</span></button>
   </nav>`;
+  // Always render drawer; toggle visibility via openMobMenu() — no render() call on toggle avoids race with global click handler
   return`<nav class="mob-nav">
     <button class="mob-nav-btn ${S.page==='dash'?'on':''}" onclick="go('dash')"><span>⚡</span><span>${t('mobHome')}</span></button>
     <button class="mob-nav-btn ${S.page==='recs'?'on':''}" onclick="go('recs')"><span>✨</span><span>${t('mobMatches')}</span></button>
     <button class="mob-nav-btn ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span>📊</span><span>${t('mobSkills')}</span></button>
     <button class="mob-nav-btn ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span>🗺️</span><span>${t('mobRoadmap')}</span></button>
-    <button class="mob-nav-btn" onclick="S.mobMenu=!S.mobMenu;render()"><span>☰</span><span>${t('mobMore')}</span></button>
+    <button class="mob-nav-btn" id="mob-more-btn" style="position:relative"><span>☰</span><span>${t('mobMore')}</span>
+      ${S.user&&S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+    </button>
+    ${S.user?`<button class="mob-nav-btn" id="mob-bell-btn" style="position:relative"><span>🔔</span><span>Alerts</span>
+      ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+    </button>`:''}
   </nav>
-  ${S.mobMenu?`<div class="mob-menu-drawer" onclick="S.mobMenu=false;render()"><div class="mob-menu-panel" onclick="event.stopPropagation()">
-    <div class="mob-pill"></div>
-    <button class="sb-item ${S.page==='resume'?'on':''}" onclick="S.mobMenu=false;go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
-    <button class="sb-item ${S.page==='network'?'on':''}" onclick="S.mobMenu=false;go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
-    <button class="sb-item ${S.page==='saved'?'on':''}" onclick="S.mobMenu=false;go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
-    <button class="sb-item ${S.page==='profile'?'on':''}" onclick="S.mobMenu=false;go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;toggleDark();"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
-  </div></div>`:''}`;
+  <div class="mob-menu-drawer" id="mob-drawer">
+    <div class="mob-menu-panel" id="mob-panel">
+      <div class="mob-pill"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;padding:0 .25rem">
+        <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">Menu</span>
+        <button id="mob-drawer-close" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+      <button class="sb-item ${S.page==='resume'?'on':''}" onclick="closeMobMenu();go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
+      <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
+      <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
+      <button class="sb-item" onclick="closeMobMenu();S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
+      <button class="sb-item" onclick="closeMobMenu();toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
+      <button class="sb-item" style="color:var(--red)" onclick="closeMobMenu();doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
+    </div>
+  </div>
+  ${S.user?`
+  <div class="mob-menu-drawer" id="mob-bell-drawer">
+    <div class="mob-menu-panel" id="mob-bell-panel" style="max-height:80vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,1.5rem)">
+      <div class="mob-pill"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;padding:0 .25rem;flex-shrink:0">
+        <div>
+          <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">${t('notifications')}</span>
+          ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="background:var(--red);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .38rem;margin-left:.4rem">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          ${S.appNotifs.length>0?`<button onclick="markAllRead()" style="font-size:.73rem;color:var(--p);font-weight:700;background:none;border:none;cursor:pointer;font-family:var(--fb)">${t('markAllRead')}</button>`:''}
+          <button id="mob-bell-close" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center">×</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+        ${S.appNotifs.length===0?`<div style="padding:2.5rem;text-align:center;color:var(--t3)"><div style="font-size:2.2rem;margin-bottom:.6rem">🎉</div><div style="font-size:.85rem;font-weight:600">All caught up!</div></div>`:
+        S.appNotifs.map(n=>`<div style="display:flex;align-items:start;gap:.75rem;padding:.85rem .25rem;border-bottom:1px solid var(--b);background:${n.read?'transparent':'var(--pl)'}">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--bg3);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${n.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:${n.read?'600':'800'};color:var(--t);margin-bottom:.15rem">${n.title}</div>
+            <div style="font-size:.76rem;color:var(--t2);line-height:1.5;margin-bottom:.22rem">${n.body}</div>
+            <div style="font-size:.68rem;color:var(--t3)">${n.time}</div>
+          </div>
+          <button onclick="dismissAppNotif(${n.id})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:.15rem;flex-shrink:0;line-height:1">×</button>
+        </div>`).join('')}
+      </div>
+      <div style="padding:.75rem .25rem 0;border-top:1px solid var(--b);text-align:center;flex-shrink:0">
+        <span style="font-size:.76rem;color:var(--p);font-weight:700;cursor:pointer" onclick="notif('Notification settings coming soon!','in')">⚙️ Notification Settings</span>
+      </div>
+    </div>
+  </div>`:''}`;
 }
 function buildApp(){
   if(!('mobMenu' in S))S.mobMenu=false;
-  return `${buildNav()}${buildBody()}${buildMobNav()}${buildChat()}${S.voiceActive?`<div class="vi"><div class="vd"></div><div class="vw">${[1,2,3,4,5].map(i=>`<div class="vb"></div>`).join('')}</div><span>Listening…</span></div>`:''}${buildNotifs()}${S.modal?buildModal():''}${buildCookieBanner()}${buildLangPopup()}`;
+  return `${buildNav()}${buildBody()}${buildMobNav()}${buildChat()}${S.voiceActive?`<div class="vi"><div class="vd"></div><div class="vw">${[1,2,3,4,5].map(i=>`<div class="vb"></div>`).join('')}</div><span>Listening…</span></div>`:''}${buildNotifs()}${S.modal?buildModal():''}${buildTour()}${buildCookieBanner()}${buildLangPopup()}`;
 }
 
 // ══════════════════════ NAV ══════════════════════
@@ -1839,11 +2001,11 @@ function buildNav(){
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
       ${S.user?`<div style="position:relative">
-        <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
+        <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" id="tour-bell" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
           ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:var(--red);color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
         </button>
-        ${S.bellOpen?`<div style="position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);box-shadow:var(--shl);z-index:9999;overflow:hidden" onclick="event.stopPropagation()">
+        ${S.bellOpen?`<div class="bell-desktop-panel" style="position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);box-shadow:var(--shl);z-index:9999;overflow:hidden" onclick="event.stopPropagation()">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;border-bottom:1px solid var(--b)">
             <div style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t)">${t('notifications')} <span style="background:var(--red);color:#fff;border-radius:99px;font-size:.62rem;padding:.1rem .38rem;margin-left:.3rem">${S.appNotifs.filter(n=>!n.read).length}</span></div>
             <button onclick="markAllRead()" style="font-size:.73rem;color:var(--p);font-weight:700;background:none;border:none;cursor:pointer">${t('markAllRead')}</button>
@@ -1888,14 +2050,14 @@ function sb(role){
     </div>
     <div class="sb-sec"><div class="sb-lbl">Main</div>
       <button class="sb-item ${S.page==='dash'?'on':''}" onclick="go('dash')"><span class="sb-ic">⚡</span>${t('sbDash')}</button>
-      <button class="sb-item ${S.page==='recs'?'on':''}" onclick="go('recs')"><span class="sb-ic">✨</span>${t('sbRecs')}<span class="sb-badge">${INTERNS.length}</span></button>
-      <button class="sb-item ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span class="sb-ic">📊</span>${t('sbSkillGap')}</button>
+      <button class="sb-item ${S.page==='recs'?'on':''}" id="tour-sb-recs" onclick="go('recs')"><span class="sb-ic">✨</span>${t('sbRecs')}<span class="sb-badge">${INTERNS.length}</span></button>
+      <button class="sb-item ${S.page==='skillgap'?'on':''}" id="tour-sb-skill" onclick="go('skillgap')"><span class="sb-ic">📊</span>${t('sbSkillGap')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}<span class="sb-badge ${INTERNS.filter(x=>x.saved).length===0?'r':''}">${INTERNS.filter(x=>x.saved).length}</span></button>
     </div>
     <div class="sb-sec"><div class="sb-lbl">Growth</div>
       <button class="sb-item ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span class="sb-ic">🗺️</span>${t('sbRoadmap')}</button>
       <button class="sb-item ${S.page==='resume'?'on':''}" onclick="go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
-      <button class="sb-item ${S.page==='network'?'on':''}" onclick="go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='network'?'on':''}" id="tour-sb-net" onclick="go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
@@ -2278,7 +2440,7 @@ function buildDash(){
     </div>
 
     <!-- Metrics: horizontal scroll on mobile -->
-    <div style="display:flex;gap:.65rem;overflow-x:auto;padding-bottom:.5rem;margin-bottom:1.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none" class="dash-metrics">
+    <div style="display:flex;gap:.65rem;overflow-x:auto;padding-bottom:.5rem;margin-bottom:1.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none" class="dash-metrics" id="tour-metrics">
       ${(()=>{const ml=t('metrics')||['AI Matches','Applied','Saved','Top Match','Profile'];const ms=t('metricSubs')||['↑ 3 today','Track all','Bookmarks','Google','Completion'];return[['⚡',INTERNS.length,0,'var(--p)'],['📝',S.appliedIds.length,1,'var(--cyan)'],['🔖',INTERNS.filter(x=>x.saved).length,2,'var(--amber)'],['🏆','94%',3,'var(--green)'],['📊','74%',4,'var(--p2)']].map(([ico,v,i,c])=>`
       <div style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:1rem 1.1rem;min-width:120px;flex-shrink:0;cursor:pointer;position:relative;overflow:hidden;transition:all .15s" onclick="go('recs')">
         <div style="position:absolute;top:-12px;right:-12px;width:50px;height:50px;border-radius:50%;background:${c};opacity:.07"></div>
@@ -2292,7 +2454,7 @@ function buildDash(){
     <!-- Main grid: stacks on mobile -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem" class="dash-grid-2">
       <!-- Profile strength -->
-      <div class="card">
+      <div class="card" id="tour-profile">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">${t('profile')}</h3>
           <span class="bdg bi">${pct}%</span>
@@ -2305,7 +2467,7 @@ function buildDash(){
       </div>
 
       <!-- Top matches -->
-      <div class="card">
+      <div class="card" id="tour-matches">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">${t('topMatches')}</h3>
           <span style="font-size:.73rem;color:var(--p);cursor:pointer;font-weight:700" onclick="go('recs')">All →</span>
@@ -2325,18 +2487,18 @@ function buildDash(){
     <!-- Activity + Quick Actions: stacks on mobile -->
     <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:1rem;margin-bottom:1rem" class="dash-grid-act">
       <div class="card">
-        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:1rem">${t('weeklyActivity')}</h3>
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:1rem" id="tour-activity-lbl">${t('weeklyActivity')}</h3>
         <div class="bch">${[{l:'Mon',v:45,h:38},{l:'Tue',v:82,h:68},{l:'Wed',v:60,h:50},{l:'Thu',v:95,h:79},{l:'Fri',v:75,h:62},{l:'Sat',v:110,h:91},{l:'Sun',v:88,h:73}].map(d=>`<div class="bc"><div class="bv">${d.v}</div><div class="bb" style="height:${d.h}px"></div><div class="bl">${d.l}</div></div>`).join('')}</div>
         <div style="font-size:.69rem;color:var(--t3);margin-top:.55rem">Profile views · this week</div>
       </div>
       <div class="card">
-        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem">${t('quickActions')}</h3>
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem" id="tour-quick">${t('quickActions')}</h3>
         ${[['🗺️','Roadmap','roadmap'],['📄','Resume','resume'],['🤝','Network','network'],['📊','Skill Gap','skillgap']].map(([ico,lbl,pg])=>`<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem;font-size:.79rem" onclick="go('${pg}')">${ico} ${lbl}</button>`).join('')}
       </div>
     </div>
 
     <!-- AI Insights -->
-    <div class="aic">
+    <div class="aic" id="tour-insights">
       <div class="aih">🤖 AI Insights</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.75rem">
         ${(t('insights')||[['📈','Trending','React Native & TypeScript are the most requested skills.'],['🎯','Tip','GitHub increases recruiter views 3.2×.'],['⚡','Apply Now!','Google closes in 4 days.']]).map(([ico,ti,d])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.8rem .9rem;border:1px solid var(--b)"><div style="font-size:1.1rem;margin-bottom:.4rem">${ico}</div><div style="font-size:.78rem;font-weight:700;color:var(--t);margin-bottom:.28rem">${ti}</div><div style="font-size:.72rem;color:var(--t2);line-height:1.5">${d}</div></div>`).join('')}
@@ -2358,34 +2520,34 @@ function buildRecs(){
 
   function bigCard(i){
     const col=i.match>=90?'var(--green)':i.match>=85?'var(--cyan)':'var(--amber)';
-    return `<div class="ic" style="padding:1.75rem;display:flex;flex-direction:column;gap:1.1rem;position:relative;overflow:hidden">
+    return `<div class="ic rec-big-card" style="display:flex;flex-direction:column;gap:1rem;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${i.match>=90?'var(--g1)':i.match>=85?'var(--g4)':'var(--g3)'}"></div>
-      <div style="display:flex;align-items:start;justify-content:space-between;gap:.75rem">
-        <div style="display:flex;align-items:center;gap:.85rem">
-          <div class="il" style="width:58px;height:58px;border-radius:14px;font-size:1.7rem">${i.logo}</div>
-          <div>
-            <div style="font-family:var(--fh);font-size:1.05rem;font-weight:700;color:var(--t);margin-bottom:.18rem">${i.title}</div>
-            <div style="font-size:.84rem;color:var(--t3);font-weight:600">${i.co}</div>
-            ${i.match>=90?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(99,102,241,.1);color:var(--p);border:1px solid rgba(99,102,241,.2);border-radius:99px;padding:.14rem .58rem;font-size:.68rem;font-weight:800;margin-top:.3rem">${t('perfectMatch')}</span>`:''}
+      <div style="display:flex;align-items:start;justify-content:space-between;gap:.6rem">
+        <div style="display:flex;align-items:center;gap:.75rem;flex:1;min-width:0">
+          <div class="il" style="width:52px;height:52px;border-radius:13px;font-size:1.5rem;flex-shrink:0">${i.logo}</div>
+          <div style="min-width:0">
+            <div style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t);margin-bottom:.14rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</div>
+            <div style="font-size:.81rem;color:var(--t3);font-weight:600">${i.co}</div>
+            ${i.match>=90?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(99,102,241,.1);color:var(--p);border:1px solid rgba(99,102,241,.2);border-radius:99px;padding:.12rem .5rem;font-size:.65rem;font-weight:800;margin-top:.28rem">${t('perfectMatch')}</span>`:''}
           </div>
         </div>
         <div style="text-align:center;flex-shrink:0">
-          <div style="width:68px;height:68px;border-radius:50%;background:conic-gradient(${col} ${i.match*3.6}deg,var(--bg3) 0);display:flex;align-items:center;justify-content:center">
-            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:.88rem;font-weight:800;color:${col}">${i.match}%</div>
+          <div style="width:56px;height:56px;border-radius:50%;background:conic-gradient(${col} ${i.match*3.6}deg,var(--bg3) 0);display:flex;align-items:center;justify-content:center">
+            <div style="width:42px;height:42px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:.82rem;font-weight:800;color:${col}">${i.match}%</div>
           </div>
-          <div style="font-size:.67rem;color:var(--t3);margin-top:.3rem;font-weight:700">${t('aiMatch')}</div>
+          <div style="font-size:.62rem;color:var(--t3);margin-top:.25rem;font-weight:700">${t('aiMatch')}</div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.45rem">
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">📍 ${i.loc}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">💻 ${typeLabel[i.type]||i.type}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--green);font-weight:700">💰 ${i.pay}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">⏱ ${i.dur}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.38rem">
+        <span class="rec-pill">📍 ${i.loc}</span>
+        <span class="rec-pill">💻 ${typeLabel[i.type]||i.type}</span>
+        <span class="rec-pill rec-pill-green">💰 ${i.pay}</span>
+        <span class="rec-pill">⏱ ${i.dur}</span>
       </div>
-      <div style="display:flex;gap:.3rem;flex-wrap:wrap">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.74rem;padding:.22rem .7rem">${s}</span>`).join('')}</div>
-      <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.12);border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:var(--t2);line-height:1.6">🧠 <strong style="color:var(--p)">${t('whyYou')}</strong> ${i.why}</div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-top:.25rem;border-top:1px solid var(--b)">
-        <button class="btn btn-p" style="flex:1;justify-content:center;padding:.6rem" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled style="opacity:.55;cursor:default;flex:1;justify-content:center;padding:.6rem"':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
+      <div style="display:flex;gap:.28rem;flex-wrap:wrap">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.72rem;padding:.2rem .6rem">${s}</span>`).join('')}</div>
+      <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.12);border-radius:10px;padding:.65rem .9rem;font-size:.78rem;color:var(--t2);line-height:1.6">🧠 <strong style="color:var(--p)">${t('whyYou')}</strong> ${i.why}</div>
+      <div class="rec-actions">
+        <button class="btn btn-p rec-apply-btn" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
         <button class="btn ${i.saved?'btn-success':'btn-ghost'} btn-sm" onclick="saveInt(${i.id})">${i.saved?t('savedBtn'):t('saveBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="go('skillgap')">${t('gapBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="notif('Opening ${i.co}…','in')">🏢</button>
@@ -2394,28 +2556,28 @@ function buildRecs(){
   }
 
   function smallCard(i){
-    return `<div class="ic" style="padding:1.35rem">
-      <div style="display:flex;gap:.85rem;align-items:start;margin-bottom:.9rem">
-        <div class="il" style="width:48px;height:48px;border-radius:11px;font-size:1.4rem">${i.logo}</div>
+    return `<div class="ic rec-small-card">
+      <div style="display:flex;gap:.75rem;align-items:start;margin-bottom:.75rem">
+        <div class="il" style="width:46px;height:46px;border-radius:11px;font-size:1.35rem;flex-shrink:0">${i.logo}</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:start;justify-content:space-between;gap:.5rem">
-            <div>
-              <div style="font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--t)">${i.title}</div>
-              <div style="font-size:.79rem;color:var(--t3)">${i.co}</div>
+          <div style="display:flex;align-items:start;justify-content:space-between;gap:.4rem">
+            <div style="min-width:0">
+              <div style="font-family:var(--fh);font-size:.92rem;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</div>
+              <div style="font-size:.77rem;color:var(--t3)">${i.co}</div>
             </div>
-            <span style="background:rgba(245,158,11,.1);color:var(--amber);border-radius:99px;padding:.2rem .6rem;font-size:.74rem;font-weight:800;white-space:nowrap;flex-shrink:0">${i.match}%</span>
+            <span style="background:rgba(245,158,11,.1);color:var(--amber);border-radius:99px;padding:.18rem .58rem;font-size:.72rem;font-weight:800;white-space:nowrap;flex-shrink:0">${i.match}%</span>
           </div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.7rem">
-        <span class="ipill">📍 ${i.loc}</span>
-        <span class="ipill">💻 ${typeLabel[i.type]||i.type}</span>
-        <span class="ipill">💰 ${i.pay}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.28rem;margin-bottom:.6rem">
+        <span class="rec-pill">📍 ${i.loc}</span>
+        <span class="rec-pill">💻 ${typeLabel[i.type]||i.type}</span>
+        <span class="rec-pill rec-pill-green">💰 ${i.pay}</span>
       </div>
-      <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.75rem">${i.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-      <div style="font-size:.76rem;color:var(--t2);line-height:1.5;background:var(--bg3);border-radius:8px;padding:.55rem .75rem;margin-bottom:.85rem">🧠 ${i.why.split('.')[0]}.</div>
-      <div style="display:flex;gap:.4rem">
-        <button class="btn btn-p btn-sm" style="flex:1;justify-content:center" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled style="opacity:.55;cursor:default"':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
+      <div style="display:flex;gap:.28rem;flex-wrap:wrap;margin-bottom:.65rem">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.72rem">${s}</span>`).join('')}</div>
+      <div style="font-size:.75rem;color:var(--t2);line-height:1.5;background:var(--bg3);border-radius:8px;padding:.5rem .72rem;margin-bottom:.75rem">🧠 ${i.why.split('.')[0]}.</div>
+      <div style="display:flex;gap:.38rem">
+        <button class="btn btn-p btn-sm" style="flex:1;justify-content:center" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
         <button class="btn ${i.saved?'btn-success':'btn-ghost'} btn-sm" onclick="saveInt(${i.id})">${i.saved?t('savedBtn'):t('saveBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="go('skillgap')">${t('gapBtn')}</button>
       </div>
@@ -2426,31 +2588,32 @@ function buildRecs(){
   const filterLabels={all:t('filterAll'),Remote:t('remote'),Hybrid:t('hybrid'),'On-site':t('onsite')};
 
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="margin-bottom:1.5rem">
-      <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('recsTitle')}</h1>
-      <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('recsSub')} · <strong style="color:var(--p)">${shown.length} ${t('recsMatches')}</strong></p>
+    <div style="margin-bottom:1.25rem">
+      <h1 style="font-family:var(--fh);font-size:clamp(1.2rem,4vw,1.55rem);font-weight:700;color:var(--t);letter-spacing:-.03em">${t('recsTitle')}</h1>
+      <p style="color:var(--t3);font-size:.82rem;margin-top:.2rem">${t('recsSub')} · <strong style="color:var(--p)">${shown.length} ${t('recsMatches')}</strong></p>
     </div>
-    <div style="display:flex;gap:.9rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap">
-      <div class="pill-tog">${filterTypes.map(ft=>`<button class="pill-btn ${S.fType===ft?'on':''}" onclick="S.fType='${ft}';render()">${filterLabels[ft]}</button>`).join('')}</div>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="notif('${t('filterSort')}','in')">${t('filterSort')}</button>
+    <!-- Filter bar: scrolls horizontally on mobile, no wrap -->
+    <div style="display:flex;gap:.55rem;align-items:center;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+      <div class="pill-tog" style="flex-shrink:0">${filterTypes.map(ft=>`<button class="pill-btn ${S.fType===ft?'on':''}" onclick="S.fType='${ft}';render()">${filterLabels[ft]}</button>`).join('')}</div>
+      <button class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap" onclick="notif('${t('filterSort')}','in')">⇅ ${t('filterSort')}</button>
     </div>
     ${shown.length===0?`<div class="card" style="text-align:center;padding:3rem"><div style="font-size:2.5rem;margin-bottom:.75rem">🔍</div><p style="font-weight:700;color:var(--t)">${t('noResults')}</p><button class="btn btn-p btn-sm" style="margin-top:1rem" onclick="S.fType='all';S.srchQ='';render()">${t('clearFilters')}</button></div>`:`
     ${perfect.length>0?`
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem">
-        <div style="font-family:var(--fh);font-size:.82rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em">${t('perfectMatches')}</div>
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.9rem">
+        <div style="font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${t('perfectMatches')}</div>
         <span class="bdg bi">${perfect.length} ${t('found')}</span>
         <div style="flex:1;height:1px;background:var(--b)"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:1.1rem;margin-bottom:2rem">
+      <div class="rec-grid">
         ${perfect.map(i=>bigCard(i)).join('')}
       </div>`:''}
     ${others.length>0?`
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem">
-        <div style="font-family:var(--fh);font-size:.82rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em">${t('otherMatches')}</div>
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.9rem;margin-top:${perfect.length>0?'1.5rem':'0'}">
+        <div style="font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${t('otherMatches')}</div>
         <span class="bdg bgr">${others.length} ${t('more')}</span>
         <div style="flex:1;height:1px;background:var(--b)"></div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="rec-list">
         ${others.map(i=>smallCard(i)).join('')}
       </div>`:''}
     `}
@@ -2590,43 +2753,63 @@ function buildRoadmap(){
   const statusBadge={done:'bg',active:'bi',locked:'bgr'};
   const filterLabel={all:t('rmAll'),done:t('rmDone'),active:t('rmActive'),locked:t('rmLocked')};
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.65rem;flex-wrap:wrap;gap:.9rem">
+
+    <!-- Header -->
+    <div class="rm-header">
       <div>
-        <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('rmTitle')}</h1>
-        <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('rmSub')}</p>
+        <h1 class="rm-page-title">${t('rmTitle')}</h1>
+        <p style="color:var(--t3);font-size:.82rem;margin-top:.18rem">${t('rmSub')}</p>
       </div>
-      <button class="btn btn-ghost btn-sm" onclick="notif('Roadmap PDF exported! 📄','ok')">${t('rmExport')}</button>
+      <button class="btn btn-ghost btn-sm rm-export-btn" onclick="notif('Roadmap PDF exported! 📄','ok')">${t('rmExport')}</button>
     </div>
-    <div class="aic" style="margin-bottom:1.5rem">
-      <div class="aih">${t('rmAiAnalysis')}</div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.9rem">
-        ${[[t('rmProgress'),pct+'%'],[t('rmCompleted'),done+'/'+ROADMAP.length+' '+t('rmSteps')],[t('rmEstTime'),t('rmTimeLeft')],[t('rmMatchBoost'),t('rmBoost')]].map(([l,v])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.78rem .9rem;border:1px solid var(--b)"><div style="font-size:.68rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.07em">${l}</div><div style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:var(--t);margin-top:.22rem">${v}</div></div>`).join('')}
-        <div style="background:var(--bg2);border-radius:var(--r);padding:.78rem .9rem;border:1px solid var(--b);grid-column:1/-1"><div style="font-size:.69rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:.45rem">${t('rmOverall')}</div><div class="pb tk"><div class="pf" style="width:${pct}%"></div></div></div>
+
+    <!-- Overall progress bar (always visible) -->
+    <div class="rm-progress-strip">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <span style="font-size:.78rem;font-weight:700;color:var(--t)">${t('rmOverall')}</span>
+        <span style="font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--p)">${pct}%</span>
       </div>
+      <div class="pb tk"><div class="pf" style="width:${pct}%"></div></div>
+      <div style="font-size:.72rem;color:var(--t3);margin-top:.35rem">${done} of ${ROADMAP.length} steps completed</div>
     </div>
-    <div style="display:flex;gap:.5rem;margin-bottom:1.35rem;flex-wrap:wrap">
-      ${filterKeys.map(f=>`<button class="btn ${S.rmFilter===f?'btn-p':'btn-ghost'} btn-sm" onclick="S.rmFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+
+    <!-- AI stats: horizontal scroll chips on mobile -->
+    <div class="rm-stats-strip">
+      ${[[t('rmProgress'),pct+'%','var(--p)'],[t('rmCompleted'),done+'/'+ROADMAP.length,'var(--green)'],[t('rmEstTime'),t('rmTimeLeft'),'var(--amber)'],[t('rmMatchBoost'),t('rmBoost'),'var(--cyan)']].map(([l,v,c])=>`
+      <div class="rm-stat-chip">
+        <div class="rm-stat-val" style="color:${c}">${v}</div>
+        <div class="rm-stat-lbl">${l}</div>
+      </div>`).join('')}
     </div>
+
+    <!-- Filter pills: horizontal scroll -->
+    <div class="rm-filter-bar">
+      ${filterKeys.map(f=>`<button class="nh-filter-pill ${S.rmFilter===f?'on':''}" onclick="S.rmFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+      <span class="nh-count">${shown.length} ${shown.length===1?'step':'steps'}</span>
+    </div>
+
+    <!-- Timeline -->
     <div class="rm-track">
-      ${shown.map(node=>`<div class="rm-node ${node.status}">
+      ${shown.length===0?`<div style="text-align:center;padding:2.5rem;color:var(--t3)"><div style="font-size:2rem;margin-bottom:.5rem">✅</div><div style="font-weight:700;color:var(--t)">All done here!</div></div>`:''}
+      ${shown.map(node=>`
+      <div class="rm-node ${node.status}">
         <div class="rm-card">
-          <div style="display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:.65rem;margin-bottom:.5rem">
-            <div>
-              <div style="display:flex;align-items:center;gap:.55rem;margin-bottom:.22rem">
-                <span class="bdg ${statusBadge[node.status]}">${statusLabel[node.status]}</span>
-                <span style="font-size:.7rem;color:var(--t3);font-weight:600">${node.time}</span>
-              </div>
-              <div class="rm-title">${node.title}</div>
-              <div class="rm-sub">${node.sub}</div>
+          <!-- Top row: badge + time + action button -->
+          <div class="rm-card-top">
+            <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;flex:1">
+              <span class="bdg ${statusBadge[node.status]}">${statusLabel[node.status]}</span>
+              <span style="font-size:.7rem;color:var(--t3);font-weight:600">${node.time}</span>
             </div>
-            <div style="display:flex;gap:.38rem;flex-shrink:0">
+            <div style="flex-shrink:0">
               ${node.status==='active'?`<button class="btn btn-p btn-sm" onclick="notif('Marked complete! 🎉','ok')">${t('rmMarkDone')}</button>`:''}
               ${node.status==='locked'?`<button class="btn btn-ghost btn-sm" onclick="notif('Complete previous steps first','wn')">${t('rmLockedBtn')}</button>`:''}
               ${node.status==='done'?`<button class="btn btn-success btn-sm" onclick="notif('Reviewing…','in')">${t('rmReview')}</button>`:''}
             </div>
           </div>
+          <div class="rm-title">${node.title}</div>
+          <div class="rm-sub">${node.sub}</div>
           <div class="rm-skills">${node.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-          ${node.status==='active'?`<div style="margin-top:.85rem"><div class="pb sl"><div class="pf" style="width:45%"></div></div><div style="font-size:.7rem;color:var(--t3);margin-top:.25rem">${t('rmComplete')}</div></div>`:''}
+          ${node.status==='active'?`<div class="rm-progress-row"><div class="pb sl" style="flex:1"><div class="pf" style="width:45%"></div></div><span style="font-size:.7rem;color:var(--t3);white-space:nowrap">${t('rmComplete')}</span></div>`:''}
         </div>
       </div>`).join('')}
     </div>
@@ -2703,50 +2886,105 @@ function buildNetwork(){
   if(S.nhFilter==='connected')shown=NETWORK.filter(p=>p.conn);
   if(S.nhFilter==='online')shown=NETWORK.filter(p=>p.online);
   const filterLabel={all:t('nhAll'),connected:t('nhConnected'),online:t('nhOnline')};
+  const stats=[[`👥`,t('nhConnections'),NETWORK.filter(p=>p.conn).length],['👁️',t('nhProfileViews'),'142'],['📩',t('nhMessages'),'3 '+t('nhUnread')],['🔔',t('nhRequests'),'2 '+t('nhPending')]];
+  const companies=[['🔵','Google','SWE Intern open'],['🟦','Microsoft','ML Intern open'],['🟡','Flipkart','Full Stack open']];
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.65rem;flex-wrap:wrap;gap:.9rem">
+
+    <!-- ── Page Header ── -->
+    <div class="nh-header">
       <div>
-        <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('nhTitle')}</h1>
-        <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('nhSub')}</p>
+        <h1 class="nh-title">${t('nhTitle')}</h1>
+        <p style="color:var(--t3);font-size:.82rem;margin-top:.18rem">${t('nhSub')}</p>
       </div>
-      <button class="btn btn-p btn-sm" onclick="notif('Posting in Feed…','in')">${t('nhShareUpdate')}</button>
+      <button class="btn btn-p btn-sm nh-share-btn" onclick="notif('Posting in Feed…','in')">${t('nhShareUpdate')}</button>
     </div>
-    <div class="aic" style="margin-bottom:1.5rem">
+
+    <!-- ── Stats strip: horizontal scroll on mobile ── -->
+    <div class="nh-stats-strip">
+      ${stats.map(([ico,lbl,val])=>`
+      <div class="nh-stat-chip">
+        <span class="nh-stat-ico">${ico}</span>
+        <div>
+          <div class="nh-stat-val">${val}</div>
+          <div class="nh-stat-lbl">${lbl}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <!-- ── AI Banner ── -->
+    <div class="aic nh-ai-banner">
       <div class="aih">${t('nhAiSuggestions')}</div>
-      <div style="font-size:.8rem;color:var(--t2);line-height:1.65">${t('nhAiText')} <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')">${t('nhAutoConnect')}</span></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.35rem" class="dash-grid-2">
-      <div style="display:flex;flex-direction:column;gap:.9rem">
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:1rem">${t('nhConnections')}</h3>
-          ${[[t('nhConnections'),NETWORK.filter(p=>p.conn).length],['👁️ '+t('nhProfileViews'),'142'],['📩 '+t('nhMessages'),'3 '+t('nhUnread')],['🔔 '+t('nhRequests'),'2 '+t('nhPending')]].map(([l,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:.52rem 0;border-bottom:1px solid var(--b);font-size:.83rem"><span style="color:var(--t2)">👥 ${l}</span><span style="font-weight:700;color:var(--t)">${v}</span></div>`).join('')}
-        </div>
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.85rem">${t('nhFilter')}</h3>
-          ${filterKeys.map(f=>`<button class="btn ${S.nhFilter===f?'btn-p':'btn-ghost'} btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.4rem" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
-        </div>
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.85rem">${t('nhCompaniesHiring')}</h3>
-          ${[['🔵','Google','SWE Intern open'],['🟦','Microsoft','ML Intern open'],['🟡','Flipkart','Full Stack open']].map(([ico,co,role])=>`<div style="display:flex;align-items:center;gap:.65rem;padding:.5rem 0;border-bottom:1px solid var(--b)"><span style="font-size:1.2rem">${ico}</span><div style="flex:1"><div style="font-size:.82rem;font-weight:700;color:var(--t)">${co}</div><div style="font-size:.71rem;color:var(--green)">${role}</div></div><button class="btn btn-ghost btn-xs" onclick="go('recs')">${t('nhView')}</button></div>`).join('')}
-        </div>
+      <div style="font-size:.8rem;color:var(--t2);line-height:1.6">${t('nhAiText')}
+        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')"> ${t('nhAutoConnect')}</span>
       </div>
-      <div>
-        <div class="nh-grid">
-          ${shown.map(p=>`<div class="ncard">
-            <div class="ncard-av" style="background:${p.col}">${p.name.split(' ').map(x=>x[0]).join('')}${p.online?'<div class="online-dot"></div>':''}</div>
-            <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.18rem">${p.name}</div>
-            <div style="font-size:.73rem;color:var(--p);font-weight:600;margin-bottom:.2rem">${p.role}</div>
-            <div style="font-size:.7rem;color:var(--t3);margin-bottom:.6rem">${p.college}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:.28rem;justify-content:center;margin-bottom:.75rem">${p.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-            <div style="font-size:.7rem;color:var(--t3);margin-bottom:.75rem">${p.mutual} ${t('nhMutual')}</div>
-            <div style="display:flex;gap:.4rem;width:100%">
-              <button class="btn ${p.conn?'btn-success':'btn-p'} btn-sm" style="flex:1;justify-content:center" onclick="toggleConn(${p.id})">${p.conn?t('nhConnectedBtn'):t('nhConnect')}</button>
-              <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="S.modal='msg_${p.id}';render()">${t('nhMessage')}</button>
+    </div>
+
+    <!-- ── Filter pills: scrollable on mobile ── -->
+    <div class="nh-filter-bar">
+      ${filterKeys.map(f=>`<button class="nh-filter-pill ${S.nhFilter===f?'on':''}" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+      <span class="nh-count">${shown.length} ${shown.length===1?'person':'people'}</span>
+    </div>
+
+    <!-- ── Main layout: sidebar + grid ── -->
+    <div class="nh-layout">
+
+      <!-- Sidebar (desktop only; hidden on mobile) -->
+      <div class="nh-sidebar">
+        <div class="card" style="margin-bottom:.9rem">
+          <h3 class="nh-side-h">${t('nhCompaniesHiring')}</h3>
+          ${companies.map(([ico,co,role])=>`
+          <div style="display:flex;align-items:center;gap:.65rem;padding:.5rem 0;border-bottom:1px solid var(--b)">
+            <span style="font-size:1.15rem">${ico}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.81rem;font-weight:700;color:var(--t)">${co}</div>
+              <div style="font-size:.7rem;color:var(--green);font-weight:600">${role}</div>
             </div>
+            <button class="btn btn-ghost btn-xs" onclick="go('recs')">${t('nhView')}</button>
           </div>`).join('')}
         </div>
+        <div class="card">
+          <h3 class="nh-side-h" style="margin-bottom:.6rem">${t('nhFilter')}</h3>
+          ${filterKeys.map(f=>`<button class="btn ${S.nhFilter===f?'btn-p':'btn-ghost'} btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- People grid -->
+      <div class="nh-grid">
+        ${shown.length===0?`<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--t3)"><div style="font-size:2.2rem;margin-bottom:.6rem">😶</div><div style="font-weight:700;color:var(--t);margin-bottom:.4rem">No results</div><button class="btn btn-ghost btn-sm" onclick="S.nhFilter='all';render()">Clear filter</button></div>`:''}
+        ${shown.map(p=>`
+        <div class="ncard">
+          <div class="ncard-top">
+            <div class="ncard-av" style="background:${p.col}">${p.name.split(' ').map(x=>x[0]).join('')}${p.online?'<div class="online-dot"></div>':''}</div>
+            <div class="ncard-info">
+              <div class="ncard-name">${p.name}</div>
+              <div class="ncard-role">${p.role}</div>
+              <div class="ncard-college">${p.college}</div>
+            </div>
+          </div>
+          <div class="ncard-skills">${p.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
+          <div class="ncard-mutual">${p.mutual} ${t('nhMutual')}</div>
+          <div class="ncard-actions">
+            <button class="btn ${p.conn?'btn-success':'btn-p'} btn-sm ncard-btn" onclick="toggleConn(${p.id})">${p.conn?t('nhConnectedBtn'):t('nhConnect')}</button>
+            <button class="btn btn-ghost btn-sm ncard-btn" onclick="S.modal='msg_${p.id}';render()">${t('nhMessage')}</button>
+          </div>
+        </div>`).join('')}
       </div>
     </div>
+
+    <!-- ── Companies Hiring: mobile-only bottom strip ── -->
+    <div class="nh-companies-mobile">
+      <div class="nh-side-h" style="margin-bottom:.75rem">🏢 ${t('nhCompaniesHiring')}</div>
+      <div class="nh-companies-scroll">
+        ${companies.map(([ico,co,role])=>`
+        <div class="nh-co-chip" onclick="go('recs')">
+          <span style="font-size:1.3rem">${ico}</span>
+          <div style="font-size:.78rem;font-weight:700;color:var(--t)">${co}</div>
+          <div style="font-size:.67rem;color:var(--green);font-weight:600">${role}</div>
+          <span class="btn btn-ghost btn-xs" style="margin-top:.35rem">${t('nhView')}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
   </div></div>`;
 }
 
@@ -2767,10 +3005,11 @@ function buildAdmin(){
   return `<div class="page dw">${sb('admin')}<div class="dm">
     <div style="margin-bottom:1.65rem"><h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">🛡️ Admin Panel</h1><p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">Nirmaan v3.0 · <span style="color:var(--green)">● All systems operational</span></p></div>
     <div class="mg">${[['👥','6,241','Users','↑ 12%'],['💼','15k+','Internships','↑ 8%'],['🏢','1,100','Companies','↑ 5 new'],['🤖','97%','AI Accuracy','↑ 2%'],['💰','₹2.4Cr','MRR','↑ 34%']].map(([ico,v,l,c])=>`<div class="mc"><div class="mi">${ico}</div><div class="mv">${v}</div><div class="ml">${l}</div><div class="mch up">${c}</div></div>`).join('')}</div>
-    <div class="tabs">${['users','internships','analytics','ai'].map(t=>`<div class="tab ${S.adminTab===t?'on':''}" onclick="S.adminTab='${t}';render()">${{users:'👥 Users',internships:'💼 Internships',analytics:'📈 Analytics',ai:'🤖 AI Engine'}[t]}</div>`).join('')}</div>
+    <div class="tabs">${['users','internships','analytics','ai','push'].map(t=>`<div class="tab ${S.adminTab===t?'on':''}" onclick="S.adminTab='${t}';render()">${{users:'👥 Users',internships:'💼 Internships',analytics:'📈 Analytics',ai:'🤖 AI Engine',push:'📢 Push'}[t]}</div>`).join('')}</div>
     ${S.adminTab==='users'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">User Management</h3><div style="display:flex;gap.4rem;gap:.4rem"><input class="fi" style="width:175px" placeholder="Search users…"/><button class="btn btn-ghost btn-sm" onclick="notif('Users exported!','ok')">↓ Export</button><button class="btn btn-p btn-sm" onclick="notif('Invite sent!','ok')">+ Invite</button></div></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>User</th><th>Role</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody>${AUSERS.map(u=>`<tr><td><div style="display:flex;align-items:center;gap.6rem;gap:.6rem"><div class="av" style="width:29px;height:29px;font-size:.63rem;background:var(--g1);color:#fff">${u.name.split(' ').map(x=>x[0]).join('').slice(0,2)}</div><div><div style="font-weight:700;font-size:.84rem">${u.name}</div><div style="font-size:.7rem;color:var(--t3)">${u.email}</div></div></div></td><td><span class="bdg ${u.role==='Admin'?'bp':u.role==='Company'?'bc':'bi'}">${u.role}</span></td><td style="color:var(--t3);font-size:.8rem">${u.joined}</td><td><span class="bdg ${u.status==='Active'?'bg':'ba'}">${u.status}</span></td><td><div style="display:flex;gap.3rem;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="notif('Editing ${u.name}…','in')">Edit</button><button class="btn btn-danger btn-xs" onclick="notif('${u.name} suspended','in')">Suspend</button><button class="btn btn-ghost btn-xs" onclick="notif('Logged in as ${u.name}','in')">Login As</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
     S.adminTab==='internships'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b)"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">Internship Management</h3></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Title</th><th>Company</th><th>Type</th><th>Match</th><th>Status</th><th>Actions</th></tr></thead><tbody>${INTERNS.map(i=>`<tr><td style="font-weight:700">${i.title}</td><td>${i.co}</td><td><span class="bdg bgr">${i.type}</span></td><td style="font-weight:800;color:${i.match>=85?'var(--green)':'var(--amber)'}">${i.match}%</td><td><span class="bdg bg">Active</span></td><td><div style="display:flex;gap.3rem;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="notif('Editing internship…','in')">Edit</button><button class="btn btn-danger btn-xs" onclick="notif('Internship removed','in')">Remove</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
     S.adminTab==='ai'?`<div class="aic"><div class="aih">🤖 AI Engine Status</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.85rem;margin-top:.65rem">${[['Embedding Model','Sentence-BERT v3','✅'],['Algorithm','Cosine + BM25','✅'],['Vector DB','Pinecone 16M','✅'],['Latency','<120ms avg','✅'],['Daily Queries','48,320','✅'],['Accuracy','97.2%','↑ +2.1%']].map(([l,v,s])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.75rem .9rem;border:1px solid var(--b)"><div style="font-size:.67rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing.07em;letter-spacing:.07em">${l}</div><div style="font-family:var(--fh);font-size:.93rem;font-weight:700;color:var(--t);margin:.22rem 0">${v}</div><div style="font-size:.7rem;color:var(--green);font-weight:700">${s}</div></div>`).join('')}</div></div>`:
+    S.adminTab==='push'?buildAdminPushPanel():
     `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem"><div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:1.25rem">Weekly Signups</h3><div class="bch">${[{l:'M',v:45,h:38},{l:'T',v:82,h:68},{l:'W',v:60,h:50},{l:'T',v:95,h:79},{l:'F',v:75,h:62},{l:'S',v:110,h:91},{l:'S',v:88,h:73}].map(d=>`<div class="bc"><div class="bv">${d.v}</div><div class="bb" style="height:${d.h}px"></div><div class="bl">${d.l}</div></div>`).join('')}</div></div><div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.9rem">Platform KPIs</h3>${[['Applications','24,832'],['Placements','6,241'],['Avg Match','89%'],['Courses Enrolled','16,400'],['MAU','18,200'],['API / day','2.3M']].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:.52rem 0;border-bottom:1px solid var(--b);font-size:.82rem"><span style="color:var(--t2)">${l}</span><span style="font-weight:800;color:var(--t)">${v}</span></div>`).join('')}</div></div>`}
   </div></div>`;
 }
@@ -2805,30 +3044,42 @@ function buildChat(){
   const msgs=S.chatMsgs.length===0?[{r:'b',t:t('chatWelcome')||BRAIN.hi}]:S.chatMsgs;
   const hint=S.lang==='hi'?'मैं क्या मदद कर सकता हूं? 👋':'What can I help you with? 👋';
   const ph=t('chatPlaceholder')||'Ask me anything…';
+  const quickBtns=(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']);
   return `
     ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
     <button id="chat-fab-btn" style="display:none"></button>
     ${S.chatOpen?`<div class="cw">
+      <!-- Header -->
       <div class="ch">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
-        <div style="flex:1;min-width:0"><div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div><div style="color:rgba(255,255,255,.65);font-size:.67rem">● Online · 50+ topics</div></div>
-        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.18rem .5rem;font-size:.65rem;cursor:pointer;font-family:var(--fb)">🗑</button>
-        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.4rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+        <div style="flex:1;min-width:0">
+          <div style="color:#fff;font-weight:700;font-size:.88rem;font-family:var(--fh)">Arya AI</div>
+          <div style="color:rgba(255,255,255,.65);font-size:.65rem">● Online · 50+ topics</div>
+        </div>
+        <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.16rem .45rem;font-size:.62rem;cursor:pointer;font-family:var(--fb);flex-shrink:0">🗑</button>
+        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.35rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
       </div>
+
+      <!-- Messages -->
       <div class="cms" id="chatmsgs">
         ${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
         ${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}
       </div>
-      <div class="cqb">${(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']).map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}</div>
-      <div class="cir">
-        <button id="chat-voice-btn" class="cvb ${S.voiceActive?'on':''}" title="Voice">🎙️</button>
-        <input class="cinp" id="chatinp" placeholder="${ph}"/>
+
+      <!-- Quick buttons: horizontal scroll, no wrap -->
+      <div class="cqb">
+        ${quickBtns.map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}
+      </div>
+
+      <!-- Input row -->
+      <div class="cif">
+        <button id="chat-voice-btn" class="cvb" title="Voice input">🎤</button>
+        <input class="cinp" id="chatinp" placeholder="${ph}" autocomplete="off"/>
         <button id="chat-send-btn" class="csnd">➤</button>
       </div>
     </div>`:''}
   `;
 }
-
 
 // ══════════════════════ NOTIFS ══════════════════════
 function buildNotifs(){
@@ -2897,6 +3148,118 @@ function buildCookiePolicyModal(){
   </div>`;
 }
 
+/* ── SPOTLIGHT TOUR ── */
+function buildTour(){
+  if(!S.tourActive||!S.user)return'';
+  const isComp=S.user.role==='company';
+  const steps=t(isComp?'tourStepsCompany':'tourStepsStudent')||[];
+  const total=steps.length;
+  const i=Math.min(S.tourStep,total-1);
+  const step=steps[i];
+  if(!step)return'';
+  const isLast=i===total-1;
+  const progress=(i+1)/total*100;
+  const dots=steps.map((_,di)=>`<div class="tour-dot${di===i?' on':''}"></div>`).join('');
+  const featureGrid=`<div class="tour-features">${(isComp?[['➕','Post Roles'],['👥','AI Ranking'],['📈','Analytics'],['🏢','Profile']]:[['⚡','Dashboard'],['🤖','AI Match'],['📊','Skill Gap'],['🗺️','Roadmap'],['🎙️','Arya AI'],['🤝','Network']]).map(([ico,lbl])=>`<div class="tour-feat-chip"><span>${ico}</span><span>${lbl}</span></div>`).join('')}</div>`;
+
+  if(i===0){
+    return `<div class="tour-overlay tour-centered" id="tour-overlay"><div class="tour-card" id="tour-card">
+      <button class="tour-skip" onclick="tourSkip()">${t('tourSkip')} ✕</button>
+      <div class="tour-progress-track"><div class="tour-progress-fill" style="width:${progress}%"></div></div>
+      <div class="tour-dots">${dots}</div>
+      <div class="tour-ico-wrap"><div class="tour-ico">${step.ico}</div><div class="tour-ico-ring"></div></div>
+      <h2 class="tour-title">${step.title}</h2>
+      <p class="tour-body">${step.body}</p>
+      ${featureGrid}
+      <p class="tour-cta">${step.cta}</p>
+      <div class="tour-step-lbl">${i+1} ${t('tourOf')} ${total}</div>
+      <div class="tour-nav"><div></div><button class="btn btn-p tour-btn-next" onclick="tourNext()">${t('tourNext')}</button></div>
+    </div></div>`;
+  }
+
+  return `<div class="tour-overlay tour-spotlight" id="tour-overlay">
+    <svg class="tour-svg-mask" id="tour-svg-mask" xmlns="http://www.w3.org/2000/svg" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2001">
+      <defs><mask id="tour-hole-mask">
+        <rect width="100%" height="100%" fill="white"/>
+        <rect id="tour-hole-rect" x="0" y="0" width="0" height="0" rx="14" fill="black"/>
+      </mask></defs>
+      <rect width="100%" height="100%" fill="rgba(10,10,30,0.75)" mask="url(#tour-hole-mask)"/>
+    </svg>
+    <div class="tour-spotlight-ring" id="tour-spotlight-ring"></div>
+    <div class="tour-tooltip" id="tour-tooltip" data-step="${i}" style="opacity:0">
+      <div class="tour-progress-track" style="margin-bottom:.75rem"><div class="tour-progress-fill" style="width:${progress}%"></div></div>
+      <div class="tour-dots" style="margin-bottom:.75rem">${dots}</div>
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem">
+        <div class="tour-tip-ico">${step.ico}</div>
+        <h3 class="tour-tip-title">${step.title}</h3>
+      </div>
+      <p class="tour-tip-body">${step.body}</p>
+      <p class="tour-cta" style="margin:.65rem 0">${step.cta}</p>
+      <div class="tour-step-lbl" style="margin-bottom:.65rem">${i+1} ${t('tourOf')} ${total}</div>
+      <div class="tour-nav">
+        <button class="btn btn-ghost tour-btn-back" onclick="tourPrev()">${t('tourPrev')}</button>
+        <button class="btn btn-p tour-btn-next" onclick="${isLast?'tourSkip()':'tourNext()'}">
+${isLast?t('tourFinish'):t('tourNext')}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+const TOUR_TARGETS_STUDENT=[null,'tour-metrics','tour-sb-recs','tour-sb-skill','tour-profile','chat-fab-btn','tour-sb-net'];
+const TOUR_TARGETS_COMPANY=[null,'tour-metrics','tour-matches','tour-insights','tour-bell'];
+
+function tourPositionSpotlight(){
+  if(!S.tourActive||S.tourStep===0)return;
+  const isComp=S.user&&S.user.role==='company';
+  const targets=isComp?TOUR_TARGETS_COMPANY:TOUR_TARGETS_STUDENT;
+  const targetId=targets[Math.min(S.tourStep,targets.length-1)];
+  if(!targetId)return;
+  const el=document.getElementById(targetId);
+  const holeRect=document.getElementById('tour-hole-rect');
+  const ring=document.getElementById('tour-spotlight-ring');
+  const tooltip=document.getElementById('tour-tooltip');
+  if(!el||!holeRect||!ring||!tooltip)return;
+  const pad=14;
+  const r=el.getBoundingClientRect();
+  const vw=window.innerWidth;
+  const vh=window.innerHeight;
+  // Hole
+  holeRect.setAttribute('x',r.left-pad);
+  holeRect.setAttribute('y',r.top-pad);
+  holeRect.setAttribute('width',r.width+pad*2);
+  holeRect.setAttribute('height',r.height+pad*2);
+  // Ring
+  ring.style.cssText=`position:fixed;left:${r.left-pad}px;top:${r.top-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;border-radius:14px;border:2.5px solid var(--p);box-shadow:0 0 0 4px rgba(99,102,241,.2),0 0 28px rgba(99,102,241,.35);z-index:2003;pointer-events:none;animation:tourRingPulse 1.8s ease-in-out infinite`;
+  // Tooltip positioning
+  const tipW=Math.min(300,vw-24);
+  const tipH=tooltip.offsetHeight||240;
+  const gap=16;
+  let tx,ty;
+  if(vw<=600){
+    // Mobile: pin above mob-nav
+    tx=8; ty=Math.max(8,vh-tipH-80);
+    tooltip.style.width=(vw-16)+'px';
+  } else {
+    tooltip.style.width=tipW+'px';
+    if(r.bottom+gap+tipH<vh){ty=r.bottom+gap;tx=Math.max(12,Math.min(r.left,vw-tipW-12));}
+    else if(r.top-gap-tipH>0){ty=r.top-gap-tipH;tx=Math.max(12,Math.min(r.left,vw-tipW-12));}
+    else if(r.right+gap+tipW<vw){tx=r.right+gap;ty=Math.max(12,Math.min(r.top,vh-tipH-12));}
+    else{tx=Math.max(12,r.left-gap-tipW);ty=Math.max(12,Math.min(r.top,vh-tipH-12));}
+  }
+  tooltip.style.left=tx+'px';
+  tooltip.style.top=ty+'px';
+  tooltip.style.opacity='1';
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+function tourNext(){
+  const isComp=S.user&&S.user.role==='company';
+  const total=(t(isComp?'tourStepsCompany':'tourStepsStudent')||[]).length;
+  if(S.tourStep<total-1){S.tourStep++;render();}
+}
+function tourPrev(){if(S.tourStep>0){S.tourStep--;render();}}
+function tourSkip(){S.tourActive=false;render();}
+
 function buildModal(){
   if(S.modal==='cookiePolicy')return buildCookiePolicyModal();
   if(S.modal==='project') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal"><button class="mcl" onclick="S.modal=null;render()">×</button><div class="mh">Add Project</div><p style="font-size:.82rem;color:var(--t3);margin-bottom:1.35rem">Showcase your work to boost AI match score</p><div class="fg"><label class="fl">Project Name</label><input class="fi" id="mpn" placeholder="AI Chat App"/></div><div class="fg"><label class="fl">Technologies Used</label><input class="fi" id="mpt" placeholder="React, Node.js, OpenAI"/></div><div class="fg"><label class="fl">Project Link</label><input class="fi" id="mpl" placeholder="github.com/you/project"/></div><div class="fg"><label class="fl">Description</label><textarea class="fta" rows="3" placeholder="What does it do? What did you build?"></textarea></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="addProject()">Add Project ✓</button><button class="btn btn-ghost" onclick="S.modal=null;render()">Cancel</button></div></div></div>`;
@@ -2912,12 +3275,274 @@ function buildFooter(){
   return `<footer class="footer"><div class="fg3"><div><div class="fbr">✦ Nirmaan</div><div style="font-size:.81rem;color:var(--t3);line-height:1.65;max-width:260px">AI-powered internship matching for every student in India.</div><div style="display:flex;gap.6rem;gap:.6rem;margin-top:.9rem">${['🐦','💼','🐙','💬'].map(ic=>`<span onclick="notif('Follow us!','in')" style="cursor:pointer;font-size:1.05rem">${ic}</span>`).join('')}</div></div><div class="fco"><h4>Platform</h4><a onclick="go('recs')">AI Matching</a><a onclick="go('skillgap')">Skill Gap</a><a onclick="go('roadmap')">Roadmap</a><a onclick="go('resume')">Resume Builder</a><a onclick="go('network')">Networking</a></div><div class="fco"><h4>Company</h4><a onclick="go('about')">About</a><a onclick="notif('Blog coming soon!','in')">Blog</a><a onclick="go('contact')">Contact</a><a onclick="notif('Careers page!','in')">Careers</a></div><div class="fco"><h4>Support</h4><a onclick="notif('Help center!','in')">Help Center</a><a onclick="notif('Privacy Policy','in')">Privacy</a><a onclick="notif('Terms of Service','in')">Terms</a><a onclick="notif('API docs!','in')">API Docs</a></div></div><div class="fbot"><div>© 2025 Nirmaan Technologies Pvt. Ltd. · Made with ❤️ in India 🇮🇳</div><div style="font-size:.73rem">v3.0 · All systems ✅</div></div></footer>`;
 }
 
+// ══════════════════════ PWA INSTALL ══════════════════════
+/* Capture the browser's install prompt so we can show it on our own button */
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  S.pwaInstallPrompt = e;
+  render(); // show install banner / button
+});
+
+window.addEventListener('appinstalled', () => {
+  S.pwaInstalled = true;
+  S.pwaInstallPrompt = null;
+  localStorage.setItem('nirmaan_pwa_installed', '1');
+  notif('Nirmaan installed! 🎉 Open it from your home screen.', 'ok');
+  render();
+});
+
+async function triggerInstall() {
+  if (!S.pwaInstallPrompt) return;
+  S.pwaInstallPrompt.prompt();
+  const { outcome } = await S.pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    S.pwaInstalled = true;
+    localStorage.setItem('nirmaan_pwa_installed', '1');
+  }
+  S.pwaInstallPrompt = null;
+  render();
+}
+
+function dismissInstallBanner() {
+  S.pushBannerDismissed = true;
+  localStorage.setItem('nirmaan_push_dismissed', '1');
+  render();
+}
+
+// ══════════════════════ PUSH NOTIFICATIONS ══════════════════════
+let _swReg = null; // cached SW registration
+
+async function initSW() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    _swReg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    return _swReg;
+  } catch (err) { console.warn('SW reg failed:', err); return null; }
+}
+
+async function requestPushPermission() {
+  if (!('Notification' in window)) {
+    notif('Push notifications are not supported in this browser.', 'in'); return;
+  }
+  const perm = await Notification.requestPermission();
+  S.pushPermission = perm;
+  if (perm === 'granted') {
+    await subscribePush();
+    notif('Push notifications enabled! ✅', 'ok');
+  } else {
+    notif('Notification permission denied. You can enable it in browser settings.', 'in');
+  }
+  render();
+}
+
+async function subscribePush() {
+  const reg = _swReg || await initSW();
+  if (!reg) return;
+  try {
+    // VAPID public key placeholder — replace with your real key in production
+    const VAPID_PUBLIC = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3GOFGZGFJsQ2-pW7AMSJQ';
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    S.pushSubscription = sub;
+    console.log('Push subscription:', JSON.stringify(sub));
+    // In production: send sub to your server here
+  } catch (err) {
+    console.warn('Push subscribe error:', err);
+    // Still proceed — we can use SW message-based local push
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// ── Admin sends a push to all clients via the SW ─────
+async function adminSendPush() {
+  const title = S.adminPushTitle.trim() || 'Nirmaan';
+  const body  = S.adminPushBody.trim();
+  if (!body) { notif('Please enter a notification message.', 'in'); return; }
+
+  const icon = S.adminPushIcon || '🔔';
+  const url  = S.adminPushUrl.trim() || './nirmaan.html';
+
+  // Save to history
+  const entry = { id: Date.now(), title, body, icon, url, target: S.adminPushTarget, sentAt: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) };
+  S.adminPushHistory.unshift(entry);
+  if (S.adminPushHistory.length > 50) S.adminPushHistory.pop();
+  localStorage.setItem('nirmaan_push_history', JSON.stringify(S.adminPushHistory));
+
+  // Send via Service Worker message (works locally without a push server)
+  const reg = _swReg || await initSW();
+  if (reg && reg.active) {
+    reg.active.postMessage({ type: 'ADMIN_PUSH', title, body, url, tag: 'admin-' + entry.id });
+    notif(`Push sent to ${S.adminPushTarget === 'all' ? 'all users' : S.adminPushTarget + ' users'} ✅`, 'ok');
+  } else {
+    // Fallback: browser Notification API directly
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body, icon: '', tag: 'admin-direct' });
+      notif('Push sent (direct) ✅', 'ok');
+    } else {
+      notif('Service worker not active. Please reload and try again.', 'in');
+    }
+  }
+
+  // Clear form
+  S.adminPushTitle = ''; S.adminPushBody = ''; S.adminPushUrl = '';
+  render();
+}
+
+function buildPushBanner() {
+  if (S.pushBannerDismissed) return '';
+  if (S.pushPermission === 'granted') return '';
+  if (!S.user) return '';
+  return `<div id="push-banner" style="position:fixed;bottom:${window.innerWidth<=768?'72px':'1.2rem'};right:1rem;z-index:900;max-width:320px;background:var(--bg2);border:1.5px solid var(--p);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.18);display:flex;gap:.8rem;align-items:flex-start;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+    <div style="font-size:1.5rem;flex-shrink:0">🔔</div>
+    <div style="flex:1">
+      <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">Enable Job Alerts</div>
+      <div style="font-size:.76rem;color:var(--t3);margin:.22rem 0 .65rem">Get instant alerts for new matches, application updates & company views.</div>
+      <div style="display:flex;gap:.5rem">
+        <button onclick="requestPushPermission()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.38rem .9rem;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Allow Notifications</button>
+        <button onclick="dismissInstallBanner()" style="background:var(--bg3);color:var(--t2);border:1px solid var(--b);border-radius:99px;padding:.38rem .7rem;font-size:.76rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Not now</button>
+      </div>
+    </div>
+    <button onclick="dismissInstallBanner()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:0;line-height:1;align-self:flex-start">×</button>
+  </div>`;
+}
+
+function buildInstallBanner() {
+  if (S.pwaInstalled || !S.pwaInstallPrompt || S.pushBannerDismissed) return '';
+  return `<div id="install-banner" style="position:fixed;bottom:${window.innerWidth<=768?'72px':'1.2rem'};left:1rem;z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+    <div style="font-size:1.8rem;flex-shrink:0">📲</div>
+    <div style="flex:1">
+      <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
+      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">Add to home screen for instant access</div>
+      <div style="display:flex;gap:.45rem">
+        <button onclick="triggerInstall()" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Install App</button>
+        <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════ ADMIN PUSH TAB ══════════════════════
+function buildAdminPushPanel() {
+  const ICONS = ['🔔','📢','🎉','💼','⚡','🤖','📊','🗺️','🏆','💡'];
+  const hist  = S.adminPushHistory;
+  const targetOpts = [['all','👥 All Users'],['student','🎓 Students Only'],['company','🏢 Companies Only']];
+
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+    <!-- Compose Panel -->
+    <div class="card">
+      <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.1rem;display:flex;align-items:center;gap:.5rem">
+        📢 Send Push Notification
+        <span class="bdg ${S.pushPermission==='granted'?'bg':'ba'}" style="font-size:.65rem;margin-left:auto">${S.pushPermission==='granted'?'● Live':'○ Permission needed'}</span>
+      </h3>
+
+      ${S.pushPermission !== 'granted' ? `<div style="background:var(--bg3);border:1.5px dashed var(--amber);border-radius:var(--r);padding:.85rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:1.4rem">⚠️</span>
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--amber)">Notification permission required</div>
+          <div style="font-size:.74rem;color:var(--t3);margin:.18rem 0 .55rem">You need to grant permission before sending pushes from admin.</div>
+          <button onclick="requestPushPermission()" style="background:var(--amber);color:#fff;border:none;border-radius:99px;padding:.35rem .85rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Grant Permission</button>
+        </div>
+      </div>` : ''}
+
+      <div class="fg" style="margin-bottom:.75rem">
+        <label class="fl">Notification Icon</label>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.28rem">
+          ${ICONS.map(ic => `<div onclick="S.adminPushIcon='${ic}';render()" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;border:2px solid ${S.adminPushIcon===ic?'var(--p)':'var(--b)'};background:${S.adminPushIcon===ic?'var(--pl)':'var(--bg3)'};transition:all .12s">${ic}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="fg"><label class="fl">Title</label>
+        <input class="fi" id="push-title" placeholder="e.g. New Internship Match!" value="${S.adminPushTitle||''}" oninput="S.adminPushTitle=this.value"/>
+      </div>
+
+      <div class="fg"><label class="fl">Message Body <span style="color:var(--t3);font-weight:400">(required)</span></label>
+        <textarea class="fta" id="push-body" rows="3" placeholder="e.g. 3 new AI matches from Google, Razorpay & Flipkart are waiting for you." oninput="S.adminPushBody=this.value">${S.adminPushBody||''}</textarea>
+        <div style="text-align:right;font-size:.7rem;color:var(--t3);margin-top:.2rem">${(S.adminPushBody||'').length}/150</div>
+      </div>
+
+      <div class="fg"><label class="fl">Target Audience</label>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.28rem">
+          ${targetOpts.map(([v,l])=>`<div onclick="S.adminPushTarget='${v}';render()" style="padding:.35rem .85rem;border-radius:99px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid ${S.adminPushTarget===v?'var(--p)':'var(--b)'};background:${S.adminPushTarget===v?'var(--pl)':'var(--bg3)'};color:${S.adminPushTarget===v?'var(--p)':'var(--t2)'};transition:all .12s">${l}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="fg"><label class="fl">Deep Link URL <span style="color:var(--t3);font-weight:400">(optional)</span></label>
+        <input class="fi" id="push-url" placeholder="./nirmaan.html#recs" value="${S.adminPushUrl||''}" oninput="S.adminPushUrl=this.value"/>
+      </div>
+
+      <!-- Preview -->
+      ${S.adminPushBody ? `<div style="background:var(--bg3);border:1px solid var(--b);border-radius:12px;padding:.8rem 1rem;margin:.55rem 0 1rem;display:flex;gap:.7rem;align-items:flex-start">
+        <div style="font-size:1.5rem;flex-shrink:0">${S.adminPushIcon||'🔔'}</div>
+        <div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--t)">${S.adminPushTitle||'Nirmaan'}</div>
+          <div style="font-size:.73rem;color:var(--t3);margin-top:.12rem">${S.adminPushBody}</div>
+        </div>
+        <div style="font-size:.65rem;color:var(--t3);margin-left:auto;white-space:nowrap">now</div>
+      </div>` : ''}
+
+      <div style="display:flex;gap:.65rem;margin-top:.5rem">
+        <button onclick="adminSendPush()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:99px;padding:.6rem 1.2rem;font-size:.84rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.45rem">
+          📢 Send Push Now
+        </button>
+        <button onclick="S.adminPushTitle='';S.adminPushBody='';S.adminPushUrl='';S.adminPushIcon='🔔';render()" style="background:var(--bg3);color:var(--t2);border:1px solid var(--b);border-radius:99px;padding:.6rem 1rem;font-size:.82rem;font-weight:600;cursor:pointer;font-family:var(--fb)">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- History Panel -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center">
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">📋 Sent History</h3>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="bdg bi">${hist.length} sent</span>
+          ${hist.length?`<button onclick="S.adminPushHistory=[];localStorage.removeItem('nirmaan_push_history');render()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:.76rem;font-weight:600">Clear all</button>`:''}
+        </div>
+      </div>
+      <div style="max-height:520px;overflow-y:auto">
+        ${hist.length === 0 ? `<div style="padding:2.5rem 1.5rem;text-align:center;color:var(--t3)"><div style="font-size:2rem;margin-bottom:.6rem">📭</div><div style="font-size:.83rem">No notifications sent yet</div></div>` :
+          hist.map(h => `<div style="padding:.85rem 1.1rem;border-bottom:1px solid var(--b);display:flex;gap:.65rem;align-items:flex-start">
+            <div style="font-size:1.35rem;flex-shrink:0">${h.icon||'🔔'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+                <div style="font-weight:700;font-size:.82rem;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.title}</div>
+                <span class="bdg ${h.target==='all'?'bi':h.target==='student'?'bg':'bc'}" style="font-size:.62rem;flex-shrink:0">${h.target}</span>
+              </div>
+              <div style="font-size:.75rem;color:var(--t2);margin:.1rem 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${h.body}</div>
+              <div style="font-size:.68rem;color:var(--t3)">${h.sentAt}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
-window.render=render;window.chatVoice=chatVoice;window.notif=notif;
+window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
+window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
 
+// Listen for SW messages (e.g. push nav redirect)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'PUSH_NAV' && e.data.url) {
+      const hash = e.data.url.split('#')[1];
+      if (hash) go(hash);
+    }
+  });
+}
+
 synth&&synth.getVoices();
+initSW(); // register service worker on boot
 render();
