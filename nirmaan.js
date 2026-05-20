@@ -2787,50 +2787,105 @@ function buildNetwork(){
   if(S.nhFilter==='connected')shown=NETWORK.filter(p=>p.conn);
   if(S.nhFilter==='online')shown=NETWORK.filter(p=>p.online);
   const filterLabel={all:t('nhAll'),connected:t('nhConnected'),online:t('nhOnline')};
+  const stats=[[`👥`,t('nhConnections'),NETWORK.filter(p=>p.conn).length],['👁️',t('nhProfileViews'),'142'],['📩',t('nhMessages'),'3 '+t('nhUnread')],['🔔',t('nhRequests'),'2 '+t('nhPending')]];
+  const companies=[['🔵','Google','SWE Intern open'],['🟦','Microsoft','ML Intern open'],['🟡','Flipkart','Full Stack open']];
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:1.65rem;flex-wrap:wrap;gap:.9rem">
+
+    <!-- ── Page Header ── -->
+    <div class="nh-header">
       <div>
-        <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('nhTitle')}</h1>
-        <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('nhSub')}</p>
+        <h1 class="nh-title">${t('nhTitle')}</h1>
+        <p style="color:var(--t3);font-size:.82rem;margin-top:.18rem">${t('nhSub')}</p>
       </div>
-      <button class="btn btn-p btn-sm" onclick="notif('Posting in Feed…','in')">${t('nhShareUpdate')}</button>
+      <button class="btn btn-p btn-sm nh-share-btn" onclick="notif('Posting in Feed…','in')">${t('nhShareUpdate')}</button>
     </div>
-    <div class="aic" style="margin-bottom:1.5rem">
+
+    <!-- ── Stats strip: horizontal scroll on mobile ── -->
+    <div class="nh-stats-strip">
+      ${stats.map(([ico,lbl,val])=>`
+      <div class="nh-stat-chip">
+        <span class="nh-stat-ico">${ico}</span>
+        <div>
+          <div class="nh-stat-val">${val}</div>
+          <div class="nh-stat-lbl">${lbl}</div>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <!-- ── AI Banner ── -->
+    <div class="aic nh-ai-banner">
       <div class="aih">${t('nhAiSuggestions')}</div>
-      <div style="font-size:.8rem;color:var(--t2);line-height:1.65">${t('nhAiText')} <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')">${t('nhAutoConnect')}</span></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 2fr;gap:1.35rem" class="dash-grid-2">
-      <div style="display:flex;flex-direction:column;gap:.9rem">
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:1rem">${t('nhConnections')}</h3>
-          ${[[t('nhConnections'),NETWORK.filter(p=>p.conn).length],['👁️ '+t('nhProfileViews'),'142'],['📩 '+t('nhMessages'),'3 '+t('nhUnread')],['🔔 '+t('nhRequests'),'2 '+t('nhPending')]].map(([l,v])=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:.52rem 0;border-bottom:1px solid var(--b);font-size:.83rem"><span style="color:var(--t2)">👥 ${l}</span><span style="font-weight:700;color:var(--t)">${v}</span></div>`).join('')}
-        </div>
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.85rem">${t('nhFilter')}</h3>
-          ${filterKeys.map(f=>`<button class="btn ${S.nhFilter===f?'btn-p':'btn-ghost'} btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.4rem" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
-        </div>
-        <div class="card">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.85rem">${t('nhCompaniesHiring')}</h3>
-          ${[['🔵','Google','SWE Intern open'],['🟦','Microsoft','ML Intern open'],['🟡','Flipkart','Full Stack open']].map(([ico,co,role])=>`<div style="display:flex;align-items:center;gap:.65rem;padding:.5rem 0;border-bottom:1px solid var(--b)"><span style="font-size:1.2rem">${ico}</span><div style="flex:1"><div style="font-size:.82rem;font-weight:700;color:var(--t)">${co}</div><div style="font-size:.71rem;color:var(--green)">${role}</div></div><button class="btn btn-ghost btn-xs" onclick="go('recs')">${t('nhView')}</button></div>`).join('')}
-        </div>
+      <div style="font-size:.8rem;color:var(--t2);line-height:1.6">${t('nhAiText')}
+        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')"> ${t('nhAutoConnect')}</span>
       </div>
-      <div>
-        <div class="nh-grid">
-          ${shown.map(p=>`<div class="ncard">
-            <div class="ncard-av" style="background:${p.col}">${p.name.split(' ').map(x=>x[0]).join('')}${p.online?'<div class="online-dot"></div>':''}</div>
-            <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.18rem">${p.name}</div>
-            <div style="font-size:.73rem;color:var(--p);font-weight:600;margin-bottom:.2rem">${p.role}</div>
-            <div style="font-size:.7rem;color:var(--t3);margin-bottom:.6rem">${p.college}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:.28rem;justify-content:center;margin-bottom:.75rem">${p.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-            <div style="font-size:.7rem;color:var(--t3);margin-bottom:.75rem">${p.mutual} ${t('nhMutual')}</div>
-            <div style="display:flex;gap:.4rem;width:100%">
-              <button class="btn ${p.conn?'btn-success':'btn-p'} btn-sm" style="flex:1;justify-content:center" onclick="toggleConn(${p.id})">${p.conn?t('nhConnectedBtn'):t('nhConnect')}</button>
-              <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="S.modal='msg_${p.id}';render()">${t('nhMessage')}</button>
+    </div>
+
+    <!-- ── Filter pills: scrollable on mobile ── -->
+    <div class="nh-filter-bar">
+      ${filterKeys.map(f=>`<button class="nh-filter-pill ${S.nhFilter===f?'on':''}" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+      <span class="nh-count">${shown.length} ${shown.length===1?'person':'people'}</span>
+    </div>
+
+    <!-- ── Main layout: sidebar + grid ── -->
+    <div class="nh-layout">
+
+      <!-- Sidebar (desktop only; hidden on mobile) -->
+      <div class="nh-sidebar">
+        <div class="card" style="margin-bottom:.9rem">
+          <h3 class="nh-side-h">${t('nhCompaniesHiring')}</h3>
+          ${companies.map(([ico,co,role])=>`
+          <div style="display:flex;align-items:center;gap:.65rem;padding:.5rem 0;border-bottom:1px solid var(--b)">
+            <span style="font-size:1.15rem">${ico}</span>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:.81rem;font-weight:700;color:var(--t)">${co}</div>
+              <div style="font-size:.7rem;color:var(--green);font-weight:600">${role}</div>
             </div>
+            <button class="btn btn-ghost btn-xs" onclick="go('recs')">${t('nhView')}</button>
           </div>`).join('')}
         </div>
+        <div class="card">
+          <h3 class="nh-side-h" style="margin-bottom:.6rem">${t('nhFilter')}</h3>
+          ${filterKeys.map(f=>`<button class="btn ${S.nhFilter===f?'btn-p':'btn-ghost'} btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem" onclick="S.nhFilter='${f}';render()">${filterLabel[f]}</button>`).join('')}
+        </div>
+      </div>
+
+      <!-- People grid -->
+      <div class="nh-grid">
+        ${shown.length===0?`<div style="grid-column:1/-1;text-align:center;padding:3rem;color:var(--t3)"><div style="font-size:2.2rem;margin-bottom:.6rem">😶</div><div style="font-weight:700;color:var(--t);margin-bottom:.4rem">No results</div><button class="btn btn-ghost btn-sm" onclick="S.nhFilter='all';render()">Clear filter</button></div>`:''}
+        ${shown.map(p=>`
+        <div class="ncard">
+          <div class="ncard-top">
+            <div class="ncard-av" style="background:${p.col}">${p.name.split(' ').map(x=>x[0]).join('')}${p.online?'<div class="online-dot"></div>':''}</div>
+            <div class="ncard-info">
+              <div class="ncard-name">${p.name}</div>
+              <div class="ncard-role">${p.role}</div>
+              <div class="ncard-college">${p.college}</div>
+            </div>
+          </div>
+          <div class="ncard-skills">${p.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
+          <div class="ncard-mutual">${p.mutual} ${t('nhMutual')}</div>
+          <div class="ncard-actions">
+            <button class="btn ${p.conn?'btn-success':'btn-p'} btn-sm ncard-btn" onclick="toggleConn(${p.id})">${p.conn?t('nhConnectedBtn'):t('nhConnect')}</button>
+            <button class="btn btn-ghost btn-sm ncard-btn" onclick="S.modal='msg_${p.id}';render()">${t('nhMessage')}</button>
+          </div>
+        </div>`).join('')}
       </div>
     </div>
+
+    <!-- ── Companies Hiring: mobile-only bottom strip ── -->
+    <div class="nh-companies-mobile">
+      <div class="nh-side-h" style="margin-bottom:.75rem">🏢 ${t('nhCompaniesHiring')}</div>
+      <div class="nh-companies-scroll">
+        ${companies.map(([ico,co,role])=>`
+        <div class="nh-co-chip" onclick="go('recs')">
+          <span style="font-size:1.3rem">${ico}</span>
+          <div style="font-size:.78rem;font-weight:700;color:var(--t)">${co}</div>
+          <div style="font-size:.67rem;color:var(--green);font-weight:600">${role}</div>
+          <span class="btn btn-ghost btn-xs" style="margin-top:.35rem">${t('nhView')}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
   </div></div>`;
 }
 
