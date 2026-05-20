@@ -92,14 +92,34 @@ self.addEventListener('notificationclick', e => {
 self.addEventListener('message', e => {
   if (e.data && e.data.type === 'ADMIN_PUSH') {
     const { title, body, icon, url, tag } = e.data;
+    const notifTag = tag || ('admin-' + Date.now());
+
+    // 1. Show system notification (visible even if app is closed)
     self.registration.showNotification(title || 'Nirmaan', {
       body: body || '',
       icon: icon || './icons/icon-192.png',
       badge: './icons/badge-72.png',
-      tag: tag || ('admin-' + Date.now()),
+      tag: notifTag,
       data: { url: url || './nirmaan.html' },
       vibrate: [120, 60, 120],
+      actions: [
+        { action: 'open', title: 'Open App' },
+        { action: 'dismiss', title: 'Dismiss' }
+      ],
       renotify: true,
+    });
+
+    // 2. Relay to ALL open clients (other tabs / windows)
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clients => {
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'ADMIN_PUSH_RECEIVED',
+          title: title || 'Nirmaan',
+          body: body || '',
+          url: url || './nirmaan.html',
+          tag: notifTag,
+        });
+      });
     });
   }
 });

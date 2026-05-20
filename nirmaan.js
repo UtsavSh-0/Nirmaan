@@ -12,6 +12,7 @@ const S={
   pushPermission: (typeof Notification!=='undefined')?Notification.permission:'default',
   pushSubscription:null,
   pushBannerDismissed: localStorage.getItem('nirmaan_push_dismissed')==='1',
+  pwaInstallDismissed: localStorage.getItem('nirmaan_install_dismissed')==='1',
   // Admin push composer
   adminPushTab:'compose',
   adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
@@ -2000,6 +2001,7 @@ function buildNav(){
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
+      ${!S.pwaInstalled&&S.pwaInstallPrompt?`<button class="btn-install" onclick="triggerInstall()" title="Install Nirmaan App">📲 ${S.lang==='hi'?'ऐप इंस्टॉल करें':'Install App'}</button>`:""}
       ${S.user?`<div style="position:relative">
         <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" id="tour-bell" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
@@ -3308,6 +3310,12 @@ function dismissInstallBanner() {
   localStorage.setItem('nirmaan_push_dismissed', '1');
   render();
 }
+function dismissInstallPrompt() {
+  S.pwaInstallDismissed = true;
+  S.pwaInstallPrompt = null;
+  localStorage.setItem('nirmaan_install_dismissed', '1');
+  render();
+}
 
 // ══════════════════════ PUSH NOTIFICATIONS ══════════════════════
 let _swReg = null; // cached SW registration
@@ -3369,6 +3377,7 @@ async function adminSendPush() {
 
   const icon = S.adminPushIcon || '🔔';
   const url  = S.adminPushUrl.trim() || './nirmaan.html';
+  const tag  = 'admin-' + Date.now();
 
   // Save to history
   const entry = { id: Date.now(), title, body, icon, url, target: S.adminPushTarget, sentAt: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) };
@@ -3376,19 +3385,35 @@ async function adminSendPush() {
   if (S.adminPushHistory.length > 50) S.adminPushHistory.pop();
   localStorage.setItem('nirmaan_push_history', JSON.stringify(S.adminPushHistory));
 
-  // Send via Service Worker message (works locally without a push server)
+  let sent = false;
   const reg = _swReg || await initSW();
+
+  // 1. Send via Service Worker → broadcasts to ALL open windows + shows system notification
   if (reg && reg.active) {
-    reg.active.postMessage({ type: 'ADMIN_PUSH', title, body, url, tag: 'admin-' + entry.id });
-    notif(`Push sent to ${S.adminPushTarget === 'all' ? 'all users' : S.adminPushTarget + ' users'} ✅`, 'ok');
-  } else {
-    // Fallback: browser Notification API directly
+    reg.active.postMessage({ type: 'ADMIN_PUSH', title, body, icon, url, tag });
+    sent = true;
+  }
+
+  // 2. Also use SW clients.matchAll to directly relay to every open window
+  //    (the SW does this too, but we do it here as well for same-tab guarantee)
+  if (reg) {
+    try {
+      const clients = await reg.active?.clients?.matchAll?.({ type: 'window', includeUncontrolled: true }) || [];
+      clients.forEach(c => c.postMessage({ type: 'ADMIN_PUSH_RECEIVED', title, body, url, tag }));
+    } catch(_) {}
+  }
+
+  // 3. Fallback: direct Notification API if SW not ready
+  if (!sent) {
     if (Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '', tag: 'admin-direct' });
+      new Notification(title, { body, tag, icon: '' });
       notif('Push sent (direct) ✅', 'ok');
     } else {
-      notif('Service worker not active. Please reload and try again.', 'in');
+      notif('Grant notification permission first (see ⚠️ above).', 'wn');
+      render(); return;
     }
+  } else {
+    notif(`📢 Push sent to ${S.adminPushTarget === 'all' ? 'everyone' : S.adminPushTarget + ' users'} ✅`, 'ok');
   }
 
   // Clear form
@@ -3415,17 +3440,22 @@ function buildPushBanner() {
 }
 
 function buildInstallBanner() {
-  if (S.pwaInstalled || !S.pwaInstallPrompt || S.pushBannerDismissed) return '';
-  return `<div id="install-banner" style="position:fixed;bottom:${window.innerWidth<=768?'72px':'1.2rem'};left:1rem;z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+  if (S.pwaInstalled || !S.pwaInstallPrompt || S.pwaInstallDismissed) return '';
+  const isMob = window.innerWidth <= 768;
+  const bottom = isMob ? 'calc(72px + env(safe-area-inset-bottom, 0px))' : '1.2rem';
+  // If push banner is also showing, offset left so they don't overlap
+  const left = '1rem';
+  return `<div id="install-banner" style="position:fixed;bottom:${bottom};left:${left};z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
     <div style="font-size:1.8rem;flex-shrink:0">📲</div>
     <div style="flex:1">
       <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
-      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">Add to home screen for instant access</div>
+      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">Add to home screen for offline access &amp; instant launch</div>
       <div style="display:flex;gap:.45rem">
-        <button onclick="triggerInstall()" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Install App</button>
-        <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
+        <button onclick="triggerInstall()" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">📲 Install App</button>
+        <button onclick="dismissInstallPrompt()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
       </div>
     </div>
+    <button onclick="dismissInstallPrompt()" style="background:rgba(255,255,255,.15);border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:1rem;padding:.1rem .3rem;line-height:1;border-radius:50%;align-self:flex-start">×</button>
   </div>`;
 }
 
@@ -3528,17 +3558,35 @@ function buildAdminPushPanel() {
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
 window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
-window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;
+window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissInstallPrompt=dismissInstallPrompt;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
 
-// Listen for SW messages (e.g. push nav redirect)
+// Listen for SW messages (push nav redirect + admin broadcast)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    if (e.data && e.data.type === 'PUSH_NAV' && e.data.url) {
+    if (!e.data) return;
+
+    // Navigation redirect from notification click
+    if (e.data.type === 'PUSH_NAV' && e.data.url) {
       const hash = e.data.url.split('#')[1];
       if (hash) go(hash);
+    }
+
+    // Admin broadcast received — inject as in-app notification toast
+    if (e.data.type === 'ADMIN_PUSH_RECEIVED') {
+      const { title, body } = e.data;
+      const newNotif = {
+        id: Date.now(),
+        icon: '📢',
+        title: title || 'Nirmaan',
+        body: body || '',
+        time: 'Just now',
+        read: false,
+      };
+      S.appNotifs.unshift(newNotif);
+      notif(`📢 ${title}: ${body}`, 'ok', 5000);
     }
   });
 }
