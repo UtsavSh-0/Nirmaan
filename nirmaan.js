@@ -12,7 +12,8 @@ const S={
   pushPermission: (typeof Notification!=='undefined')?Notification.permission:'default',
   pushSubscription:null,
   pushBannerDismissed: localStorage.getItem('nirmaan_push_dismissed')==='1',
-  pwaInstallDismissed: localStorage.getItem('nirmaan_install_dismissed')==='1',
+  installBannerDismissed: localStorage.getItem('nirmaan_install_dismissed')==='1',
+  installSelectedPlatform: null, // tracks which platform tab is open on /install page
   // Admin push composer
   adminPushTab:'compose',
   adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
@@ -1944,6 +1945,7 @@ function buildMobNav(){
       <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      ${!S.pwaInstalled ? `<button class="sb-item" onclick="closeMobMenu();${S.pwaInstallPrompt?'triggerInstall()':window._isIOS?'showIOSInstallTip()':'notif(\'Open in Chrome or Edge to install the app\',\'in\')'}"><span class="sb-ic">📲</span>Install App</button>` : `<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>`}
       <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
       <button class="sb-item" onclick="closeMobMenu();S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
       <button class="sb-item" onclick="closeMobMenu();toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
@@ -2001,7 +2003,7 @@ function buildNav(){
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
-      ${!S.pwaInstalled&&S.pwaInstallPrompt?`<button class="btn-install" onclick="triggerInstall()" title="Install Nirmaan App">📲 ${S.lang==='hi'?'ऐप इंस्टॉल करें':'Install App'}</button>`:""}
+      ${!S.pwaInstalled && S.pwaInstallPrompt ? `<button class="btn btn-p btn-sm" onclick="triggerInstall()" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : !S.pwaInstalled && !S.pwaInstallPrompt && window._isIOS ? `<button class="btn btn-ghost btn-sm" onclick="showIOSInstallTip()" title="Install on iOS">📲 Add to Home</button>` : ''}
       ${S.user?`<div style="position:relative">
         <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" id="tour-bell" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
@@ -2038,7 +2040,7 @@ function buildNav(){
 }
 
 function buildBody(){
-  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact};
+  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact,install:buildInstallPage};
   return (map[S.page]||buildHome)();
 }
 
@@ -2063,6 +2065,7 @@ function sb(role){
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      ${!S.pwaInstalled ? `<button class="sb-item" onclick="${S.pwaInstallPrompt?'triggerInstall()':window._isIOS?'showIOSInstallTip()':'notif(\'Open in Chrome/Edge to install\',\'in\')'}"><span class="sb-ic">📲</span>Install App</button>` : '<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>'}
       <button class="sb-item" onclick="toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
       <button class="sb-item" onclick="doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
     </div>
@@ -2108,6 +2111,7 @@ function buildHome(){
         <button class="btn btn-p" style="font-size:.95rem;padding:.75rem 1.85rem" onclick="go('signup')">🚀 Get Started Free</button>
         <button class="btn btn-ghost" style="font-size:.95rem;padding:.75rem 1.65rem" onclick="go('login')">→ Sign In</button>
         <button class="btn btn-ghost" style="font-size:.95rem;padding:.75rem 1.5rem" onclick="toggleVoice()">🎙️ Try Voice</button>
+        ${!S.pwaInstalled ? `<button class="btn btn-ghost" style="font-size:.95rem;padding:.75rem 1.5rem;display:inline-flex;align-items:center;gap:.4rem" onclick="${S.pwaInstallPrompt?'triggerInstall()':'go(\'install\')'}">📲 Install App</button>` : ''}
       </div>
       <div style="display:flex;gap:2.75rem;justify-content:center;margin-top:3.75rem;padding-top:2.75rem;border-top:1px solid var(--b);flex-wrap:wrap">
         ${(t('stats')||[['15k+','Internships'],['97%','AI Accuracy'],['6.2k+','Placed'],['1.1k+','Companies']]).map(([v,l])=>`<div style="text-align:center"><div style="font-family:var(--fh);font-size:1.9rem;font-weight:700;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.03em">${v}</div><div style="font-size:.79rem;color:var(--t3);margin-top:.2rem">${l}</div></div>`).join('')}
@@ -3264,6 +3268,19 @@ function tourSkip(){S.tourActive=false;render();}
 
 function buildModal(){
   if(S.modal==='cookiePolicy')return buildCookiePolicyModal();
+  if(S.modal==='iosInstall') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal" style="max-width:360px">
+    <button class="mcl" onclick="S.modal=null;render()">×</button>
+    <div class="mh" style="display:flex;align-items:center;gap:.6rem">📲 Install Nirmaan on iOS</div>
+    <p style="font-size:.83rem;color:var(--t2);margin-bottom:1.35rem;line-height:1.65">Add Nirmaan to your iPhone or iPad home screen for a full app experience — no App Store needed.</p>
+    ${[['1','Open in <strong>Safari</strong>','If you\'re in another browser, copy the URL and open it in Safari.','🧭'],['2','Tap the <strong>Share</strong> button','The box-with-arrow icon at the bottom of the screen.','⬆️'],['3','Tap <strong>"Add to Home Screen"</strong>','Scroll down in the share sheet and tap this option.','➕'],['4','Tap <strong>Add</strong>','Nirmaan will appear on your home screen like a native app!','✅']].map(([n,title,desc,ico])=>`<div style="display:flex;gap:.85rem;align-items:flex-start;margin-bottom:1rem">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;flex-shrink:0">${n}</div>
+      <div>
+        <div style="font-size:.84rem;font-weight:700;color:var(--t)">${ico} <span>${title}</span></div>
+        <div style="font-size:.76rem;color:var(--t3);margin-top:.15rem">${desc}</div>
+      </div>
+    </div>`).join('')}
+    <button onclick="S.modal=null;render()" style="width:100%;background:var(--p);color:#fff;border:none;border-radius:99px;padding:.65rem 1rem;font-size:.84rem;font-weight:700;cursor:pointer;font-family:var(--fb);margin-top:.5rem">Got it ✓</button>
+  </div></div>`;
   if(S.modal==='project') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal"><button class="mcl" onclick="S.modal=null;render()">×</button><div class="mh">Add Project</div><p style="font-size:.82rem;color:var(--t3);margin-bottom:1.35rem">Showcase your work to boost AI match score</p><div class="fg"><label class="fl">Project Name</label><input class="fi" id="mpn" placeholder="AI Chat App"/></div><div class="fg"><label class="fl">Technologies Used</label><input class="fi" id="mpt" placeholder="React, Node.js, OpenAI"/></div><div class="fg"><label class="fl">Project Link</label><input class="fi" id="mpl" placeholder="github.com/you/project"/></div><div class="fg"><label class="fl">Description</label><textarea class="fta" rows="3" placeholder="What does it do? What did you build?"></textarea></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="addProject()">Add Project ✓</button><button class="btn btn-ghost" onclick="S.modal=null;render()">Cancel</button></div></div></div>`;
   if(S.modal&&S.modal.startsWith('msg_')){
     const id=parseInt(S.modal.split('_')[1]);const p=NETWORK.find(x=>x.id===id);
@@ -3272,17 +3289,241 @@ function buildModal(){
   return '';
 }
 
+// ══════════════════════ INSTALL PAGE ══════════════════════
+function buildInstallPage() {
+  const ua        = navigator.userAgent;
+  const isIOS     = /iphone|ipad|ipod/i.test(ua) && !window.MSStream;
+  const isAndroid = /android/i.test(ua);
+  const isPC      = !isIOS && !isAndroid;
+  const isChrome  = /chrome|chromium|crios/i.test(ua) && !/edg/i.test(ua);
+  const isEdge    = /edg/i.test(ua);
+  const isSafari  = /safari/i.test(ua) && !isChrome && !isEdge;
+  const isFirefox = /firefox|fxios/i.test(ua);
+  const isSamsung = /samsungbrowser/i.test(ua);
+  const hasPWA    = !!S.pwaInstallPrompt;
+  const installed = S.pwaInstalled;
+
+  // ── Detect current platform label ──
+  let platform = 'Windows / Linux PC';
+  if (/mac/i.test(ua) && isPC)      platform = 'Mac';
+  if (isAndroid && isChrome)         platform = 'Android · Chrome';
+  if (isAndroid && isSamsung)        platform = 'Android · Samsung Browser';
+  if (isAndroid && isFirefox)        platform = 'Android · Firefox';
+  if (isIOS && isSafari)             platform = 'iPhone / iPad · Safari';
+  if (isIOS && isChrome)             platform = 'iPhone / iPad · Chrome';
+
+  // ── Per-platform install steps ──
+  function stepsFor(pid) {
+    const s = {
+      chrome_desktop: [
+        ['🌐','Open in Chrome','Make sure you\'re using Google Chrome (version 73+) on Windows, Mac, or Linux.'],
+        ['📍','Look for the install icon','In the address bar, click the <strong>⊕ Install</strong> icon (or the computer icon with a down arrow) on the right side.'],
+        ['✅','Click "Install"','A dialog will appear. Click <strong>Install</strong> — Nirmaan will open as a standalone app instantly.'],
+        ['🚀','Done!','Find Nirmaan in your Start Menu (Windows), Applications (Mac), or desktop shortcut.'],
+      ],
+      edge_desktop: [
+        ['🌐','Open in Edge','Use Microsoft Edge (version 79+) on Windows or Mac.'],
+        ['⋯','Open the menu','Click the <strong>⋯</strong> (three dots) menu in the top-right corner.'],
+        ['📲','Click "Apps"','Select <strong>Apps → Install this site as an app</strong>.'],
+        ['✅','Confirm install','Click <strong>Install</strong> in the dialog. Nirmaan appears in your taskbar and Start Menu.'],
+      ],
+      android_chrome: [
+        ['🌐','Open in Chrome','Visit Nirmaan in Google Chrome on Android.'],
+        ['⋮','Tap the menu','Tap the <strong>⋮</strong> (three-dot) menu in the top-right corner.'],
+        ['📲','Tap "Add to Home screen"','Select <strong>Add to Home screen</strong> from the menu.'],
+        ['✅','Confirm','Tap <strong>Add</strong> — Nirmaan\'s icon appears on your home screen like a native app.'],
+      ],
+      android_samsung: [
+        ['🌐','Open in Samsung Browser','Visit Nirmaan in Samsung Internet browser.'],
+        ['☰','Open the menu','Tap the <strong>☰</strong> menu at the bottom of the screen.'],
+        ['➕','Tap "Add page to"','Select <strong>Add page to → Home screen</strong>.'],
+        ['✅','Confirm','Tap <strong>Add</strong> to install Nirmaan.'],
+      ],
+      ios_safari: [
+        ['🧭','Open in Safari','This only works in Safari — if you\'re in another browser, copy the URL and open it in Safari.'],
+        ['⬆️','Tap the Share button','Tap the <strong>Share ⬆️</strong> icon at the bottom of the screen (box with arrow).'],
+        ['➕','Tap "Add to Home Screen"','Scroll through the share sheet and tap <strong>Add to Home Screen</strong>.'],
+        ['✅','Tap "Add"','Optionally rename the app, then tap <strong>Add</strong>. Done — Nirmaan is on your home screen!'],
+      ],
+      ios_chrome: [
+        ['⚠️','Chrome on iOS has a limitation','Apple restricts PWA install on iOS to Safari only.'],
+        ['🧭','Copy & open in Safari','Copy the URL from Chrome\'s address bar, then open Safari and paste it.'],
+        ['⬆️','Use Share → Add to Home Screen','Follow the Safari steps above to install.'],
+        ['✅','Nirmaan is installed','Launch it from your home screen for the full app experience.'],
+      ],
+      firefox: [
+        ['ℹ️','Firefox note','Firefox for Android and Desktop supports adding to home screen, but not full PWA install via prompt.'],
+        ['⋮','Open the menu','Tap or click the <strong>⋮</strong> menu.'],
+        ['🏠','Tap "Add to Home Screen"','Select <strong>Install</strong> or <strong>Add to Home screen</strong>.'],
+        ['✅','Done','Nirmaan will launch in a dedicated window.'],
+      ],
+    };
+    return s[pid] || s['chrome_desktop'];
+  }
+
+  // Auto-pick recommended steps
+  let stepsKey = 'chrome_desktop';
+  if (isIOS && isSafari)       stepsKey = 'ios_safari';
+  else if (isIOS)              stepsKey = 'ios_chrome';
+  else if (isAndroid && isSamsung) stepsKey = 'android_samsung';
+  else if (isAndroid)          stepsKey = 'android_chrome';
+  else if (isEdge)             stepsKey = 'edge_desktop';
+  else if (isFirefox)          stepsKey = 'firefox';
+  else if (isChrome || isPC)   stepsKey = 'chrome_desktop';
+
+  const steps = stepsFor(stepsKey);
+
+  const platforms = [
+    { id:'chrome_desktop', icon:'🖥️', label:'PC · Chrome / Chromium', badge:'Recommended' },
+    { id:'edge_desktop',   icon:'🪟', label:'PC · Microsoft Edge',   badge:'' },
+    { id:'android_chrome', icon:'🤖', label:'Android · Chrome',      badge:'Most Popular' },
+    { id:'android_samsung',icon:'📱', label:'Android · Samsung Browser', badge:'' },
+    { id:'ios_safari',     icon:'🍎', label:'iPhone / iPad · Safari', badge:'Required for iOS' },
+    { id:'ios_chrome',     icon:'🔵', label:'iPhone / iPad · Chrome', badge:'Workaround' },
+    { id:'firefox',        icon:'🦊', label:'Firefox (Any Device)',   badge:'' },
+  ];
+
+  const selPlatform = S.installSelectedPlatform || stepsKey;
+  const selSteps    = stepsFor(selPlatform);
+
+  return `<div class="page">
+  <!-- ── Hero ── -->
+  <section style="background:var(--bg2);border-bottom:1px solid var(--b);padding:3.5rem 2rem 3rem;text-align:center;position:relative;overflow:hidden">
+    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.05) 1px,transparent 1px);background-size:28px 28px;pointer-events:none"></div>
+    <div style="position:relative;z-index:1;max-width:680px;margin:0 auto">
+      <div style="width:72px;height:72px;border-radius:20px;background:var(--p);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1.25rem;box-shadow:0 8px 28px rgba(99,102,241,.28)">📲</div>
+      <h1 style="font-family:var(--fh);font-size:clamp(1.8rem,4vw,2.7rem);font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.7rem">Install Nirmaan App</h1>
+      <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:1.75rem">Add Nirmaan to your home screen or desktop for <strong>instant access</strong>, offline support, and push notifications — no App Store required.</p>
+      ${installed
+        ? `<div style="display:inline-flex;align-items:center;gap:.6rem;background:rgba(34,197,94,.1);border:1.5px solid var(--green);border-radius:99px;padding:.55rem 1.35rem;font-size:.88rem;font-weight:700;color:var(--green)">✅ Nirmaan is already installed on this device!</div>`
+        : hasPWA
+          ? `<div style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap">
+              <button onclick="triggerInstall()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.7rem 1.85rem;font-size:.95rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:inline-flex;align-items:center;gap:.5rem;box-shadow:0 4px 18px rgba(99,102,241,.3)">📲 Install Now — One Click</button>
+              <div style="display:flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--t3);font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span>Your browser supports direct install</div>
+            </div>`
+          : `<div style="display:inline-flex;align-items:center;gap:.55rem;background:var(--pl);border:1.5px solid var(--p);border-radius:12px;padding:.65rem 1.2rem;font-size:.83rem;font-weight:600;color:var(--p)">📋 Detected: <strong>${platform}</strong> — follow the steps below</div>`
+      }
+    </div>
+  </section>
+
+  <!-- ── Benefits strip ── -->
+  <section style="background:var(--bg3);border-bottom:1px solid var(--b);padding:1.4rem 2rem">
+    <div style="max-width:1000px;margin:0 auto;display:flex;gap:2rem;justify-content:center;flex-wrap:wrap">
+      ${[['⚡','Instant Launch','Opens in under 1 second'],['📴','Works Offline','Core features without internet'],['🔔','Push Alerts','Admin & match notifications'],['🖥️','No App Store','Direct install from browser'],['📱','Home Screen Icon','Looks & feels native'],['🔒','Secure','HTTPS + sandboxed']].map(([ic,t,d])=>`<div style="text-align:center;min-width:100px">
+        <div style="font-size:1.35rem">${ic}</div>
+        <div style="font-size:.8rem;font-weight:700;color:var(--t);margin:.22rem 0 .12rem">${t}</div>
+        <div style="font-size:.71rem;color:var(--t3)">${d}</div>
+      </div>`).join('')}
+    </div>
+  </section>
+
+  <!-- ── Main content ── -->
+  <section style="padding:2.75rem 1.5rem;max-width:1060px;margin:0 auto">
+    <div style="display:grid;grid-template-columns:260px 1fr;gap:1.75rem;align-items:start">
+
+      <!-- Sidebar: platform picker -->
+      <div class="card" style="padding:0;overflow:hidden;position:sticky;top:1rem">
+        <div style="padding:.85rem 1rem;border-bottom:1px solid var(--b)">
+          <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">Choose Your Device</div>
+          <div style="font-size:.73rem;color:var(--t3);margin-top:.18rem">Auto-detected: <strong>${platform}</strong></div>
+        </div>
+        ${platforms.map(p => `<button onclick="S.installSelectedPlatform='${p.id}';render()" style="width:100%;background:${selPlatform===p.id?'var(--pl)':'transparent'};border:none;border-left:3px solid ${selPlatform===p.id?'var(--p)':'transparent'};padding:.72rem 1rem;text-align:left;cursor:pointer;display:flex;align-items:center;gap:.7rem;border-bottom:1px solid var(--b);transition:all .12s">
+          <span style="font-size:1.15rem">${p.icon}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.8rem;font-weight:${selPlatform===p.id?'700':'600'};color:${selPlatform===p.id?'var(--p)':'var(--t)'};line-height:1.3">${p.label}</div>
+            ${p.badge?`<div style="font-size:.65rem;font-weight:700;color:var(--p);margin-top:.1rem">${p.badge}</div>`:''}
+          </div>
+          ${selPlatform===p.id?'<span style="color:var(--p);font-size:.8rem">›</span>':''}
+        </button>`).join('')}
+      </div>
+
+      <!-- Steps panel -->
+      <div>
+        <div class="card" style="margin-bottom:1.1rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.35rem;flex-wrap:wrap;gap:.6rem">
+            <div>
+              <h2 style="font-family:var(--fh);font-weight:700;font-size:1.05rem;color:var(--t)">${platforms.find(p=>p.id===selPlatform)?.icon||'📲'} ${platforms.find(p=>p.id===selPlatform)?.label||'Install Guide'}</h2>
+              <p style="font-size:.78rem;color:var(--t3);margin-top:.2rem">Follow these ${selSteps.length} steps</p>
+            </div>
+            ${(selPlatform==='chrome_desktop'||selPlatform==='android_chrome'||selPlatform==='edge_desktop') && hasPWA
+              ? `<button onclick="triggerInstall()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.52rem 1.25rem;font-size:.82rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:inline-flex;align-items:center;gap:.4rem">📲 Install Now</button>`
+              : ''}
+          </div>
+
+          <!-- Step cards -->
+          ${selSteps.map(([ico,title,desc],i) => `<div style="display:flex;gap:1rem;margin-bottom:${i<selSteps.length-1?'1.35rem':'0'};align-items:flex-start">
+            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:0">
+              <div style="width:40px;height:40px;border-radius:50%;background:${i===selSteps.length-1?'var(--green)':'var(--p)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;box-shadow:0 3px 10px rgba(99,102,241,.2)">${i+1}</div>
+              ${i<selSteps.length-1?`<div style="width:2px;height:28px;background:var(--b);margin-top:4px"></div>`:''}
+            </div>
+            <div style="flex:1;padding-top:.3rem">
+              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
+                <span style="font-size:1.1rem">${ico}</span>
+                <div style="font-size:.88rem;font-weight:700;color:var(--t)">${title}</div>
+              </div>
+              <div style="font-size:.8rem;color:var(--t2);line-height:1.65">${desc}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+
+        <!-- What you get after install -->
+        <div class="card" style="background:var(--pl);border:1.5px solid var(--p)">
+          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--p);margin-bottom:1rem">🎁 What you get after installing</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+            ${[['🚀','Loads 3× faster','No browser chrome overhead'],['🔔','Push notifications','Match alerts & admin messages'],['📴','Offline mode','Browse saved internships offline'],['🏠','Home screen icon','One tap to open, always'],['🖥️','Dedicated window','No tab clutter in your browser'],['🔒','Auto-updates','Always the latest version']].map(([ic,t,d])=>`<div style="display:flex;gap:.6rem;align-items:flex-start">
+              <span style="font-size:1rem;flex-shrink:0;margin-top:.05rem">${ic}</span>
+              <div><div style="font-size:.8rem;font-weight:700;color:var(--t)">${t}</div><div style="font-size:.72rem;color:var(--t2)">${d}</div></div>
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <!-- Troubleshooting -->
+        <details style="margin-top:1rem" ontoggle="">
+          <summary style="cursor:pointer;font-size:.83rem;font-weight:700;color:var(--t2);padding:.65rem .9rem;background:var(--bg3);border-radius:var(--r);border:1px solid var(--b);list-style:none;display:flex;align-items:center;gap:.5rem">
+            ❓ Troubleshooting / FAQ
+          </summary>
+          <div style="background:var(--bg2);border:1px solid var(--b);border-top:none;border-radius:0 0 var(--r) var(--r);padding:1rem 1.1rem">
+            ${[["I don't see the install button",'The install prompt only appears after visiting the page for the first time and meeting browser criteria (HTTPS, manifest, service worker). Try refreshing and using Chrome or Edge.'],["The icon doesn't appear on my home screen",'Check that you tapped "Add" in the final step. On Android, check the app drawer if it\'s not on the home screen.'],['Can I uninstall?','Yes — uninstall like any app. On Windows: Settings → Apps. On Android: long-press the icon → Uninstall. On iOS: long-press → Remove.'],['Will I lose my data?','No. Your profile and preferences are stored in the cloud (or local storage for the demo). Reinstalling won\'t delete anything.'],['Does it work on Firefox desktop?','Firefox desktop does not support the install prompt yet, but you can use "Add to Desktop" from the ☰ menu.']].map(([q,a])=>`<div style="margin-bottom:.9rem;padding-bottom:.9rem;border-bottom:1px solid var(--b)">
+              <div style="font-size:.82rem;font-weight:700;color:var(--t);margin-bottom:.28rem">Q: ${q}</div>
+              <div style="font-size:.78rem;color:var(--t2);line-height:1.6">A: ${a}</div>
+            </div>`).join('')}
+          </div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Bottom CTA ── -->
+  <section style="background:var(--g1);padding:3rem 2rem;text-align:center">
+    <h2 style="font-family:var(--fh);color:#fff;font-size:1.5rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.6rem">Ready to install?</h2>
+    <p style="color:rgba(255,255,255,.8);margin-bottom:1.5rem;font-size:.88rem">Join 15,000+ students who use Nirmaan as a native app</p>
+    <div style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap">
+      ${hasPWA && !installed ? `<button onclick="triggerInstall()" style="background:#fff;color:var(--pd);font-weight:800;font-size:.9rem;padding:.7rem 1.85rem;border:none;border-radius:99px;cursor:pointer;font-family:var(--fb)">📲 Install Nirmaan Free</button>` : ''}
+      <button onclick="go('home')" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);font-size:.9rem;padding:.7rem 1.65rem;border-radius:99px;cursor:pointer;font-family:var(--fb)">← Back to Home</button>
+    </div>
+  </section>
+  ${buildFooter()}</div>`;
+}
+
 // ══════════════════════ FOOTER ══════════════════════
 function buildFooter(){
   return `<footer class="footer"><div class="fg3"><div><div class="fbr">✦ Nirmaan</div><div style="font-size:.81rem;color:var(--t3);line-height:1.65;max-width:260px">AI-powered internship matching for every student in India.</div><div style="display:flex;gap.6rem;gap:.6rem;margin-top:.9rem">${['🐦','💼','🐙','💬'].map(ic=>`<span onclick="notif('Follow us!','in')" style="cursor:pointer;font-size:1.05rem">${ic}</span>`).join('')}</div></div><div class="fco"><h4>Platform</h4><a onclick="go('recs')">AI Matching</a><a onclick="go('skillgap')">Skill Gap</a><a onclick="go('roadmap')">Roadmap</a><a onclick="go('resume')">Resume Builder</a><a onclick="go('network')">Networking</a></div><div class="fco"><h4>Company</h4><a onclick="go('about')">About</a><a onclick="notif('Blog coming soon!','in')">Blog</a><a onclick="go('contact')">Contact</a><a onclick="notif('Careers page!','in')">Careers</a></div><div class="fco"><h4>Support</h4><a onclick="notif('Help center!','in')">Help Center</a><a onclick="notif('Privacy Policy','in')">Privacy</a><a onclick="notif('Terms of Service','in')">Terms</a><a onclick="notif('API docs!','in')">API Docs</a></div></div><div class="fbot"><div>© 2025 Nirmaan Technologies Pvt. Ltd. · Made with ❤️ in India 🇮🇳</div><div style="font-size:.73rem">v3.0 · All systems ✅</div></div></footer>`;
 }
 
 // ══════════════════════ PWA INSTALL ══════════════════════
-/* Capture the browser's install prompt so we can show it on our own button */
+/* Detect iOS (no beforeinstallprompt — must use Share → Add to Home Screen) */
+window._isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+window._isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+if (window._isInStandaloneMode) {
+  S.pwaInstalled = true;
+  localStorage.setItem('nirmaan_pwa_installed', '1');
+}
+
+/* Capture the browser's install prompt (Chrome/Edge/Android) */
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   S.pwaInstallPrompt = e;
-  render(); // show install banner / button
+  render();
 });
 
 window.addEventListener('appinstalled', () => {
@@ -3306,14 +3547,21 @@ async function triggerInstall() {
 }
 
 function dismissInstallBanner() {
+  // Only dismiss the install banner, not the push banner
+  S.installBannerDismissed = true;
+  localStorage.setItem('nirmaan_install_dismissed', '1');
+  render();
+}
+
+function dismissPushBanner() {
   S.pushBannerDismissed = true;
   localStorage.setItem('nirmaan_push_dismissed', '1');
   render();
 }
-function dismissInstallPrompt() {
-  S.pwaInstallDismissed = true;
-  S.pwaInstallPrompt = null;
-  localStorage.setItem('nirmaan_install_dismissed', '1');
+
+function showIOSInstallTip() {
+  // Show an in-app modal explaining iOS install steps
+  S.modal = 'iosInstall';
   render();
 }
 
@@ -3369,93 +3617,117 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
 }
 
-// ── Admin sends a push to all clients via the SW ─────
+// ── Admin sends a push to ALL clients/devices ────────
 async function adminSendPush() {
-  const title = S.adminPushTitle.trim() || 'Nirmaan';
-  const body  = S.adminPushBody.trim();
+  const title  = S.adminPushTitle.trim() || 'Nirmaan';
+  const body   = S.adminPushBody.trim();
   if (!body) { notif('Please enter a notification message.', 'in'); return; }
+  const icon   = S.adminPushIcon || '🔔';
+  const url    = S.adminPushUrl.trim() || './nirmaan.html';
+  const target = S.adminPushTarget || 'all';
+  const tag    = 'admin-' + Date.now();
 
-  const icon = S.adminPushIcon || '🔔';
-  const url  = S.adminPushUrl.trim() || './nirmaan.html';
-  const tag  = 'admin-' + Date.now();
-
-  // Save to history
-  const entry = { id: Date.now(), title, body, icon, url, target: S.adminPushTarget, sentAt: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) };
-  S.adminPushHistory.unshift(entry);
+  // ── 1. Save to admin push history ─────────────────
+  const histEntry = { id: Date.now(), title, body, icon, url, target, sentAt: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) };
+  S.adminPushHistory.unshift(histEntry);
   if (S.adminPushHistory.length > 50) S.adminPushHistory.pop();
   localStorage.setItem('nirmaan_push_history', JSON.stringify(S.adminPushHistory));
 
-  let sent = false;
-  const reg = _swReg || await initSW();
+  // ── 2. Store notification in shared localStorage so EVERY tab/device picks it up ──
+  //    Any tab that loads (or is already open) will call _pollAdminNotifs() and see it
+  const pending = JSON.parse(localStorage.getItem('nirmaan_pending_notifs') || '[]');
+  const notifEntry = { id: histEntry.id, title, body, icon, url, target, tag, time: 'Just now', read: false };
+  pending.unshift(notifEntry);
+  if (pending.length > 100) pending.pop();
+  localStorage.setItem('nirmaan_pending_notifs', JSON.stringify(pending));
 
-  // 1. Send via Service Worker → broadcasts to ALL open windows + shows system notification
-  if (reg && reg.active) {
-    reg.active.postMessage({ type: 'ADMIN_PUSH', title, body, icon, url, tag });
+  // ── 3. Inject into the current tab's in-app bell feed immediately ──
+  S.appNotifs.unshift({ id: histEntry.id, icon, title, body, time: 'Just now', read: false });
+  if (S.appNotifs.length > 30) S.appNotifs.pop();
+
+  // ── 4. OS notification via Service Worker (shows on ALL open tabs because
+  //       sw.js uses clients.matchAll + showNotification in response to ADMIN_PUSH)
+  const reg = _swReg || await initSW();
+  let sent = false;
+  if (reg) {
+    // Wait for SW to be active (handles first-load case)
+    const activeSW = reg.active || reg.installing || reg.waiting;
+    if (activeSW) {
+      activeSW.postMessage({ type: 'ADMIN_PUSH', title, body, url, tag });
+      sent = true;
+    }
+  }
+  // Fallback: direct Notification API for current tab
+  if (!sent && Notification.permission === 'granted') {
+    new Notification(title, { body, tag });
     sent = true;
   }
-
-  // 2. Also use SW clients.matchAll to directly relay to every open window
-  //    (the SW does this too, but we do it here as well for same-tab guarantee)
-  if (reg) {
-    try {
-      const clients = await reg.active?.clients?.matchAll?.({ type: 'window', includeUncontrolled: true }) || [];
-      clients.forEach(c => c.postMessage({ type: 'ADMIN_PUSH_RECEIVED', title, body, url, tag }));
-    } catch(_) {}
+  if (!sent && Notification.permission !== 'granted') {
+    notif('⚠️ Notifications not enabled — users must allow notifications to receive pushes.', 'in');
   }
 
-  // 3. Fallback: direct Notification API if SW not ready
-  if (!sent) {
-    if (Notification.permission === 'granted') {
-      new Notification(title, { body, tag, icon: '' });
-      notif('Push sent (direct) ✅', 'ok');
-    } else {
-      notif('Grant notification permission first (see ⚠️ above).', 'wn');
-      render(); return;
-    }
-  } else {
-    notif(`📢 Push sent to ${S.adminPushTarget === 'all' ? 'everyone' : S.adminPushTarget + ' users'} ✅`, 'ok');
-  }
+  notif(`📢 Push broadcast to ${target === 'all' ? 'all users' : target + ' users'} ✅`, 'ok');
 
-  // Clear form
+  // ── 5. Clear form ──────────────────────────────────
   S.adminPushTitle = ''; S.adminPushBody = ''; S.adminPushUrl = '';
   render();
+}
+
+// ── Poll localStorage for admin-sent notifications ───
+// Called on init and via storage event — ensures every open tab/device
+// picks up notifications sent by admin from any other tab
+function _pollAdminNotifs() {
+  try {
+    const pending = JSON.parse(localStorage.getItem('nirmaan_pending_notifs') || '[]');
+    if (!pending.length) return;
+    const seen = new Set(S.appNotifs.map(n => n.id));
+    let added = false;
+    pending.forEach(n => {
+      if (!seen.has(n.id)) {
+        S.appNotifs.unshift({ id: n.id, icon: n.icon || '🔔', title: n.title, body: n.body, time: n.time || 'Just now', read: false });
+        added = true;
+      }
+    });
+    if (added) { if (S.appNotifs.length > 30) S.appNotifs.length = 30; render(); }
+  } catch (_) {}
 }
 
 function buildPushBanner() {
   if (S.pushBannerDismissed) return '';
   if (S.pushPermission === 'granted') return '';
   if (!S.user) return '';
-  return `<div id="push-banner" style="position:fixed;bottom:${window.innerWidth<=768?'72px':'1.2rem'};right:1rem;z-index:900;max-width:320px;background:var(--bg2);border:1.5px solid var(--p);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.18);display:flex;gap:.8rem;align-items:flex-start;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+  const mob = window.innerWidth <= 768;
+  return `<div id="push-banner" style="position:fixed;bottom:${mob?'72px':'1.2rem'};right:1rem;z-index:900;max-width:320px;background:var(--bg2);border:1.5px solid var(--p);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.18);display:flex;gap:.8rem;align-items:flex-start;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
     <div style="font-size:1.5rem;flex-shrink:0">🔔</div>
     <div style="flex:1">
       <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">Enable Job Alerts</div>
       <div style="font-size:.76rem;color:var(--t3);margin:.22rem 0 .65rem">Get instant alerts for new matches, application updates & company views.</div>
       <div style="display:flex;gap:.5rem">
         <button onclick="requestPushPermission()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.38rem .9rem;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Allow Notifications</button>
-        <button onclick="dismissInstallBanner()" style="background:var(--bg3);color:var(--t2);border:1px solid var(--b);border-radius:99px;padding:.38rem .7rem;font-size:.76rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Not now</button>
+        <button onclick="dismissPushBanner()" style="background:var(--bg3);color:var(--t2);border:1px solid var(--b);border-radius:99px;padding:.38rem .7rem;font-size:.76rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Not now</button>
       </div>
     </div>
-    <button onclick="dismissInstallBanner()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:0;line-height:1;align-self:flex-start">×</button>
+    <button onclick="dismissPushBanner()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:0;line-height:1;align-self:flex-start">×</button>
   </div>`;
 }
 
 function buildInstallBanner() {
-  if (S.pwaInstalled || !S.pwaInstallPrompt || S.pwaInstallDismissed) return '';
-  const isMob = window.innerWidth <= 768;
-  const bottom = isMob ? 'calc(72px + env(safe-area-inset-bottom, 0px))' : '1.2rem';
-  // If push banner is also showing, offset left so they don't overlap
-  const left = '1rem';
-  return `<div id="install-banner" style="position:fixed;bottom:${bottom};left:${left};z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+  if (S.pwaInstalled || S.installBannerDismissed) return '';
+  // Show on: (a) Chrome/Edge with prompt, (b) iOS Safari without prompt
+  const hasPrompt = !!S.pwaInstallPrompt;
+  const isIOS = window._isIOS;
+  if (!hasPrompt && !isIOS) return ''; // Firefox/desktop-only browsers — skip
+  const mob = window.innerWidth <= 768;
+  return `<div id="install-banner" style="position:fixed;bottom:${mob?'72px':'1.2rem'};left:1rem;z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
     <div style="font-size:1.8rem;flex-shrink:0">📲</div>
     <div style="flex:1">
       <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
-      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">Add to home screen for offline access &amp; instant launch</div>
+      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">${isIOS ? 'Tap Share then "Add to Home Screen"' : 'Add to home screen for instant access'}</div>
       <div style="display:flex;gap:.45rem">
-        <button onclick="triggerInstall()" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">📲 Install App</button>
-        <button onclick="dismissInstallPrompt()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
+        <button onclick="${hasPrompt ? 'triggerInstall()' : 'showIOSInstallTip()'}" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${isIOS ? 'How to Install' : 'Install App'}</button>
+        <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
       </div>
     </div>
-    <button onclick="dismissInstallPrompt()" style="background:rgba(255,255,255,.15);border:none;color:rgba(255,255,255,.8);cursor:pointer;font-size:1rem;padding:.1rem .3rem;line-height:1;border-radius:50%;align-self:flex-start">×</button>
   </div>`;
 }
 
@@ -3558,39 +3830,36 @@ function buildAdminPushPanel() {
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
 window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
-window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissInstallPrompt=dismissInstallPrompt;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;
+window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissPushBanner=dismissPushBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;window.showIOSInstallTip=showIOSInstallTip;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
 
-// Listen for SW messages (push nav redirect + admin broadcast)
+// Listen for SW messages (push nav redirect + new notif broadcast)
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('message', e => {
-    if (!e.data) return;
-
-    // Navigation redirect from notification click
-    if (e.data.type === 'PUSH_NAV' && e.data.url) {
+    if (e.data && e.data.type === 'PUSH_NAV' && e.data.url) {
       const hash = e.data.url.split('#')[1];
       if (hash) go(hash);
     }
-
-    // Admin broadcast received — inject as in-app notification toast
-    if (e.data.type === 'ADMIN_PUSH_RECEIVED') {
-      const { title, body } = e.data;
-      const newNotif = {
-        id: Date.now(),
-        icon: '📢',
-        title: title || 'Nirmaan',
-        body: body || '',
-        time: 'Just now',
-        read: false,
-      };
-      S.appNotifs.unshift(newNotif);
-      notif(`📢 ${title}: ${body}`, 'ok', 5000);
+    if (e.data && e.data.type === 'NEW_NOTIF' && e.data.payload) {
+      const n = e.data.payload;
+      const seen = new Set(S.appNotifs.map(x => x.id));
+      if (!seen.has(n.id)) {
+        S.appNotifs.unshift({ id: n.id, icon: n.icon || '🔔', title: n.title, body: n.body, time: 'Just now', read: false });
+        if (S.appNotifs.length > 30) S.appNotifs.length = 30;
+        render();
+      }
     }
   });
 }
 
+// Poll localStorage for admin notifications sent from other tabs/devices
+window.addEventListener('storage', e => {
+  if (e.key === 'nirmaan_pending_notifs') _pollAdminNotifs();
+});
+
 synth&&synth.getVoices();
 initSW(); // register service worker on boot
+_pollAdminNotifs(); // pick up any notifs sent while this tab was closed
 render();
