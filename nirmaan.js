@@ -14,7 +14,8 @@ const S={
   projects:[{n:'AI Chat App',t:'React, Node.js, OpenAI',l:'github.com/demo'},{n:'E-Commerce',t:'Next.js, MongoDB, Stripe',l:'portfolio.demo'}],
   certs:[{n:'AWS Cloud Practitioner',i:'Amazon',y:'2024'},{n:'React Developer',i:'Meta',y:'2024'}],
   step:1,totalSteps:7,signupRole:'student',
-  firstName:'',lastName:'',email:'',phone:'',
+  coName:'',coSize:'',coIndustry:'',coWebsite:'',coDesc:'',coHireRoles:[],coHireMode:'',coStipendMin:'',coBenefits:[],
+  firstName:'',lastName:'',email:'',phone:'',pw:'',pwConfirm:'',
   otpSent:false,otpCode:'',otpInput:'',otpVerified:false,
   modal:null,
   rmFilter:'all',
@@ -381,7 +382,7 @@ function notif(msg,type='ok',dur=3400){
   setTimeout(()=>{S.notifs=S.notifs.filter(n=>n.id!==id);render();},dur);
 }
 function closeN(id){S.notifs=S.notifs.filter(n=>n.id!==id);render();}
-function go(page){if(page==='signup'){S.step=1;S.otpSent=false;S.otpVerified=false;S.otpCode='';S.otpInput='';S.firstName='';S.lastName='';S.email='';S.phone='';S.signupRole='student';}S.page=page;window.scrollTo(0,0);render();}
+function go(page){if(page==='signup'){S.step=1;S.otpSent=false;S.otpVerified=false;S.otpCode='';S.otpInput='';S.firstName='';S.lastName='';S.email='';S.phone='';S.pw='';S.pwConfirm='';S.signupRole='student';S.totalSteps=7;S.coName='';S.coSize='';S.coIndustry='';S.coWebsite='';S.coDesc='';S.coHireRoles=[];S.coHireMode='';S.coStipendMin='';S.coBenefits=[];}S.page=page;window.scrollTo(0,0);render();}
 function toggleDark(){S.dark=!S.dark;document.documentElement.setAttribute('data-theme',S.dark?'dark':'');render();}
 
 // ══════════════════════ VOICE ══════════════════════
@@ -1605,21 +1606,49 @@ function nextStep(){
     const ln=(document.getElementById('sln')||{}).value||'';
     const em=(document.getElementById('sem')||{}).value||S.email||'';
     const ph=(document.getElementById('sph')||{}).value||'';
+    const pw=(document.getElementById('spw')||{}).value||S.pw||'';
+    const pwc=(document.getElementById('spwc')||{}).value||S.pwConfirm||'';
     if(!fn||!em){notif('Please fill in your name and email','wn');return;}
     if(!S.otpVerified){notif('Please verify your email with OTP first 📧','wn');return;}
-    S.firstName=fn;S.lastName=ln;S.email=em;S.phone=ph;
+    if(!pw||pw.length<8){notif('Password must be at least 8 characters 🔒','wn');const el=document.getElementById('spw');if(el){el.focus();el.style.borderColor='var(--red)';}return;}
+    if(pw!==pwc){notif('Passwords do not match — please re-enter ❌','wn');const el=document.getElementById('spwc');if(el){el.focus();el.style.borderColor='var(--red)';}return;}
+    S.firstName=fn;S.lastName=ln;S.email=em;S.phone=ph;S.pw=pw;S.pwConfirm=pwc;
   }
-  if(S.step===2){S.loc=(document.getElementById('sloc')||{}).value||S.loc;}
-  if(S.step===3){
+  // Step 2: role selection — set totalSteps based on chosen role
+  if(S.step===2){
+    S.totalSteps=S.signupRole==='company'?5:7;
+    if(S.signupRole==='company'){
+      S.loc=(document.getElementById('co-city')||{}).value||S.loc;
+    } else {
+      S.loc=(document.getElementById('sloc')||{}).value||S.loc;
+    }
+  }
+  // Student step 3: academic
+  if(S.step===3&&S.signupRole==='student'){
     S.edu=(document.getElementById('smaj')||{}).value||S.edu;
     S.college=(document.getElementById('scol')||{}).value||S.college;
+  }
+  // Company step 3: company info
+  if(S.step===3&&S.signupRole==='company'){
+    const cn=(document.getElementById('co-name')||{}).value||'';
+    if(!cn){notif('Please enter your company name','wn');return;}
+    S.coName=cn;
+    S.coIndustry=(document.getElementById('co-industry')||{}).value||S.coIndustry;
+    S.coSize=(document.getElementById('co-size')||{}).value||S.coSize;
+    S.coWebsite=(document.getElementById('co-website')||{}).value||S.coWebsite;
+    S.coDesc=(document.getElementById('co-desc')||{}).value||S.coDesc;
+  }
+  // Company step 4: hiring needs
+  if(S.step===4&&S.signupRole==='company'){
+    S.coHireMode=(document.getElementById('co-mode')||{}).value||S.coHireMode;
+    S.coStipendMin=(document.getElementById('co-stipend')||{}).value||S.coStipendMin;
   }
   if(S.step<S.totalSteps){S.step++;render();}
 }
 function completeSignup(){
-  const name=`${S.firstName||'Student'} ${S.lastName||''}`.trim();
-  S.user={name:name||'New Student',email:S.email||'student@test.com',role:S.signupRole};
-  notif(`Welcome to Nirmaan, ${S.firstName||'friend'}! 🎉`);
+  const name=S.signupRole==='company'?(S.coName||`${S.firstName} ${S.lastName}`.trim()):`${S.firstName||'Student'} ${S.lastName||''}`.trim();
+  S.user={name:name||'New User',email:S.email||'user@test.com',role:S.signupRole,coName:S.coName};
+  notif(S.signupRole==='company'?`Welcome aboard, ${S.coName||S.firstName}! Let's find great talent 🚀`:`Welcome to Nirmaan, ${S.firstName||'friend'}! 🎉`);
   speak(`Welcome ${S.firstName||''}`);
   go(S.signupRole==='company'?'codash':'dash');
 }
@@ -1628,10 +1657,14 @@ function sendOtp(){
   const fnEl=document.getElementById('sfn');
   const lnEl=document.getElementById('sln');
   const phEl=document.getElementById('sph');
-  // Save all step-1 field values before re-render wipes them
+  const pwEl2=document.getElementById('spw');
+  const pwcEl2=document.getElementById('spwc');
+  // Save ALL step-1 field values before re-render wipes them
   if(fnEl)S.firstName=fnEl.value;
   if(lnEl)S.lastName=lnEl.value;
   if(phEl)S.phone=phEl.value;
+  if(pwEl2)S.pw=pwEl2.value;
+  if(pwcEl2)S.pwConfirm=pwcEl2.value;
   const em=(semEl?semEl.value.trim():'')||S.email;
   if(!em||!em.includes('@')){notif('Enter a valid email first','wn');return;}
   S.email=em;
@@ -1643,6 +1676,11 @@ function sendOtp(){
   notif('OTP sent to '+em+'! Demo code: '+S.otpCode+' 📧','ok',8000);
 }
 function verifyOtp(){
+  // Save all step-1 fields before re-render
+  const fnEl2=document.getElementById('sfn');const lnEl2=document.getElementById('sln');
+  const phEl2=document.getElementById('sph');const pwEl3=document.getElementById('spw');const pwcEl3=document.getElementById('spwc');
+  if(fnEl2)S.firstName=fnEl2.value;if(lnEl2)S.lastName=lnEl2.value;
+  if(phEl2)S.phone=phEl2.value;if(pwEl3)S.pw=pwEl3.value;if(pwcEl3)S.pwConfirm=pwcEl3.value;
   const otpEl=document.getElementById('otp-input');
   const inp=otpEl?otpEl.value.trim():'';
   if(!inp){notif('Enter the 6-digit OTP code','wn');return;}
@@ -1656,6 +1694,22 @@ function verifyOtp(){
     if(otpEl)otpEl.style.borderColor='var(--red)';
     if(otpEl)otpEl.focus();
   }
+}
+function updatePwStrength(pw){
+  if(!pw)pw='';
+  const bar=document.getElementById('pw-strength-bar');
+  const label=document.getElementById('pw-strength-label');
+  const criteria={len:pw.length>=8,upper:/[A-Z]/.test(pw),lower:/[a-z]/.test(pw),num:/[0-9]/.test(pw),sym:/[^A-Za-z0-9]/.test(pw)};
+  const score=Object.values(criteria).filter(Boolean).length;
+  const colors=['#ef4444','#f97316','#eab308','#22c55e','#16a34a'];
+  const labels=['Too short','Weak','Fair','Good','Strong'];
+  if(bar){bar.style.width=(pw.length?Math.max(score/5*100,8):0)+'%';bar.style.background=colors[score-1]||'#e5e7eb';}
+  if(label){label.textContent=pw.length?(labels[score-1]||''):'';label.style.color=colors[score-1]||'';}
+  const lblMap={len:'8+ characters',upper:'Uppercase',lower:'Lowercase',num:'Number',sym:'Symbol'};
+  Object.keys(criteria).forEach(k=>{
+    const el=document.getElementById('pwc-'+k);
+    if(el){el.textContent=(criteria[k]?'✓ ':'○ ')+lblMap[k];el.style.color=criteria[k]?'var(--green)':'var(--t3)';}
+  });
 }
 function toggleBell(){S.bellOpen=!S.bellOpen;render();}
 function markAllRead(){S.appNotifs.forEach(n=>n.read=true);notif('All notifications marked read','in');render();}
@@ -1712,6 +1766,21 @@ function render(){
   const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
   attachEv();
 
+  // Restore password field values via JS (browsers block value attr on type=password after DOM rebuild)
+  if(S.page==='signup'&&S.step===1){
+    const pwEl=document.getElementById('spw');
+    const pwcEl=document.getElementById('spwc');
+    if(pwEl&&S.pw)pwEl.value=S.pw;
+    if(pwcEl&&S.pwConfirm)pwcEl.value=S.pwConfirm;
+    if(pwEl){pwEl.addEventListener('input',function(){S.pw=this.value;updatePwStrength(this.value);});}
+    if(pwcEl){pwcEl.addEventListener('input',function(){
+      S.pwConfirm=this.value;
+      const m=document.getElementById('pw-match-msg');
+      if(m){m.textContent=(this.value&&this.value!==S.pw)?'Passwords do not match':'';m.style.color='var(--red)';}
+    });}
+    updatePwStrength(S.pw);
+  }
+
   if(savedId){
     const el=document.getElementById(savedId);
     if(el&&(el.tagName==='INPUT'||el.tagName==='TEXTAREA')){
@@ -1720,8 +1789,47 @@ function render(){
     }
   }
 }
+function openMobMenu(){
+  const d=document.getElementById('mob-drawer');
+  if(d){d.style.display='flex';requestAnimationFrame(()=>{d.classList.add('open');});}
+}
+function closeMobMenu(){
+  const d=document.getElementById('mob-drawer');
+  if(!d)return;
+  d.classList.remove('open');
+  setTimeout(()=>{if(!d.classList.contains('open'))d.style.display='none';},260);
+}
 function attachEv(){
   const cm=document.getElementById('chatmsgs');if(cm)cm.scrollTop=cm.scrollHeight;
+  // Wire More button — no render() call so global click handler can't fight it
+  const moreBtn=document.getElementById('mob-more-btn');
+  const drawer=document.getElementById('mob-drawer');
+  const panel=document.getElementById('mob-panel');
+  const closeBtn=document.getElementById('mob-drawer-close');
+  if(drawer){drawer.style.display='none';} // hide by default after every render
+  if(moreBtn){moreBtn.onclick=function(e){e.stopPropagation();openMobMenu();};}
+  if(closeBtn){closeBtn.onclick=function(e){e.stopPropagation();closeMobMenu();};}
+  if(drawer){drawer.onclick=function(){closeMobMenu();};}
+  if(panel){panel.onclick=function(e){e.stopPropagation();};}
+  // Bell panel: wire mobile bottom-sheet bell if present
+  const mobBellBtn=document.getElementById('mob-bell-btn');
+  if(mobBellBtn){mobBellBtn.onclick=function(e){e.stopPropagation();openMobBell();};}
+  const mobBellClose=document.getElementById('mob-bell-close');
+  if(mobBellClose){mobBellClose.onclick=function(e){e.stopPropagation();closeMobBell();};}
+  const mobBellDrawer=document.getElementById('mob-bell-drawer');
+  if(mobBellDrawer){mobBellDrawer.style.display='none';mobBellDrawer.onclick=function(){closeMobBell();};}
+  const mobBellPanel=document.getElementById('mob-bell-panel');
+  if(mobBellPanel){mobBellPanel.onclick=function(e){e.stopPropagation();};}
+}
+function openMobBell(){
+  const d=document.getElementById('mob-bell-drawer');
+  if(d){d.style.display='flex';requestAnimationFrame(()=>d.classList.add('open'));}
+}
+function closeMobBell(){
+  const d=document.getElementById('mob-bell-drawer');
+  if(!d)return;
+  d.classList.remove('open');
+  setTimeout(()=>{if(!d.classList.contains('open'))d.style.display='none';},260);
 }
 function buildMobNav(){
   const isDash=['dash','recs','skillgap','saved','profile','roadmap','resume','network','codash','admin'].includes(S.page)&&S.user;
@@ -1732,23 +1840,67 @@ function buildMobNav(){
     ${S.user?`<button class="mob-nav-btn" onclick="go('dash')"><span>⚡</span><span>${t('sbDash')}</span></button>`:`<button class="mob-nav-btn ${S.page==='login'?'on':''}" onclick="go('login')"><span>🔑</span><span>${t('login')}</span></button>`}
     <button class="mob-nav-btn" onclick="S.langChosen=false;render()"><span>🌐</span><span>${S.lang==='hi'?'हि':'EN'}</span></button>
   </nav>`;
+  // Always render drawer; toggle visibility via openMobMenu() — no render() call on toggle avoids race with global click handler
   return`<nav class="mob-nav">
     <button class="mob-nav-btn ${S.page==='dash'?'on':''}" onclick="go('dash')"><span>⚡</span><span>${t('mobHome')}</span></button>
     <button class="mob-nav-btn ${S.page==='recs'?'on':''}" onclick="go('recs')"><span>✨</span><span>${t('mobMatches')}</span></button>
     <button class="mob-nav-btn ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span>📊</span><span>${t('mobSkills')}</span></button>
     <button class="mob-nav-btn ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span>🗺️</span><span>${t('mobRoadmap')}</span></button>
-    <button class="mob-nav-btn" onclick="S.mobMenu=!S.mobMenu;render()"><span>☰</span><span>${t('mobMore')}</span></button>
+    <button class="mob-nav-btn" id="mob-more-btn" style="position:relative"><span>☰</span><span>${t('mobMore')}</span>
+      ${S.user&&S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+    </button>
+    ${S.user?`<button class="mob-nav-btn" id="mob-bell-btn" style="position:relative"><span>🔔</span><span>Alerts</span>
+      ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+    </button>`:''}
   </nav>
-  ${S.mobMenu?`<div class="mob-menu-drawer" onclick="S.mobMenu=false;render()"><div class="mob-menu-panel" onclick="event.stopPropagation()">
-    <div class="mob-pill"></div>
-    <button class="sb-item ${S.page==='resume'?'on':''}" onclick="S.mobMenu=false;go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
-    <button class="sb-item ${S.page==='network'?'on':''}" onclick="S.mobMenu=false;go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
-    <button class="sb-item ${S.page==='saved'?'on':''}" onclick="S.mobMenu=false;go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
-    <button class="sb-item ${S.page==='profile'?'on':''}" onclick="S.mobMenu=false;go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;toggleDark();"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
-    <button class="sb-item" onclick="S.mobMenu=false;doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
-  </div></div>`:''}`;
+  <div class="mob-menu-drawer" id="mob-drawer">
+    <div class="mob-menu-panel" id="mob-panel">
+      <div class="mob-pill"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;padding:0 .25rem">
+        <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">Menu</span>
+        <button id="mob-drawer-close" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center">×</button>
+      </div>
+      <button class="sb-item ${S.page==='resume'?'on':''}" onclick="closeMobMenu();go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
+      <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
+      <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
+      <button class="sb-item" onclick="closeMobMenu();S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
+      <button class="sb-item" onclick="closeMobMenu();toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
+      <button class="sb-item" style="color:var(--red)" onclick="closeMobMenu();doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
+    </div>
+  </div>
+  ${S.user?`
+  <div class="mob-menu-drawer" id="mob-bell-drawer">
+    <div class="mob-menu-panel" id="mob-bell-panel" style="max-height:80vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,1.5rem)">
+      <div class="mob-pill"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;padding:0 .25rem;flex-shrink:0">
+        <div>
+          <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">${t('notifications')}</span>
+          ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="background:var(--red);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .38rem;margin-left:.4rem">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          ${S.appNotifs.length>0?`<button onclick="markAllRead()" style="font-size:.73rem;color:var(--p);font-weight:700;background:none;border:none;cursor:pointer;font-family:var(--fb)">${t('markAllRead')}</button>`:''}
+          <button id="mob-bell-close" style="width:30px;height:30px;border-radius:50%;border:1px solid var(--b);background:var(--bg3);cursor:pointer;font-size:.9rem;color:var(--t2);display:flex;align-items:center;justify-content:center">×</button>
+        </div>
+      </div>
+      <div style="overflow-y:auto;flex:1;-webkit-overflow-scrolling:touch">
+        ${S.appNotifs.length===0?`<div style="padding:2.5rem;text-align:center;color:var(--t3)"><div style="font-size:2.2rem;margin-bottom:.6rem">🎉</div><div style="font-size:.85rem;font-weight:600">All caught up!</div></div>`:
+        S.appNotifs.map(n=>`<div style="display:flex;align-items:start;gap:.75rem;padding:.85rem .25rem;border-bottom:1px solid var(--b);background:${n.read?'transparent':'var(--pl)'}">
+          <div style="width:40px;height:40px;border-radius:10px;background:var(--bg3);border:1px solid var(--b);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0">${n.icon}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.82rem;font-weight:${n.read?'600':'800'};color:var(--t);margin-bottom:.15rem">${n.title}</div>
+            <div style="font-size:.76rem;color:var(--t2);line-height:1.5;margin-bottom:.22rem">${n.body}</div>
+            <div style="font-size:.68rem;color:var(--t3)">${n.time}</div>
+          </div>
+          <button onclick="dismissAppNotif(${n.id})" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:.15rem;flex-shrink:0;line-height:1">×</button>
+        </div>`).join('')}
+      </div>
+      <div style="padding:.75rem .25rem 0;border-top:1px solid var(--b);text-align:center;flex-shrink:0">
+        <span style="font-size:.76rem;color:var(--p);font-weight:700;cursor:pointer" onclick="notif('Notification settings coming soon!','in')">⚙️ Notification Settings</span>
+      </div>
+    </div>
+  </div>`:''}`;
 }
 function buildApp(){
   if(!('mobMenu' in S))S.mobMenu=false;
@@ -1768,13 +1920,13 @@ function buildNav(){
     <div class="nav-acts">
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
-      <button class="btn-ic" onclick="toggleVoice()" title="${S.lang==='hi'?'वॉइस':'Voice'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
+      <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
       ${S.user?`<div style="position:relative">
         <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
           ${S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:-4px;right:-4px;width:17px;height:17px;border-radius:50%;background:var(--red);color:#fff;font-size:.6rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
         </button>
-        ${S.bellOpen?`<div style="position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);box-shadow:var(--shl);z-index:9999;overflow:hidden" onclick="event.stopPropagation()">
+        ${S.bellOpen?`<div class="bell-desktop-panel" style="position:absolute;top:calc(100% + 10px);right:0;width:340px;background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);box-shadow:var(--shl);z-index:9999;overflow:hidden" onclick="event.stopPropagation()">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:.85rem 1rem;border-bottom:1px solid var(--b)">
             <div style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t)">${t('notifications')} <span style="background:var(--red);color:#fff;border-radius:99px;font-size:.62rem;padding:.1rem .38rem;margin-left:.3rem">${S.appNotifs.filter(n=>!n.read).length}</span></div>
             <button onclick="markAllRead()" style="font-size:.73rem;color:var(--p);font-weight:700;background:none;border:none;cursor:pointer">${t('markAllRead')}</button>
@@ -1960,8 +2112,15 @@ function buildLogin(){
 
 // ══════════════════════ SIGNUP ══════════════════════
 function buildSignup(){
-  const steps=['Account','Verify','Role','Education','Skills','Portfolio','Review'];
+  const isComp=S.signupRole==='company';
+  const studentSteps=['Account','Role','Academic','Skills','Portfolio','Interests','Review'];
+  const companySteps=['Account','Role','Company Info','Hiring Needs','Review'];
+  const steps=isComp&&S.step>2?companySteps:studentSteps;
+  const totalForSidebar=isComp&&S.step>2?5:7;
   const cur=S.step;
+  const sideQuote=isComp
+    ?{q:'"Nirmaan helped us hire our best intern in 48 hours."',a:'— Arjun Mehta, CTO @ FinTechX'}
+    :{q:'"Nirmaan matched me with Google in under 5 mins."',a:'— Priya Sharma, IIT Delhi → Google Intern'};
   return `<div class="page"><div class="ob" style="padding-top:0">
     <div class="obl">
       <div style="font-family:var(--fh);font-size:1.3rem;font-weight:700;color:#fff;margin-bottom:2.5rem;z-index:1;position:relative">✦ Nirmaan</div>
@@ -1972,8 +2131,8 @@ function buildSignup(){
         </div>`).join('')}
       </div>
       <div style="margin-top:auto;padding-top:2rem;z-index:1;position:relative;border-top:1px solid rgba(255,255,255,.15)">
-        <div style="font-size:.8rem;color:rgba(255,255,255,.75);line-height:1.65;font-style:italic;margin-bottom:.65rem">"Nirmaan matched me with Google in under 5 mins."</div>
-        <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.85)">— Priya Sharma, IIT Delhi → Google Intern</div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.75);line-height:1.65;font-style:italic;margin-bottom:.65rem">${sideQuote.q}</div>
+        <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.85)">${sideQuote.a}</div>
       </div>
     </div>
     <div class="obr">
@@ -1982,25 +2141,46 @@ function buildSignup(){
         ${buildStepContent(cur)}
         <div style="display:flex;justify-content:space-between;align-items:center;margin-top:1.65rem">
           ${cur>1?`<button class="btn btn-ghost" onclick="S.step--;render()">← Back</button>`:`<button class="btn btn-ghost" onclick="go('login')">← Login</button>`}
-          <span style="font-size:.76rem;color:var(--t3)">Step ${cur} of ${S.totalSteps}</span>
-          ${cur<S.totalSteps?`<button class="btn btn-p" onclick="nextStep()">Continue →</button>`:`<button class="btn btn-p" onclick="completeSignup()">🚀 Launch Dashboard</button>`}
+          <span style="font-size:.76rem;color:var(--t3)">Step ${cur} of ${isComp&&cur>2?5:7}</span>
+          ${cur<(isComp&&cur>=2?5:7)?`<button class="btn btn-p" onclick="nextStep()">Continue →</button>`:`<button class="btn btn-p" onclick="completeSignup()">🚀 ${isComp?'Launch Employer Dashboard':'Launch Dashboard'}</button>`}
         </div>
       </div>
     </div>
   </div></div>`;
 }
 function buildStepContent(n){
-  const s={
-1:`<h2 class="stit">Create your account</h2><p class="ssub">Start your AI internship journey</p>
+  const isComp=S.signupRole==='company';
+
+  // ── STEP 1: Account (same for both) ──────────────────────────────
+  if(n===1) return `<h2 class="stit">Create your account</h2><p class="ssub">Start your journey on Nirmaan</p>
 <div class="fr2">
   <div class="fg"><label class="fl">First Name</label><input class="fi" id="sfn" placeholder="Priya" value="${S.firstName}"/></div>
   <div class="fg"><label class="fl">Last Name</label><input class="fi" id="sln" placeholder="Sharma" value="${S.lastName}"/></div>
 </div>
-<div class="fg"><label class="fl">Email</label><input class="fi" id="sem" type="email" placeholder="priya@example.com" value="${S.email}" onblur="if(this.value!==S.email){S.email=this.value;S.otpSent=false;S.otpVerified=false;render();}"/></div>
+<div class="fg"><label class="fl">Email</label><input class="fi" id="sem" type="email" placeholder="you@example.com" value="${S.email}" onblur="if(this.value!==S.email){S.email=this.value;S.otpSent=false;S.otpVerified=false;render();}"/></div>
 <div class="fg"><label class="fl">Phone</label><input class="fi" id="sph" type="tel" placeholder="+91 98765 43210" value="${S.phone}"/></div>
-<div class="fr2">
-  <div class="fg"><label class="fl">${t('passwordLabel')}</label><input class="fi" type="password" placeholder="Min 8 characters"/></div>
-  <div class="fg"><label class="fl">Confirm</label><input class="fi" type="password" placeholder="Repeat password"/></div>
+<div class="fg"><label class="fl">${t('passwordLabel')}</label>
+  <input class="fi" id="spw" type="password" placeholder="Min 8 characters" autocomplete="new-password"/>
+  <div style="margin-top:.45rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.3rem">
+      <span style="font-size:.72rem;color:var(--t3)">Strength</span>
+      <span id="pw-strength-label" style="font-size:.72rem;font-weight:700;color:var(--t2)"></span>
+    </div>
+    <div style="height:5px;background:var(--b);border-radius:99px;overflow:hidden">
+      <div id="pw-strength-bar" style="height:100%;width:0%;border-radius:99px;transition:width .3s,background .3s"></div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:.3rem .75rem;margin-top:.5rem">
+      <span id="pwc-len" data-label="8+ characters" style="font-size:.71rem;color:var(--t3)">○ 8+ characters</span>
+      <span id="pwc-upper" data-label="Uppercase" style="font-size:.71rem;color:var(--t3)">○ Uppercase</span>
+      <span id="pwc-lower" data-label="Lowercase" style="font-size:.71rem;color:var(--t3)">○ Lowercase</span>
+      <span id="pwc-num" data-label="Number" style="font-size:.71rem;color:var(--t3)">○ Number</span>
+      <span id="pwc-sym" data-label="Symbol" style="font-size:.71rem;color:var(--t3)">○ Symbol</span>
+    </div>
+  </div>
+</div>
+<div class="fg"><label class="fl">Confirm Password</label>
+  <input class="fi" id="spwc" type="password" placeholder="Repeat password" autocomplete="new-password"/>
+  <span id="pw-match-msg" style="font-size:.72rem;margin-top:.25rem;display:block"></span>
 </div>
 <div style="background:var(--bg3);border:1.5px solid var(--b);border-radius:var(--r);padding:1rem 1.15rem;margin-top:.5rem">
   <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem">
@@ -2024,14 +2204,33 @@ function buildStepContent(n){
     </div>
     `:`<div style="display:flex;align-items:center;gap:.55rem;padding:.6rem .9rem;background:rgba(16,185,129,.08);border:1.5px solid rgba(16,185,129,.2);border-radius:9px"><span style="font-size:1.1rem">✅</span><span style="font-size:.83rem;font-weight:600;color:var(--green)">Email verified successfully!</span></div>`}
   `}
-</div>`,
-2:`<h2 class="stit">Who are you?</h2><p class="ssub">We'll personalise everything based on your role</p>
+</div>`;
+
+  // ── STEP 2: Role Selection (same for both, but shows role-specific hint after pick) ──
+  if(n===2) return `<h2 class="stit">Who are you?</h2><p class="ssub">We'll personalise everything based on your role</p>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:.9rem;margin-bottom:1.25rem">
-  ${[['student','🎓','Student','Looking for internships'],['company','🏢','Company','Finding talent']].map(([r,ico,lbl,d])=>`<div onclick="S.signupRole='${r}';render()" style="border:2px solid ${S.signupRole===r?'var(--p)':'var(--b)'};border-radius:var(--rl);padding:1.3rem;text-align:center;cursor:pointer;background:${S.signupRole===r?'var(--pl)':'var(--bg3)'};transition:all .15s"><div style="font-size:1.8rem;margin-bottom:.6rem">${ico}</div><div style="font-family:var(--fh);font-weight:700;color:var(--t);margin-bottom:.3rem">${lbl}</div><div style="font-size:.75rem;color:var(--t3)">${d}</div>${S.signupRole===r?'<div style="margin-top:.65rem"><span class="bdg bi">✓ Selected</span></div>':''}</div>`).join('')}
+  ${[['student','🎓','Student','Looking for internships','Find AI-matched internships, skill gap analysis, career roadmap & more'],['company','🏢','Company / Recruiter','Posting internships','Post roles, get AI-ranked candidates, manage your pipeline & analytics']].map(([r,ico,lbl,d,desc])=>`
+  <div onclick="S.signupRole='${r}';S.totalSteps=${r==='company'?5:7};render()" style="border:2px solid ${S.signupRole===r?'var(--p)':'var(--b)'};border-radius:var(--rl);padding:1.3rem;text-align:center;cursor:pointer;background:${S.signupRole===r?'var(--pl)':'var(--bg3)'};transition:all .15s;position:relative">
+    <div style="font-size:2rem;margin-bottom:.6rem">${ico}</div>
+    <div style="font-family:var(--fh);font-weight:700;color:var(--t);margin-bottom:.25rem">${lbl}</div>
+    <div style="font-size:.72rem;color:var(--t3);line-height:1.5">${desc}</div>
+    ${S.signupRole===r?`<div style="margin-top:.75rem"><span class="bdg bi">✓ Selected</span></div>`:''}
+  </div>`).join('')}
 </div>
+${S.signupRole==='student'?`
 <div class="fg"><label class="fl">City / Location</label><input class="fi" id="sloc" placeholder="Bangalore" value="${S.loc}"/></div>
-<div class="fg"><label class="fl">Preferred Work Mode</label><select class="fs"><option>Remote</option><option>Hybrid</option><option>On-site</option><option>Any</option></select></div>`,
-3:`<h2 class="stit">Academic background</h2><p class="ssub">Helps match you with right-level internships</p>
+<div class="fg"><label class="fl">Preferred Work Mode</label><select class="fs" id="s-mode"><option>Remote</option><option>Hybrid</option><option>On-site</option><option>Any</option></select></div>
+`:`
+<div class="fg"><label class="fl">Company Headquarters City</label><input class="fi" id="co-city" placeholder="Bangalore, Mumbai, Delhi…" value="${S.loc}"/></div>
+<div style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.18);border-radius:10px;padding:.9rem 1rem;margin-top:.4rem">
+  <div style="font-size:.78rem;font-weight:700;color:var(--p);margin-bottom:.35rem">🏢 Company account includes:</div>
+  <div style="display:flex;flex-direction:column;gap:.28rem">${['Post unlimited internship listings','AI-ranked candidate shortlist for each role','Application pipeline & status tracking','Company analytics dashboard'].map(f=>`<div style="font-size:.75rem;color:var(--t2);display:flex;gap:.5rem"><span style="color:var(--green);font-weight:700">✓</span>${f}</div>`).join('')}</div>
+</div>
+`}`;
+
+  // ── STUDENT STEPS 3–7 ─────────────────────────────────────────────
+  if(!isComp){
+    if(n===3) return `<h2 class="stit">Academic background</h2><p class="ssub">Helps match you with right-level internships</p>
 <div class="fr2">
   <div class="fg"><label class="fl">Degree</label><select class="fs"><option>B.Tech / B.E.</option><option>B.Sc</option><option>BCA</option><option>MCA</option><option>M.Tech</option><option>MBA</option></select></div>
   <div class="fg"><label class="fl">Major / Branch</label><input class="fi" id="smaj" placeholder="Computer Science" value="${S.edu}"/></div>
@@ -2041,33 +2240,111 @@ function buildStepContent(n){
   <div class="fg"><label class="fl">Year</label><select class="fs"><option>1st</option><option>2nd</option><option selected>3rd</option><option>4th</option><option>Graduate</option></select></div>
   <div class="fg"><label class="fl">CGPA / %</label><input class="fi" placeholder="8.5" value="${S.cgpa}"/></div>
 </div>
-<div class="fg"><label class="fl">Experience</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.3rem">${[['fresher','🌱','Fresher'],['some','⚡','Has Projects'],['exp','🔥','Done Intern']].map(([v,ico,lbl])=>`<div onclick="S.exp='${v}';render()" style="border:1.5px solid ${S.exp===v?'var(--p)':'var(--b)'};border-radius:9px;padding:.7rem;text-align:center;cursor:pointer;background:${S.exp===v?'var(--pl)':'var(--bg3)'};transition:all .15s"><div style="font-size:1.2rem;margin-bottom:.28rem">${ico}</div><div style="font-size:.73rem;font-weight:700;color:${S.exp===v?'var(--p)':'var(--t2)'}">${lbl}</div></div>`).join('')}</div></div>`,
-4:`<h2 class="stit">Skills & Interests</h2><p class="ssub">The heart of our AI matching — be thorough!</p>
+<div class="fg"><label class="fl">Experience Level</label><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-top:.3rem">${[['fresher','🌱','Fresher'],['some','⚡','Has Projects'],['exp','🔥','Done Intern']].map(([v,ico,lbl])=>`<div onclick="S.exp='${v}';render()" style="border:1.5px solid ${S.exp===v?'var(--p)':'var(--b)'};border-radius:9px;padding:.7rem;text-align:center;cursor:pointer;background:${S.exp===v?'var(--pl)':'var(--bg3)'};transition:all .15s"><div style="font-size:1.2rem;margin-bottom:.28rem">${ico}</div><div style="font-size:.73rem;font-weight:700;color:${S.exp===v?'var(--p)':'var(--t2)'}">${lbl}</div></div>`).join('')}</div></div>`;
+
+    if(n===4) return `<h2 class="stit">Skills & Interests</h2><p class="ssub">The heart of our AI matching — be thorough!</p>
 <div class="fg"><label class="fl">Technical Skills <span style="color:var(--t3)">(press Enter)</span></label><div class="tw">${S.skills.map(s=>`<span class="tg">${s}<span class="tgx" onclick="rmSkill('${s}')">×</span></span>`).join('')}<input class="ti" placeholder="React, Python, Figma…" onkeydown="addSkillKey(event)"/></div><div style="font-size:.71rem;color:var(--t3);margin-top:.25rem">Add all languages, frameworks, and tools you know</div></div>
 <div class="fg"><label class="fl">Areas of Interest</label><div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.32rem">${['Frontend','Backend','AI/ML','Data Science','DevOps','Mobile','Design','Cloud','Cybersecurity','Blockchain'].map(i=>`<div onclick="toggleInt('${i}')" style="border:1.5px solid ${S.interests.includes(i)?'var(--p)':'var(--b)'};background:${S.interests.includes(i)?'var(--pl)':'var(--bg3)'};color:${S.interests.includes(i)?'var(--p)':'var(--t2)'};border-radius:99px;padding:.32rem .8rem;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .15s">${i}</div>`).join('')}</div></div>
 <div class="fr2">
   <div class="fg"><label class="fl">Duration Preference</label><select class="fs"><option>Any</option><option>1–2 months</option><option>2–3 months</option><option>3–6 months</option></select></div>
   <div class="fg"><label class="fl">Min Stipend (₹/mo)</label><select class="fs"><option>Any</option><option>10k+</option><option>20k+</option><option>30k+</option><option>50k+</option></select></div>
-</div>`,
-5:`<h2 class="stit">Portfolio & Links</h2><p class="ssub">Showcase your work — boosts your match score!</p>
+</div>`;
+
+    if(n===5) return `<h2 class="stit">Portfolio & Links</h2><p class="ssub">Showcase your work — boosts your match score!</p>
 <div class="fr2">
   <div class="fg"><label class="fl">🔗 LinkedIn</label><input class="fi" placeholder="linkedin.com/in/you" value="${S.linkedin}" oninput="S.linkedin=this.value"/></div>
   <div class="fg"><label class="fl">🐙 GitHub</label><input class="fi" placeholder="github.com/you" value="${S.github}" oninput="S.github=this.value"/></div>
 </div>
 <div class="fg"><label class="fl">🌐 Portfolio</label><input class="fi" placeholder="yourportfolio.com" value="${S.portfolio}" oninput="S.portfolio=this.value"/></div>
 <div class="fg"><label class="fl">📁 Projects (${S.projects.length})</label>
-  ${S.projects.map((p,i)=>`<div style="display:flex;align-items:center;gap.7rem;gap:.7rem;padding:.6rem .8rem;border:1px solid var(--b);border-radius:9px;margin-bottom:.4rem;background:var(--bg3)"><div style="font-size:.85rem;flex:1"><div style="font-weight:700;color:var(--t)">${p.n}</div><div style="font-size:.71rem;color:var(--t3)">${p.t}</div></div><button class="btn btn-danger btn-xs" onclick="rmProject(${i})">×</button></div>`).join('')}
+  ${S.projects.map((p,i)=>`<div style="display:flex;align-items:center;gap:.7rem;padding:.6rem .8rem;border:1px solid var(--b);border-radius:9px;margin-bottom:.4rem;background:var(--bg3)"><div style="font-size:.85rem;flex:1"><div style="font-weight:700;color:var(--t)">${p.n}</div><div style="font-size:.71rem;color:var(--t3)">${p.t}</div></div><button class="btn btn-danger btn-xs" onclick="rmProject(${i})">×</button></div>`).join('')}
   <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:.4rem" onclick="S.modal='project';render()">+ Add Project</button>
 </div>
-<div class="fg"><label class="fl">📄 Resume Upload</label><div class="uzn" onclick="notif('Resume uploaded! AI analyzing skills… 🤖','ok')"><div class="uzi">📄</div><div style="font-size:.88rem;font-weight:600;color:var(--t)">Click to upload resume</div><div style="font-size:.75rem;color:var(--t3);margin-top:.25rem">PDF or DOCX · Max 5MB</div></div></div>`,
-6:`<h2 class="stit">You're all set! 🎉</h2><p class="ssub">Review before we run the AI matching engine</p>
+<div class="fg"><label class="fl">📄 Resume Upload</label><div class="uzn" onclick="notif('Resume uploaded! AI analyzing skills… 🤖','ok')"><div class="uzi">📄</div><div style="font-size:.88rem;font-weight:600;color:var(--t)">Click to upload resume</div><div style="font-size:.75rem;color:var(--t3);margin-top:.25rem">PDF or DOCX · Max 5MB</div></div></div>`;
+
+    if(n===6) return `<h2 class="stit">Almost there! ✨</h2><p class="ssub">Any certifications to boost your profile?</p>
+<div class="fg"><label class="fl">📜 Certifications (${S.certs.length})</label>
+  ${S.certs.map((c,i)=>`<div style="display:flex;align-items:center;gap:.7rem;padding:.55rem .8rem;border:1px solid var(--b);border-radius:9px;margin-bottom:.35rem;background:var(--bg3)"><span style="font-size:.88rem">🏅</span><div style="flex:1"><div style="font-size:.82rem;font-weight:700;color:var(--t)">${c.n}</div><div style="font-size:.71rem;color:var(--t3)">${c.i} · ${c.y}</div></div></div>`).join('')}
+  <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:.4rem" onclick="notif('Cert upload coming soon! 🎓','in')">+ Add Certification</button>
+</div>
+<div class="fg" style="margin-top:.5rem"><label class="fl">Any message to companies? <span style="color:var(--t3)">(optional)</span></label>
+  <textarea class="fi" rows="3" placeholder="e.g. Available from June, open to part-time remote…" style="resize:vertical;min-height:72px"></textarea>
+</div>`;
+
+    // Student step 7 — Review
+    return `<h2 class="stit">You're all set! 🎉</h2><p class="ssub">Review before we run the AI matching engine</p>
 <div class="aic"><div class="aih">🤖 AI Pre-Analysis Complete</div><div style="font-size:.8rem;color:var(--t2);line-height:1.6;margin-bottom:.8rem">Found <strong style="color:var(--p)">${INTERNS.length} matching internships</strong>. Top match: <strong>Google Frontend Dev at 94%</strong>.</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">${[['Profile Score','87%'],['Top Match','94% (Google)'],['Skills',S.skills.length+' added'],['Interests',S.interests.length+' selected']].map(([l,v])=>`<div style="background:var(--bg2);border-radius:8px;padding:.65rem .9rem;border:1px solid var(--b)"><div style="font-size:.68rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${l}</div><div style="font-family:var(--fh);font-size:1.05rem;font-weight:700;color:var(--t);margin-top:.2rem">${v}</div></div>`).join('')}</div></div>
 <div style="background:var(--bg3);border-radius:var(--r);padding:.9rem 1.1rem;border:1px solid var(--b)">
   ${[['👤',`${S.firstName||'Student'} ${S.lastName||''}`,'Name'],['📧',S.email||'—','Email (✓ verified)'],['🎓',S.edu||'CS','Education'],['🛠️',S.skills.slice(0,3).join(', ')||'—',S.skills.length+' skills'],['📁',S.projects.length+' projects, '+S.certs.length+' certs','Portfolio']].map(([ico,l,r])=>`<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.32rem 0;border-bottom:1px solid var(--b)"><span style="color:var(--t)">${ico} ${l}</span><span style="color:var(--t3)">${r}</span></div>`).join('')}
 </div>
-<div style="font-size:.76rem;color:var(--t3);text-align:center;margin-top:.9rem;line-height:1.6">By creating an account you agree to our Terms & Privacy Policy. Data is encrypted and never sold.</div>`
-  };
-  return s[n]||s[1];
+<div style="font-size:.76rem;color:var(--t3);text-align:center;margin-top:.9rem;line-height:1.6">By creating an account you agree to our Terms & Privacy Policy. Data is encrypted and never sold.</div>`;
+  }
+
+  // ── COMPANY STEPS 3–5 ────────────────────────────────────────────
+  if(n===3) return `<h2 class="stit">Tell us about your company</h2><p class="ssub">This appears on your employer profile seen by candidates</p>
+<div class="fg"><label class="fl">Company Name <span style="color:var(--red)">*</span></label><input class="fi" id="co-name" placeholder="e.g. FinTechX Pvt. Ltd." value="${S.coName}"/></div>
+<div class="fr2">
+  <div class="fg"><label class="fl">Industry</label>
+    <select class="fs" id="co-industry">
+      ${['Technology','Fintech','E-Commerce','EdTech','HealthTech','Media','Consulting','Manufacturing','Other'].map(o=>`<option${S.coIndustry===o?' selected':''}>${o}</option>`).join('')}
+    </select>
+  </div>
+  <div class="fg"><label class="fl">Company Size</label>
+    <select class="fs" id="co-size">
+      ${['1–10 (Startup)','11–50','51–200','201–500','500+ (Enterprise)'].map(o=>`<option${S.coSize===o?' selected':''}>${o}</option>`).join('')}
+    </select>
+  </div>
+</div>
+<div class="fg"><label class="fl">Website</label><input class="fi" id="co-website" placeholder="https://yourcompany.com" value="${S.coWebsite}"/></div>
+<div class="fg"><label class="fl">What does your company do? <span style="color:var(--t3)">(shown to candidates)</span></label>
+  <textarea class="fi" id="co-desc" rows="3" placeholder="We build AI-powered payment infrastructure for Indian SMEs…" style="resize:vertical;min-height:80px">${S.coDesc}</textarea>
+</div>
+<div class="fg"><label class="fl">Company Social / LinkedIn</label><input class="fi" placeholder="linkedin.com/company/yourco" value="${S.linkedin}" oninput="S.linkedin=this.value"/></div>`;
+
+  if(n===4) return `<h2 class="stit">Your hiring needs</h2><p class="ssub">Helps our AI surface the best-matched candidates for you</p>
+<div class="fg"><label class="fl">Roles you typically hire for</label>
+  <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.35rem">
+    ${['Frontend Dev','Backend Dev','Full Stack','AI/ML Engineer','Data Analyst','UI/UX Designer','DevOps','Product Manager','Marketing','Business Dev','Content Writer','Finance'].map(r=>`<div onclick="(S.coHireRoles.includes('${r}')?S.coHireRoles=S.coHireRoles.filter(x=>x!=='${r}'):S.coHireRoles.push('${r}'));render()" style="border:1.5px solid ${S.coHireRoles.includes(r)?'var(--p)':'var(--b)'};background:${S.coHireRoles.includes(r)?'var(--pl)':'var(--bg3)'};color:${S.coHireRoles.includes(r)?'var(--p)':'var(--t2)'};border-radius:99px;padding:.32rem .8rem;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .15s">${r}</div>`).join('')}
+  </div>
+</div>
+<div class="fr2">
+  <div class="fg"><label class="fl">Work Mode Offered</label>
+    <select class="fs" id="co-mode">
+      ${['Remote','Hybrid','On-site','Flexible'].map(o=>`<option${S.coHireMode===o?' selected':''}>${o}</option>`).join('')}
+    </select>
+  </div>
+  <div class="fg"><label class="fl">Typical Stipend (₹/mo)</label>
+    <select class="fs" id="co-stipend">
+      ${['Unpaid (Academic Credit)','Up to ₹5,000','₹5,000–10,000','₹10,000–20,000','₹20,000–30,000','₹30,000–50,000','₹50,000+'].map(o=>`<option${S.coStipendMin===o?' selected':''}>${o}</option>`).join('')}
+    </select>
+  </div>
+</div>
+<div class="fg"><label class="fl">Perks & Benefits offered</label>
+  <div style="display:flex;flex-wrap:wrap;gap:.45rem;margin-top:.35rem">
+    ${['Letter of Recommendation','Certificate','PPO (Pre-Placement Offer)','Flexible Hours','Mentorship','Free Courses','Equity / ESOPs','International Exposure'].map(b=>`<div onclick="(S.coBenefits.includes('${b}')?S.coBenefits=S.coBenefits.filter(x=>x!=='${b}'):S.coBenefits.push('${b}'));render()" style="border:1.5px solid ${S.coBenefits.includes(b)?'var(--p)':'var(--b)'};background:${S.coBenefits.includes(b)?'var(--pl)':'var(--bg3)'};color:${S.coBenefits.includes(b)?'var(--p)':'var(--t2)'};border-radius:99px;padding:.32rem .8rem;font-size:.76rem;font-weight:600;cursor:pointer;transition:all .15s">${b}</div>`).join('')}
+  </div>
+</div>
+<div class="fg"><label class="fl">How many interns do you plan to hire? <span style="color:var(--t3)">(approx)</span></label>
+  <select class="fs">
+    ${['1–2','3–5','6–10','10–20','20+'].map(o=>`<option>${o}</option>`).join('')}
+  </select>
+</div>`;
+
+  // Company step 5 — Review
+  return `<h2 class="stit">Ready to find great talent! 🚀</h2><p class="ssub">Review your employer profile before going live</p>
+<div class="aic" style="border-color:rgba(99,102,241,.2)">
+  <div class="aih">🤖 AI Employer Profile Ready</div>
+  <div style="font-size:.8rem;color:var(--t2);line-height:1.6;margin-bottom:.8rem">
+    Your profile will be visible to <strong style="color:var(--p)">10,000+ students</strong> across India. AI matching will rank candidates automatically.
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
+    ${[['Roles Posted','0 (add after setup)'],['Candidate Pool','10,000+ active'],['Avg. Match Time','< 24 hours'],['Top Colleges','IIT, NIT, BITS + 200 more']].map(([l,v])=>`<div style="background:var(--bg2);border-radius:8px;padding:.65rem .9rem;border:1px solid var(--b)"><div style="font-size:.68rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing:.06em">${l}</div><div style="font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--t);margin-top:.2rem">${v}</div></div>`).join('')}
+  </div>
+</div>
+<div style="background:var(--bg3);border-radius:var(--r);padding:.9rem 1.1rem;border:1px solid var(--b);margin-top:.75rem">
+  ${[['🏢',S.coName||'—','Company'],['🌐',S.coIndustry||'—','Industry'],['📏',S.coSize||'—','Size'],['👤',`${S.firstName} ${S.lastName}`,'Account Owner'],['📧',S.email||'—','Email (✓ verified)'],['💼',S.coHireRoles.slice(0,3).join(', ')||'—',(S.coHireRoles.length||0)+' role types'],['🎁',S.coBenefits.slice(0,2).join(', ')||'—',(S.coBenefits.length||0)+' benefits']].map(([ico,l,r])=>`<div style="display:flex;justify-content:space-between;font-size:.8rem;padding:.32rem 0;border-bottom:1px solid var(--b)"><span style="color:var(--t)">${ico} ${l}</span><span style="color:var(--t3)">${r}</span></div>`).join('')}
+</div>
+<div style="font-size:.76rem;color:var(--t3);text-align:center;margin-top:.9rem;line-height:1.6">By creating an account you agree to our Employer Terms & Privacy Policy. Candidate data is protected under DPDP Act 2023.</div>`;
 }
 
 // ══════════════════════ DASHBOARD ══════════════════════
@@ -2164,34 +2441,34 @@ function buildRecs(){
 
   function bigCard(i){
     const col=i.match>=90?'var(--green)':i.match>=85?'var(--cyan)':'var(--amber)';
-    return `<div class="ic" style="padding:1.75rem;display:flex;flex-direction:column;gap:1.1rem;position:relative;overflow:hidden">
+    return `<div class="ic rec-big-card" style="display:flex;flex-direction:column;gap:1rem;position:relative;overflow:hidden">
       <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${i.match>=90?'var(--g1)':i.match>=85?'var(--g4)':'var(--g3)'}"></div>
-      <div style="display:flex;align-items:start;justify-content:space-between;gap:.75rem">
-        <div style="display:flex;align-items:center;gap:.85rem">
-          <div class="il" style="width:58px;height:58px;border-radius:14px;font-size:1.7rem">${i.logo}</div>
-          <div>
-            <div style="font-family:var(--fh);font-size:1.05rem;font-weight:700;color:var(--t);margin-bottom:.18rem">${i.title}</div>
-            <div style="font-size:.84rem;color:var(--t3);font-weight:600">${i.co}</div>
-            ${i.match>=90?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(99,102,241,.1);color:var(--p);border:1px solid rgba(99,102,241,.2);border-radius:99px;padding:.14rem .58rem;font-size:.68rem;font-weight:800;margin-top:.3rem">${t('perfectMatch')}</span>`:''}
+      <div style="display:flex;align-items:start;justify-content:space-between;gap:.6rem">
+        <div style="display:flex;align-items:center;gap:.75rem;flex:1;min-width:0">
+          <div class="il" style="width:52px;height:52px;border-radius:13px;font-size:1.5rem;flex-shrink:0">${i.logo}</div>
+          <div style="min-width:0">
+            <div style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t);margin-bottom:.14rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</div>
+            <div style="font-size:.81rem;color:var(--t3);font-weight:600">${i.co}</div>
+            ${i.match>=90?`<span style="display:inline-flex;align-items:center;gap:.25rem;background:rgba(99,102,241,.1);color:var(--p);border:1px solid rgba(99,102,241,.2);border-radius:99px;padding:.12rem .5rem;font-size:.65rem;font-weight:800;margin-top:.28rem">${t('perfectMatch')}</span>`:''}
           </div>
         </div>
         <div style="text-align:center;flex-shrink:0">
-          <div style="width:68px;height:68px;border-radius:50%;background:conic-gradient(${col} ${i.match*3.6}deg,var(--bg3) 0);display:flex;align-items:center;justify-content:center">
-            <div style="width:52px;height:52px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:.88rem;font-weight:800;color:${col}">${i.match}%</div>
+          <div style="width:56px;height:56px;border-radius:50%;background:conic-gradient(${col} ${i.match*3.6}deg,var(--bg3) 0);display:flex;align-items:center;justify-content:center">
+            <div style="width:42px;height:42px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:.82rem;font-weight:800;color:${col}">${i.match}%</div>
           </div>
-          <div style="font-size:.67rem;color:var(--t3);margin-top:.3rem;font-weight:700">${t('aiMatch')}</div>
+          <div style="font-size:.62rem;color:var(--t3);margin-top:.25rem;font-weight:700">${t('aiMatch')}</div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.45rem">
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">📍 ${i.loc}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">💻 ${typeLabel[i.type]||i.type}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--green);font-weight:700">💰 ${i.pay}</span>
-        <span style="display:inline-flex;align-items:center;gap:.3rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.3rem .75rem;font-size:.76rem;color:var(--t2)">⏱ ${i.dur}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.38rem">
+        <span class="rec-pill">📍 ${i.loc}</span>
+        <span class="rec-pill">💻 ${typeLabel[i.type]||i.type}</span>
+        <span class="rec-pill rec-pill-green">💰 ${i.pay}</span>
+        <span class="rec-pill">⏱ ${i.dur}</span>
       </div>
-      <div style="display:flex;gap:.3rem;flex-wrap:wrap">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.74rem;padding:.22rem .7rem">${s}</span>`).join('')}</div>
-      <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.12);border-radius:10px;padding:.75rem 1rem;font-size:.8rem;color:var(--t2);line-height:1.6">🧠 <strong style="color:var(--p)">${t('whyYou')}</strong> ${i.why}</div>
-      <div style="display:flex;gap:.5rem;flex-wrap:wrap;padding-top:.25rem;border-top:1px solid var(--b)">
-        <button class="btn btn-p" style="flex:1;justify-content:center;padding:.6rem" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled style="opacity:.55;cursor:default;flex:1;justify-content:center;padding:.6rem"':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
+      <div style="display:flex;gap:.28rem;flex-wrap:wrap">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.72rem;padding:.2rem .6rem">${s}</span>`).join('')}</div>
+      <div style="background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.12);border-radius:10px;padding:.65rem .9rem;font-size:.78rem;color:var(--t2);line-height:1.6">🧠 <strong style="color:var(--p)">${t('whyYou')}</strong> ${i.why}</div>
+      <div class="rec-actions">
+        <button class="btn btn-p rec-apply-btn" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
         <button class="btn ${i.saved?'btn-success':'btn-ghost'} btn-sm" onclick="saveInt(${i.id})">${i.saved?t('savedBtn'):t('saveBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="go('skillgap')">${t('gapBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="notif('Opening ${i.co}…','in')">🏢</button>
@@ -2200,28 +2477,28 @@ function buildRecs(){
   }
 
   function smallCard(i){
-    return `<div class="ic" style="padding:1.35rem">
-      <div style="display:flex;gap:.85rem;align-items:start;margin-bottom:.9rem">
-        <div class="il" style="width:48px;height:48px;border-radius:11px;font-size:1.4rem">${i.logo}</div>
+    return `<div class="ic rec-small-card">
+      <div style="display:flex;gap:.75rem;align-items:start;margin-bottom:.75rem">
+        <div class="il" style="width:46px;height:46px;border-radius:11px;font-size:1.35rem;flex-shrink:0">${i.logo}</div>
         <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:start;justify-content:space-between;gap:.5rem">
-            <div>
-              <div style="font-family:var(--fh);font-size:.95rem;font-weight:700;color:var(--t)">${i.title}</div>
-              <div style="font-size:.79rem;color:var(--t3)">${i.co}</div>
+          <div style="display:flex;align-items:start;justify-content:space-between;gap:.4rem">
+            <div style="min-width:0">
+              <div style="font-family:var(--fh);font-size:.92rem;font-weight:700;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</div>
+              <div style="font-size:.77rem;color:var(--t3)">${i.co}</div>
             </div>
-            <span style="background:rgba(245,158,11,.1);color:var(--amber);border-radius:99px;padding:.2rem .6rem;font-size:.74rem;font-weight:800;white-space:nowrap;flex-shrink:0">${i.match}%</span>
+            <span style="background:rgba(245,158,11,.1);color:var(--amber);border-radius:99px;padding:.18rem .58rem;font-size:.72rem;font-weight:800;white-space:nowrap;flex-shrink:0">${i.match}%</span>
           </div>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.7rem">
-        <span class="ipill">📍 ${i.loc}</span>
-        <span class="ipill">💻 ${typeLabel[i.type]||i.type}</span>
-        <span class="ipill">💰 ${i.pay}</span>
+      <div style="display:flex;flex-wrap:wrap;gap:.28rem;margin-bottom:.6rem">
+        <span class="rec-pill">📍 ${i.loc}</span>
+        <span class="rec-pill">💻 ${typeLabel[i.type]||i.type}</span>
+        <span class="rec-pill rec-pill-green">💰 ${i.pay}</span>
       </div>
-      <div style="display:flex;gap:.3rem;flex-wrap:wrap;margin-bottom:.75rem">${i.skills.map(s=>`<span class="bdg bi">${s}</span>`).join('')}</div>
-      <div style="font-size:.76rem;color:var(--t2);line-height:1.5;background:var(--bg3);border-radius:8px;padding:.55rem .75rem;margin-bottom:.85rem">🧠 ${i.why.split('.')[0]}.</div>
-      <div style="display:flex;gap:.4rem">
-        <button class="btn btn-p btn-sm" style="flex:1;justify-content:center" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled style="opacity:.55;cursor:default"':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
+      <div style="display:flex;gap:.28rem;flex-wrap:wrap;margin-bottom:.65rem">${i.skills.map(s=>`<span class="bdg bi" style="font-size:.72rem">${s}</span>`).join('')}</div>
+      <div style="font-size:.75rem;color:var(--t2);line-height:1.5;background:var(--bg3);border-radius:8px;padding:.5rem .72rem;margin-bottom:.75rem">🧠 ${i.why.split('.')[0]}.</div>
+      <div style="display:flex;gap:.38rem">
+        <button class="btn btn-p btn-sm" style="flex:1;justify-content:center" onclick="applyInt(${i.id})" ${S.appliedIds.includes(i.id)?'disabled':''}>${S.appliedIds.includes(i.id)?t('applied'):t('applyNow')}</button>
         <button class="btn ${i.saved?'btn-success':'btn-ghost'} btn-sm" onclick="saveInt(${i.id})">${i.saved?t('savedBtn'):t('saveBtn')}</button>
         <button class="btn btn-ghost btn-sm" onclick="go('skillgap')">${t('gapBtn')}</button>
       </div>
@@ -2232,31 +2509,32 @@ function buildRecs(){
   const filterLabels={all:t('filterAll'),Remote:t('remote'),Hybrid:t('hybrid'),'On-site':t('onsite')};
 
   return `<div class="page dw">${sb('student')}<div class="dm">
-    <div style="margin-bottom:1.5rem">
-      <h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">${t('recsTitle')}</h1>
-      <p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">${t('recsSub')} · <strong style="color:var(--p)">${shown.length} ${t('recsMatches')}</strong></p>
+    <div style="margin-bottom:1.25rem">
+      <h1 style="font-family:var(--fh);font-size:clamp(1.2rem,4vw,1.55rem);font-weight:700;color:var(--t);letter-spacing:-.03em">${t('recsTitle')}</h1>
+      <p style="color:var(--t3);font-size:.82rem;margin-top:.2rem">${t('recsSub')} · <strong style="color:var(--p)">${shown.length} ${t('recsMatches')}</strong></p>
     </div>
-    <div style="display:flex;gap:.9rem;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap">
-      <div class="pill-tog">${filterTypes.map(ft=>`<button class="pill-btn ${S.fType===ft?'on':''}" onclick="S.fType='${ft}';render()">${filterLabels[ft]}</button>`).join('')}</div>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="notif('${t('filterSort')}','in')">${t('filterSort')}</button>
+    <!-- Filter bar: scrolls horizontally on mobile, no wrap -->
+    <div style="display:flex;gap:.55rem;align-items:center;margin-bottom:1.25rem;overflow-x:auto;padding-bottom:.35rem;-webkit-overflow-scrolling:touch;scrollbar-width:none">
+      <div class="pill-tog" style="flex-shrink:0">${filterTypes.map(ft=>`<button class="pill-btn ${S.fType===ft?'on':''}" onclick="S.fType='${ft}';render()">${filterLabels[ft]}</button>`).join('')}</div>
+      <button class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap" onclick="notif('${t('filterSort')}','in')">⇅ ${t('filterSort')}</button>
     </div>
     ${shown.length===0?`<div class="card" style="text-align:center;padding:3rem"><div style="font-size:2.5rem;margin-bottom:.75rem">🔍</div><p style="font-weight:700;color:var(--t)">${t('noResults')}</p><button class="btn btn-p btn-sm" style="margin-top:1rem" onclick="S.fType='all';S.srchQ='';render()">${t('clearFilters')}</button></div>`:`
     ${perfect.length>0?`
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem">
-        <div style="font-family:var(--fh);font-size:.82rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em">${t('perfectMatches')}</div>
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.9rem">
+        <div style="font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${t('perfectMatches')}</div>
         <span class="bdg bi">${perfect.length} ${t('found')}</span>
         <div style="flex:1;height:1px;background:var(--b)"></div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:1.1rem;margin-bottom:2rem">
+      <div class="rec-grid">
         ${perfect.map(i=>bigCard(i)).join('')}
       </div>`:''}
     ${others.length>0?`
-      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:1rem">
-        <div style="font-family:var(--fh);font-size:.82rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em">${t('otherMatches')}</div>
+      <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.9rem;margin-top:${perfect.length>0?'1.5rem':'0'}">
+        <div style="font-family:var(--fh);font-size:.78rem;font-weight:800;color:var(--t);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap">${t('otherMatches')}</div>
         <span class="bdg bgr">${others.length} ${t('more')}</span>
         <div style="flex:1;height:1px;background:var(--b)"></div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:.85rem">
+      <div class="rec-list">
         ${others.map(i=>smallCard(i)).join('')}
       </div>`:''}
     `}
@@ -2613,7 +2891,7 @@ function buildChat(){
   const ph=t('chatPlaceholder')||'Ask me anything…';
   return `
     ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
-    <button id="chat-fab-btn" class="cfab ${S.voiceActive?'rec':''}">${S.voiceActive?'🔴':'🤖'}</button>
+    <button id="chat-fab-btn" style="display:none"></button>
     ${S.chatOpen?`<div class="cw">
       <div class="ch">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>

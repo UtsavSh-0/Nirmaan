@@ -321,8 +321,10 @@ input,select,textarea{font-family:var(--fb)}
 .mob-nav-btn.on{color:var(--p)}
 .mob-nav-btn span:first-child{font-size:1.1rem;line-height:1}
 .mob-nav-btn span:last-child{font-size:.58rem;font-weight:700;letter-spacing:.02em}
-.mob-menu-drawer{display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,.55);backdrop-filter:blur(4px)}
-.mob-menu-panel{position:absolute;bottom:0;left:0;right:0;background:var(--bg2);border-radius:22px 22px 0 0;padding:1.25rem 1rem 2.5rem;animation:slideUp .25s ease}
+.mob-menu-drawer{display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0);backdrop-filter:blur(0px);transition:background .26s,backdrop-filter .26s;flex-direction:column;justify-content:flex-end}
+.mob-menu-drawer.open{background:rgba(0,0,0,.52);backdrop-filter:blur(4px)}
+.mob-menu-panel{position:relative;background:var(--bg2);border-radius:22px 22px 0 0;padding:1.1rem 1rem calc(1.5rem + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .26s cubic-bezier(.32,1,.6,1);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mob-menu-drawer.open .mob-menu-panel{transform:translateY(0)}
 @keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 .contact-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:2.25rem;max-width:880px;margin:0 auto;padding:3.5rem 2rem}
 /* ── DASHBOARD & CONTACT MOBILE ── */
@@ -333,6 +335,15 @@ input,select,textarea{font-family:var(--fb)}
   .contact-grid .card{order:-1}
 }
 .mob-pill{width:40px;height:4px;background:var(--b2);border-radius:99px;margin:0 auto .9rem}
+/* ── REC PAGE CLASSES ── */
+.rec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:1rem;margin-bottom:1.5rem}
+.rec-list{display:flex;flex-direction:column;gap:.85rem}
+.rec-big-card{padding:1.5rem}
+.rec-small-card{padding:1.25rem}
+.rec-pill{display:inline-flex;align-items:center;gap:.28rem;background:var(--bg3);border:1px solid var(--b);border-radius:99px;padding:.28rem .7rem;font-size:.74rem;color:var(--t2)}
+.rec-pill-green{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.2);color:var(--green);font-weight:700}
+.rec-actions{display:flex;gap:.45rem;flex-wrap:wrap;padding-top:.75rem;border-top:1px solid var(--b)}
+.rec-apply-btn{flex:1;justify-content:center;min-width:0}
 
 @media(max-width:900px){
   .obl,.login-right{display:none}
@@ -420,8 +431,20 @@ input,select,textarea{font-family:var(--fb)}
   .obr{padding:1.75rem 1.25rem}
   .ob{min-height:calc(100vh - var(--nav))}
 
-  /* bell dropdown */
-  div[style*="width:340px"][style*="border-radius:var(--rl)"]{width:calc(100vw - 1.5rem) !important;right:-3rem !important}
+  /* bell dropdown on desktop nav — hidden on mobile; use mob-bell-drawer instead */
+  .bell-desktop-panel{display:none !important}
+
+  /* rec page — single column on mobile */
+  .rec-grid{grid-template-columns:1fr !important}
+  .rec-big-card{padding:1rem}
+  .rec-small-card{padding:.9rem}
+  .rec-actions{gap:.35rem}
+  .rec-apply-btn{min-width:calc(100% - 0px);flex:1 1 100%;order:-1}
+  .rec-actions .btn-sm{flex:1;justify-content:center}
+  .rec-pill{font-size:.71rem;padding:.24rem .58rem}
+
+  /* mob-nav: 6 items on mobile — shrink font */
+  .mob-nav-btn span:last-child{font-size:.52rem}
 
   /* voice indicator */
   .vi{right:.75rem;bottom:8.5rem;font-size:.74rem;padding:.55rem .85rem}
