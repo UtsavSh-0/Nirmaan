@@ -17,7 +17,7 @@ const S={
   adminPushTab:'compose',
   adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
   adminPushTitle:'',adminPushBody:'',adminPushUrl:'',adminPushTarget:'all',adminPushIcon:'🔔',
-  fType:'all',srchQ:'',
+  fType:'all',srchQ:'',srchOpen:false,
   skills:['JavaScript','React','Python'],
   interests:['Frontend','AI/ML'],
   loc:'Bangalore',edu:'B.Tech CS',college:'IIT Delhi',yr:'3rd Year',cgpa:'8.5',
@@ -30,6 +30,9 @@ const S={
   otpSent:false,otpCode:'',otpInput:'',otpVerified:false,
   modal:null,
   rmFilter:'all',
+  // ── Rewards ───────────────────────────────────────
+  rewardsShareModal:null,
+  rewardsClaimAnim:false,
   rbData:{name:'Priya Sharma',title:'Frontend Developer',email:'priya@example.com',phone:'+91 98765 43210',summary:'Passionate frontend developer with strong skills in React, TypeScript and UI design. Looking for opportunities to contribute to impactful products.',skills:['React','JavaScript','Python','CSS','Git'],exp:[{co:'Freelance Projects',role:'Frontend Dev',period:'2023–Present',desc:'Built 5+ client websites using React and Next.js'}],edu:'B.Tech Computer Science – IIT Delhi (2025)'},
   autoLoginCountdown:5,autoLoginActive:true,autoLoginRole:'student',
   tourStep:0,tourActive:false,
@@ -178,6 +181,39 @@ const T={
       {ico:'📈',title:'Hiring Analytics',body:'Track applications, shortlists, and match quality in real time. Understand which skills are most available in the candidate pool.',cta:'Make data-driven hiring decisions.'},
       {ico:'🏢',title:'Your Employer Profile',body:'Candidates see your company culture, team size, perks, and open roles. A strong profile attracts better applications.',cta:'First impressions matter — make yours count.'},
     ],
+    // Rewards
+    rwdTitle:'🏅 Your Rewards',rwdSubtitle:'badges earned',rwdOf:'of',rwdXpLabel:'XP',
+    rwdNewRewardTitle:'New reward unlocked!',
+    rwdNewRewardBody:'You earned <strong>{name}</strong> — {desc}. Claim your <strong>+{xp} XP</strong> and share it!',
+    rwdClaim:'Claim +{xp} XP',rwdShare:'📤 Share',
+    rwdLevel:'Level',rwdNextLevel:'Next: {name} ({xp} XP away)',rwdMaxLevel:'🏆 Max Level!',
+    rwdStreak:'🔥 Weekly Streak',rwdStreakDays:'3/7 days',
+    rwdStreakDayNames:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    rwdStatBadges:'Badges',rwdStatXp:'Total XP',rwdStatLevel:'Level',
+    rwdAllBadges:'All Badges',
+    rwdEarned:'✓ +{xp} XP',rwdLocked:'🔒 Locked',rwdShareBtn:'Share',
+    rwdShareTitle:'Share your achievement 📤',rwdShareSub:'Let your network know you earned this badge!',
+    rwdCopyBtn:'Copy',rwdCloseBtn:'Close',
+    rwdShareHashtag:'#Nirmaan · +{xp} XP · nirmaan.app',
+    rwdLevelNames:['Newcomer','Explorer','Climber','Hustler','Achiever','Champion','Legend'],
+    rwdBadgeNames:{
+      first_apply:'First Launch',profile_pro:'Profile Pro',ai_match:'AI Whisperer',week_streak:'On Fire',
+      top_match:'Top Applicant',networker:'Networker',resume_ace:'Resume Ace',early_bird:'Early Bird',
+      skill_champ:'Skill Champion',roadmap_hero:'Roadmap Hero',referral_star:'Referral Star',voice_user:'Voice Pilot',
+    },
+    rwdBadgeDescs:{
+      first_apply:'Applied to your first internship',profile_pro:'Completed 100% of your profile',
+      ai_match:'Scored 95%+ on an AI match',week_streak:'Logged in 7 days in a row',
+      top_match:'Ranked in top 5% this week',networker:'Connected with 10 mentors',
+      resume_ace:'Resume scored 90+ by AI',early_bird:'Applied within 1 hr of a new posting',
+      skill_champ:'Closed all skill gaps in a role',roadmap_hero:'Completed your full career roadmap',
+      referral_star:'Got referred by a senior for a role',voice_user:'Used Arya voice assistant 5 times',
+    },
+    rwdSbLabel:'Rewards',rwdNewTag:'NEW',
+    rwdNotifClaim:'XP claimed! {icon}',
+    rwdLinkCopied:'Link copied! 🔗',
+    rwdInstagramTip:'Copy the link and post on Instagram! 📸',
+    rwdXpAway:'XP away',
   },
   hi:{
     // Nav
@@ -314,6 +350,39 @@ const T={
       {ico:'📈',title:'हायरिंग एनालिटिक्स',body:'आवेदन, शॉर्टलिस्ट और मैच क्वालिटी रियल टाइम में ट्रैक करें। जानें उम्मीदवारों में कौन सी स्किल्स सबसे ज्यादा उपलब्ध हैं।',cta:'डेटा के आधार पर स्मार्ट हायरिंग निर्णय लें।'},
       {ico:'🏢',title:'आपका एम्प्लॉयर प्रोफ़ाइल',body:'उम्मीदवार आपकी कंपनी की संस्कृति, टीम का आकार, सुविधाएं और खुले रोल देखते हैं। एक मजबूत प्रोफ़ाइल बेहतर आवेदन आकर्षित करती है।',cta:'पहली छाप ही सबसे जरूरी होती है।'},
     ],
+    // Rewards
+    rwdTitle:'🏅 आपके पुरस्कार',rwdSubtitle:'अर्जित बैज',rwdOf:'में से',rwdXpLabel:'XP',
+    rwdNewRewardTitle:'नया पुरस्कार मिला!',
+    rwdNewRewardBody:'आपने <strong>{name}</strong> बैज जीता — {desc}। अपना <strong>+{xp} XP</strong> क्लेम करें और सबको बताएं!',
+    rwdClaim:'क्लेम करें +{xp} XP',rwdShare:'📤 शेयर करें',
+    rwdLevel:'स्तर',rwdNextLevel:'अगला: {name} ({xp} XP और चाहिए)',rwdMaxLevel:'🏆 अधिकतम स्तर!',
+    rwdStreak:'🔥 साप्ताहिक स्ट्रीक',rwdStreakDays:'3/7 दिन',
+    rwdStreakDayNames:['सोम','मंगल','बुध','गुरु','शुक्र','शनि','रवि'],
+    rwdStatBadges:'बैज',rwdStatXp:'कुल XP',rwdStatLevel:'स्तर',
+    rwdAllBadges:'सभी बैज',
+    rwdEarned:'✓ +{xp} XP',rwdLocked:'🔒 बंद',rwdShareBtn:'शेयर',
+    rwdShareTitle:'अपनी उपलब्धि शेयर करें 📤',rwdShareSub:'अपने नेटवर्क को बताएं आपने यह बैज जीता!',
+    rwdCopyBtn:'कॉपी करें',rwdCloseBtn:'बंद करें',
+    rwdShareHashtag:'#Nirmaan · +{xp} XP · nirmaan.app',
+    rwdLevelNames:['नवागंतुक','खोजकर्ता','चढ़ता सितारा','मेहनती','उपलब्धिकर्ता','चैंपियन','लीजेंड'],
+    rwdBadgeNames:{
+      first_apply:'पहला कदम',profile_pro:'प्रोफ़ाइल प्रो',ai_match:'AI विशेषज्ञ',week_streak:'आग पर',
+      top_match:'शीर्ष आवेदक',networker:'नेटवर्कर',resume_ace:'रिज्यूम एक्सपर्ट',early_bird:'सवेरे का पक्षी',
+      skill_champ:'स्किल चैंपियन',roadmap_hero:'रोडमैप हीरो',referral_star:'रेफरल स्टार',voice_user:'वॉइस पायलट',
+    },
+    rwdBadgeDescs:{
+      first_apply:'पहली इंटर्नशिप के लिए आवेदन किया',profile_pro:'प्रोफ़ाइल 100% पूरी की',
+      ai_match:'AI मैच में 95%+ स्कोर मिला',week_streak:'7 दिन लगातार लॉगिन किया',
+      top_match:'इस हफ्ते शीर्ष 5% में रहे',networker:'10 मेंटर्स से जुड़े',
+      resume_ace:'AI ने रिज्यूम को 90+ स्कोर दिया',early_bird:'नई पोस्टिंग के 1 घंटे के भीतर आवेदन किया',
+      skill_champ:'किसी रोल में सभी स्किल गैप बंद किए',roadmap_hero:'पूरा करियर रोडमैप पूरा किया',
+      referral_star:'किसी सीनियर से रेफरल मिला',voice_user:'Arya वॉइस असिस्टेंट 5 बार उपयोग किया',
+    },
+    rwdSbLabel:'पुरस्कार',rwdNewTag:'नया',
+    rwdNotifClaim:'XP क्लेम हुआ! {icon}',
+    rwdLinkCopied:'लिंक कॉपी हुआ! 🔗',
+    rwdInstagramTip:'लिंक कॉपी करें और Instagram पर पोस्ट करें! 📸',
+    rwdXpAway:'XP और चाहिए',
   }
 };
 function t(key){ return (T[S.lang]||T.en)[key]||(T.en[key]||key); }
@@ -1926,6 +1995,7 @@ function buildMobNav(){
     <button class="mob-nav-btn ${S.page==='recs'?'on':''}" onclick="go('recs')"><span>✨</span><span>${t('mobMatches')}</span></button>
     <button class="mob-nav-btn ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span>📊</span><span>${t('mobSkills')}</span></button>
     <button class="mob-nav-btn ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span>🗺️</span><span>${t('mobRoadmap')}</span></button>
+    <button class="mob-nav-btn ${S.srchOpen?'on':''}" onclick="openGlobalSearch()" aria-label="Search"><span>🔍</span><span>${S.lang==='hi'?'खोजें':'Search'}</span></button>
     <button class="mob-nav-btn" id="mob-more-btn" style="position:relative"><span>☰</span><span>${t('mobMore')}</span>
       ${S.user&&S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
     </button>
@@ -1943,6 +2013,7 @@ function buildMobNav(){
       <button class="sb-item ${S.page==='resume'?'on':''}" onclick="closeMobMenu();go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
       <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
+      <button class="sb-item ${S.page==='rewards'?'on':''}" onclick="closeMobMenu();go('rewards')" style="position:relative"><span class="sb-ic">🏅</span>${t('rwdSbLabel')||'Rewards'}${Object.keys(REWARDS_BADGE_NEW).some(id=>REWARDS_BADGE_NEW[id]&&REWARDS_BADGE_EARNED[id])?`<span style="margin-left:auto;background:var(--amber);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .4rem">${t('rwdNewTag')||'NEW'}</span>`:''}</button>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
       ${!S.pwaInstalled ? `<button class="sb-item" onclick="closeMobMenu();go('install')"><span class="sb-ic">📲</span>Install App</button>` : `<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>`}
       <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
@@ -2001,6 +2072,7 @@ function buildNav(){
     <div class="nav-acts">
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
+      <button class="btn-ic" onclick="openGlobalSearch()" title="${S.lang==='hi'?'खोजें':'Search'}">🔍</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
       ${!S.pwaInstalled ? `<button class="btn btn-p btn-sm" onclick="go('install')" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : ''}
       ${S.user?`<div style="position:relative">
@@ -2039,7 +2111,7 @@ function buildNav(){
 }
 
 function buildBody(){
-  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact,install:buildInstallPage};
+  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact,install:buildInstallPage,rewards:buildRewards};
   return (map[S.page]||buildHome)();
 }
 
@@ -2061,6 +2133,7 @@ function sb(role){
       <button class="sb-item ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span class="sb-ic">🗺️</span>${t('sbRoadmap')}</button>
       <button class="sb-item ${S.page==='resume'?'on':''}" onclick="go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
       <button class="sb-item ${S.page==='network'?'on':''}" id="tour-sb-net" onclick="go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='rewards'?'on':''}" onclick="go('rewards')" style="position:relative"><span class="sb-ic">🏅</span>${t('rwdSbLabel')||'Rewards'}${Object.keys(REWARDS_BADGE_NEW).some(id=>REWARDS_BADGE_NEW[id]&&REWARDS_BADGE_EARNED[id])?`<span style="margin-left:auto;background:var(--amber);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .4rem">${t('rwdNewTag')||'NEW'}</span>`:''}</button>
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
@@ -2498,6 +2571,7 @@ function buildDash(){
       <div class="card" id="tour-quick-actions">
         <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem" id="tour-quick">${t('quickActions')}</h3>
         ${[['🗺️','Roadmap','roadmap'],['📄','Resume','resume'],['🤝','Network','network'],['📊','Skill Gap','skillgap']].map(([ico,lbl,pg])=>`<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem;font-size:.79rem" onclick="go('${pg}')">${ico} ${lbl}</button>`).join('')}
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem;font-size:.79rem;${Object.keys(REWARDS_BADGE_NEW).some(id=>REWARDS_BADGE_NEW[id]&&REWARDS_BADGE_EARNED[id])?'border-color:var(--amber);color:var(--amber);font-weight:800':''}" onclick="go('rewards')">🏅 ${t('rwdSbLabel')||'Rewards'}${Object.keys(REWARDS_BADGE_NEW).some(id=>REWARDS_BADGE_NEW[id]&&REWARDS_BADGE_EARNED[id])?' 🔴':''}</button>
       </div>
     </div>
 
@@ -3627,22 +3701,89 @@ function buildPushBanner() {
 
 function buildInstallBanner() {
   if (S.pwaInstalled || S.installBannerDismissed) return '';
-  // Show on: (a) Chrome/Edge with prompt, (b) iOS Safari without prompt
   const hasPrompt = !!S.pwaInstallPrompt;
   const isIOS = window._isIOS;
-  if (!hasPrompt && !isIOS) return ''; // Firefox/desktop-only browsers — skip
-  const mob = window.innerWidth <= 768;
-  return `<div id="install-banner" style="position:fixed;bottom:${mob?'72px':'1.2rem'};left:1rem;z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
-    <div style="font-size:1.8rem;flex-shrink:0">📲</div>
-    <div style="flex:1">
-      <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
-      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">${isIOS ? 'Tap Share then "Add to Home Screen"' : 'Add to home screen for instant access'}</div>
-      <div style="display:flex;gap:.45rem">
-        <button onclick="${hasPrompt ? 'go(\'install\')' : 'go(\'install\')'}" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${isIOS ? 'Install' : 'Install App'}</button>
-        <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
+  if (!hasPrompt && !isIOS) return '';
+
+  // ── Native browser-style "Install app" dialog ─────────────────
+  return `
+  <div id="install-banner" style="
+    position:fixed;bottom:0;left:0;right:0;
+    z-index:9800;
+    display:flex;align-items:flex-end;justify-content:center;
+    background:rgba(0,0,0,0);
+    pointer-events:none;
+  ">
+    <!-- Sheet -->
+    <div style="
+      pointer-events:auto;
+      width:100%;max-width:480px;
+      background:#1e2130;
+      border-radius:18px 18px 0 0;
+      padding:1.15rem 1.25rem 1.5rem;
+      box-shadow:0 -8px 40px rgba(0,0,0,.45);
+      animation:ib-up .32s cubic-bezier(.34,1.2,.64,1);
+    ">
+      <!-- Title row -->
+      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;letter-spacing:.01em;margin-bottom:1rem">Install app</div>
+
+      <!-- App identity row -->
+      <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem">
+        <!-- Icon -->
+        <div style="
+          width:48px;height:48px;flex-shrink:0;
+          background:#6366F1;border-radius:12px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:1.5rem;
+          box-shadow:0 2px 10px rgba(99,102,241,.4);
+        ">✦</div>
+        <div>
+          <div style="font-size:.93rem;font-weight:600;color:#f1f5f9;line-height:1.3">Nirmaan</div>
+          <div style="font-size:.76rem;color:#94a3b8;margin-top:.1rem">nirmaan.app</div>
+        </div>
+      </div>
+
+      <!-- Action buttons — match screenshot style exactly -->
+      <div style="display:flex;justify-content:flex-end;gap:.65rem">
+        <button
+          onclick="dismissInstallBanner()"
+          style="
+            padding:.52rem 1.3rem;
+            border-radius:99px;
+            background:transparent;
+            border:1.5px solid #475569;
+            color:#cbd5e1;
+            font-size:.85rem;font-weight:600;
+            cursor:pointer;font-family:var(--fb);
+            letter-spacing:.01em;
+            transition:border-color .15s,color .15s;
+          "
+          onmouseover="this.style.borderColor='#94a3b8';this.style.color='#f1f5f9'"
+          onmouseout="this.style.borderColor='#475569';this.style.color='#cbd5e1'"
+        >Cancel</button>
+        <button
+          onclick="${isIOS ? "showIOSInstallTip()" : "triggerInstall()"}"
+          style="
+            padding:.52rem 1.45rem;
+            border-radius:99px;
+            background:#6366F1;
+            border:none;
+            color:#fff;
+            font-size:.85rem;font-weight:700;
+            cursor:pointer;font-family:var(--fb);
+            letter-spacing:.01em;
+            box-shadow:0 2px 12px rgba(99,102,241,.45);
+            transition:background .15s,box-shadow .15s;
+          "
+          onmouseover="this.style.background='#4f46e5';this.style.boxShadow='0 4px 18px rgba(99,102,241,.6)'"
+          onmouseout="this.style.background='#6366F1';this.style.boxShadow='0 2px 12px rgba(99,102,241,.45)'"
+        >Install</button>
       </div>
     </div>
-  </div>`;
+  </div>
+  <style>
+    @keyframes ib-up{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  </style>`;
 }
 
 // ══════════════════════ ADMIN PUSH TAB ══════════════════════
@@ -3741,10 +3882,228 @@ function buildAdminPushPanel() {
   </div>`;
 }
 
+// ══════════════════════ REWARDS DATA ══════════════════════
+const REWARDS_BADGE_IDS=['first_apply','profile_pro','ai_match','week_streak','top_match','networker','resume_ace','early_bird','skill_champ','roadmap_hero','referral_star','voice_user'];
+const REWARDS_BADGE_ICONS={first_apply:'🚀',profile_pro:'✨',ai_match:'🤖',week_streak:'🔥',top_match:'🏆',networker:'🌐',resume_ace:'📄',early_bird:'🌅',skill_champ:'📊',roadmap_hero:'🗺️',referral_star:'⭐',voice_user:'🎙️'};
+const REWARDS_BADGE_XP={first_apply:100,profile_pro:150,ai_match:200,week_streak:250,top_match:400,networker:300,resume_ace:175,early_bird:125,skill_champ:350,roadmap_hero:500,referral_star:275,voice_user:80};
+const REWARDS_BADGE_EARNED={first_apply:true,profile_pro:true,ai_match:true,week_streak:true,top_match:false,networker:false,resume_ace:false,early_bird:false,skill_champ:false,roadmap_hero:false,referral_star:false,voice_user:false};
+const REWARDS_BADGE_NEW={first_apply:false,profile_pro:false,ai_match:false,week_streak:true,top_match:false,networker:false,resume_ace:false,early_bird:false,skill_champ:false,roadmap_hero:false,referral_star:false,voice_user:false};
+
+function rwdBadges(){
+  return REWARDS_BADGE_IDS.map(id=>({
+    id,
+    icon:REWARDS_BADGE_ICONS[id],
+    name:(t('rwdBadgeNames')||{})[id]||id,
+    desc:(t('rwdBadgeDescs')||{})[id]||'',
+    xp:REWARDS_BADGE_XP[id],
+    earned:!!REWARDS_BADGE_EARNED[id],
+    isNew:!!REWARDS_BADGE_NEW[id],
+  }));
+}
+
+const REWARDS_LEVEL_XP=[0,200,500,1000,1800,3000,5000];
+
+function rwdCurrentXp(){
+  return REWARDS_BADGE_IDS.filter(id=>REWARDS_BADGE_EARNED[id]).reduce((s,id)=>s+REWARDS_BADGE_XP[id],0);
+}
+function rwdCurrentLevel(){
+  const xp=rwdCurrentXp();let lv=0;
+  REWARDS_LEVEL_XP.forEach((x,i)=>{if(xp>=x)lv=i;});
+  return lv;
+}
+function rwdNextLevelXp(){
+  const lv=rwdCurrentLevel();
+  return lv<REWARDS_LEVEL_XP.length-1?REWARDS_LEVEL_XP[lv+1]:null;
+}
+function rwdXpProgress(){
+  const xp=rwdCurrentXp(),lv=rwdCurrentLevel(),nx=rwdNextLevelXp();
+  if(!nx)return 100;
+  const base=REWARDS_LEVEL_XP[lv];
+  return Math.round(((xp-base)/(nx-base))*100);
+}
+function rwdFillTemplate(str,vars){
+  if(!str)return '';
+  return str.replace(/\{(\w+)\}/g,(_,k)=>vars[k]!==undefined?vars[k]:'');
+}
+
+function claimReward(id){
+  if(!REWARDS_BADGE_EARNED[id]||!REWARDS_BADGE_NEW[id])return;
+  REWARDS_BADGE_NEW[id]=false;
+  const xp=REWARDS_BADGE_XP[id];
+  const icon=REWARDS_BADGE_ICONS[id];
+  notif(rwdFillTemplate(t('rwdNotifClaim'),{xp,icon}),'ok');
+  render();
+}
+
+function openRewardShare(id){
+  S.rewardsShareModal=id;
+  render();
+}
+function closeRewardShare(){
+  S.rewardsShareModal=null;
+  render();
+}
+function doRewardShare(platform){
+  const id=S.rewardsShareModal;
+  const names=t('rwdBadgeNames')||{};
+  const xp=REWARDS_BADGE_XP[id]||0;
+  const name=names[id]||id;
+  const text=encodeURIComponent(`I just earned the "${name}" badge on Nirmaan! ${REWARDS_BADGE_ICONS[id]||''} +${xp} XP 🎉 #Nirmaan #Internship #CareerGoals`);
+  const url=encodeURIComponent(`https://nirmaan.app/badge/${id}`);
+  const links={
+    linkedin:`https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+    twitter:`https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+    whatsapp:`https://wa.me/?text=${text}%20${url}`,
+    instagram:null,
+  };
+  if(links[platform])window.open(links[platform],'_blank');
+  else notif(t('rwdInstagramTip')||'Copy link and post on Instagram!','in');
+  closeRewardShare();
+}
+function copyRewardLink(){
+  const id=S.rewardsShareModal;
+  const link=`https://nirmaan.app/badge/${id}`;
+  navigator.clipboard.writeText(link).catch(()=>{});
+  notif(t('rwdLinkCopied')||'Link copied! 🔗','ok');
+  closeRewardShare();
+}
+
+// ══════════════════════ REWARDS PAGE ══════════════════════
+function buildRewards(){
+  const badges=rwdBadges();
+  const xp=rwdCurrentXp(),lvIdx=rwdCurrentLevel(),pct=rwdXpProgress();
+  const lvNames=t('rwdLevelNames')||['Newcomer','Explorer','Climber','Hustler','Achiever','Champion','Legend'];
+  const lvName=lvNames[lvIdx]||lvNames[0];
+  const nxXp=rwdNextLevelXp();
+  const nxName=nxXp!==null?(lvNames[lvIdx+1]||''):'';
+  const newBadge=badges.find(b=>b.isNew&&b.earned);
+  const earnedCount=badges.filter(b=>b.earned).length;
+  const totalCount=badges.length;
+  const DAYS=t('rwdStreakDayNames')||['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const todayIdx=3;
+  const shareModal=S.rewardsShareModal?buildRewardShareModal():'';
+
+  return `<div class="page dw">${sb('student')}<div class="dm">
+
+    ${newBadge?`<div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:var(--rl);padding:1rem 1.2rem;margin-bottom:1.3rem;display:flex;align-items:flex-start;gap:.9rem">
+      <div style="font-size:1.6rem;flex-shrink:0">🎉</div>
+      <div style="flex:1">
+        <div style="font-family:var(--fh);font-weight:700;font-size:.95rem;color:#92400e;margin-bottom:.25rem">${t('rwdNewRewardTitle')}</div>
+        <div style="font-size:.8rem;color:#78350f;line-height:1.55">${rwdFillTemplate(t('rwdNewRewardBody'),{name:newBadge.name,desc:newBadge.desc,xp:newBadge.xp})}</div>
+        <div style="display:flex;gap:.55rem;margin-top:.75rem;flex-wrap:wrap">
+          <button onclick="claimReward('${newBadge.id}')" style="background:#f59e0b;color:#fff;border:none;border-radius:99px;padding:.42rem 1.1rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${rwdFillTemplate(t('rwdClaim'),{xp:newBadge.xp})}</button>
+          <button onclick="openRewardShare('${newBadge.id}')" style="background:transparent;color:#92400e;border:1.5px solid #fde68a;border-radius:99px;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${t('rwdShare')}</button>
+        </div>
+      </div>
+    </div>`:''}
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.7rem">
+      <div>
+        <h1 style="font-family:var(--fh);font-size:clamp(1.15rem,3.5vw,1.4rem);font-weight:700;color:var(--t);letter-spacing:-.03em">${t('rwdTitle')}</h1>
+        <p style="font-size:.78rem;color:var(--t3);margin-top:.15rem">${earnedCount} ${t('rwdOf')} ${totalCount} ${t('rwdSubtitle')}</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:.55rem;background:var(--bg2);border:1px solid var(--b);border-radius:99px;padding:.45rem .95rem">
+        <span style="font-size:1rem">⭐</span>
+        <span style="font-family:var(--fh);font-size:1.15rem;font-weight:700;color:var(--t)">${xp.toLocaleString()}</span>
+        <span style="font-size:.74rem;color:var(--t3);font-weight:600">${t('rwdXpLabel')}</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.2rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;flex-wrap:wrap;gap:.4rem">
+        <div>
+          <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">${lvName}</span>
+          <span style="background:var(--pl);color:var(--p);border-radius:99px;font-size:.7rem;font-weight:700;padding:.15rem .65rem;margin-left:.5rem">${t('rwdLevel')} ${lvIdx+1}</span>
+        </div>
+        ${nxXp!==null
+          ?`<span style="font-size:.74rem;color:var(--t3)">${rwdFillTemplate(t('rwdNextLevel'),{name:nxName,xp:(nxXp-xp).toLocaleString()})}</span>`
+          :`<span style="font-size:.74rem;color:var(--green);font-weight:700">${t('rwdMaxLevel')}</span>`}
+      </div>
+      <div style="height:8px;background:var(--bg3);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:var(--g1);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:.45rem;font-size:.69rem;color:var(--t3)">
+        <span>${xp.toLocaleString()} ${t('rwdXpLabel')}</span>
+        <span>${nxXp!==null?nxXp.toLocaleString()+' '+t('rwdXpLabel'):t('rwdMaxLevel')}</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1.2rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">${t('rwdStreak')}</h3>
+        <span style="font-size:.73rem;color:var(--t3)">${t('rwdStreakDays')}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
+        ${DAYS.map((d,i)=>`<div style="background:${i<todayIdx?'var(--pl)':i===todayIdx?'var(--bg2)':'var(--bg3)'};border:${i===todayIdx?'1.5px solid var(--p)':'1px solid var(--b)'};border-radius:8px;padding:7px 4px;text-align:center">
+          <div style="font-size:.62rem;color:var(--t3);margin-bottom:3px">${d}</div>
+          <div style="font-size:.95rem">${i<todayIdx?'✅':i===todayIdx?'⚡':'○'}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1.2rem">
+      ${[[`${earnedCount}/${totalCount}`,t('rwdStatBadges'),'🏅','var(--p)'],[`${xp.toLocaleString()}`,t('rwdStatXp'),'⭐','var(--amber)'],[`Lv.${lvIdx+1}`,t('rwdStatLevel'),'🎖️','var(--green)']].map(([v,l,ico,c])=>`
+      <div style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:.85rem .75rem;text-align:center">
+        <div style="font-size:1.1rem;margin-bottom:.3rem">${ico}</div>
+        <div style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:${c}">${v}</div>
+        <div style="font-size:.67rem;color:var(--t3);margin-top:.1rem">${l}</div>
+      </div>`).join('')}
+    </div>
+
+    <div style="font-size:.72rem;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:.75rem">${t('rwdAllBadges')}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.7rem;margin-bottom:1.5rem">
+      ${badges.map(b=>`
+      <div style="background:var(--bg2);border:${b.isNew&&b.earned?'1.5px solid #f59e0b':b.earned?'1px solid var(--green)':'1px solid var(--b)'};border-radius:var(--rl);padding:.95rem;position:relative;cursor:${b.earned?'pointer':'default'};opacity:${b.earned?1:.5};transition:all .15s" ${b.earned?`onclick="openRewardShare('${b.id}')" onmouseover="this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor='${b.isNew&&b.earned?'#f59e0b':b.earned?'var(--green)':'var(--b)'}'"`:''}>
+        ${b.isNew&&b.earned?`<span style="position:absolute;top:7px;right:7px;background:#f59e0b;color:#fff;font-size:.58rem;font-weight:800;border-radius:99px;padding:.1rem .45rem;letter-spacing:.04em;animation:rw-pulse 2s ease-in-out infinite">${t('rwdNewTag')}</span>`:''}
+        <div style="font-size:1.65rem;margin-bottom:.55rem">${b.icon}</div>
+        <div style="font-size:.79rem;font-weight:700;color:var(--t);margin-bottom:.25rem">${b.name}</div>
+        <div style="font-size:.69rem;color:var(--t3);line-height:1.45;margin-bottom:.55rem">${b.desc}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.3rem">
+          <span style="font-size:.69rem;font-weight:700;color:${b.earned?'var(--green)':'var(--t3)'}">${b.earned?rwdFillTemplate(t('rwdEarned'),{xp:b.xp}):t('rwdLocked')}</span>
+          ${b.earned?`<button onclick="event.stopPropagation();openRewardShare('${b.id}')" style="background:var(--pl);color:var(--p);border:none;border-radius:99px;padding:.18rem .65rem;font-size:.65rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${t('rwdShareBtn')}</button>`:''}
+        </div>
+      </div>`).join('')}
+    </div>
+
+  </div>${shareModal}</div>
+  <style>@keyframes rw-pulse{0%,100%{opacity:1;}50%{opacity:.55;}}</style>`;
+}
+
+function buildRewardShareModal(){
+  const id=S.rewardsShareModal;
+  const badges=rwdBadges();
+  const b=badges.find(x=>x.id===id);
+  if(!b)return '';
+  return `<div onclick="closeRewardShare()" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem">
+    <div onclick="event.stopPropagation()" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:1.5rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+      <h3 style="font-family:var(--fh);font-weight:700;font-size:1rem;color:var(--t);margin-bottom:.35rem">${t('rwdShareTitle')}</h3>
+      <p style="font-size:.78rem;color:var(--t3);margin-bottom:1.1rem">${t('rwdShareSub')}</p>
+      <div style="background:var(--bg3);border:1px solid var(--b);border-radius:var(--r);padding:1rem;text-align:center;margin-bottom:1.1rem">
+        <div style="font-size:2.2rem;margin-bottom:.45rem">${b.icon}</div>
+        <div style="font-family:var(--fh);font-size:.9rem;font-weight:700;color:var(--t)">${b.name}</div>
+        <div style="font-size:.73rem;color:var(--t3);margin:.2rem 0 .55rem">${b.desc}</div>
+        <div style="font-size:.68rem;color:var(--p);font-weight:600">${rwdFillTemplate(t('rwdShareHashtag'),{xp:b.xp})}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.9rem">
+        <button onclick="doRewardShare('linkedin')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">💼 LinkedIn</button>
+        <button onclick="doRewardShare('twitter')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">🐦 X / Twitter</button>
+        <button onclick="doRewardShare('whatsapp')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">💬 WhatsApp</button>
+        <button onclick="doRewardShare('instagram')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">📸 Instagram</button>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-bottom:.85rem">
+        <div style="flex:1;background:var(--bg3);border:1px solid var(--b);border-radius:var(--r);padding:.5rem .75rem;font-size:.71rem;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nirmaan.app/badge/${b.id}</div>
+        <button onclick="copyRewardLink()" style="background:var(--p);color:#fff;border:none;border-radius:var(--r);padding:.5rem .9rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">${t('rwdCopyBtn')}</button>
+      </div>
+      <button onclick="closeRewardShare()" style="width:100%;background:transparent;border:1px solid var(--b);border-radius:var(--r);padding:.6rem;font-size:.8rem;color:var(--t2);cursor:pointer;font-family:var(--fb)">${t('rwdCloseBtn')}</button>
+    </div>
+  </div>`;
+}
+
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
 window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
 window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissPushBanner=dismissPushBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;window.showIOSInstallTip=showIOSInstallTip;
+window.claimReward=claimReward;window.openRewardShare=openRewardShare;window.closeRewardShare=closeRewardShare;window.doRewardShare=doRewardShare;window.copyRewardLink=copyRewardLink;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
@@ -3772,6 +4131,160 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('storage', e => {
   if (e.key === 'nirmaan_pending_notifs') _pollAdminNotifs();
 });
+
+
+// ══════════════════════ GLOBAL SEARCH ══════════════════════
+// All pages — search internships, pages, features
+const SEARCH_PAGES = [
+  {label:'Dashboard',icon:'⚡',page:'dash',keywords:'dashboard home overview'},
+  {label:'AI Matches',icon:'✨',page:'recs',keywords:'internships matches recs recommendations jobs'},
+  {label:'Skill Gap',icon:'📊',page:'skillgap',keywords:'skills gap analysis learning'},
+  {label:'Career Roadmap',icon:'🗺️',page:'roadmap',keywords:'roadmap career plan week'},
+  {label:'Resume Builder',icon:'📄',page:'resume',keywords:'resume cv builder ai'},
+  {label:'Networking Hub',icon:'🤝',page:'network',keywords:'network connect alumni referral'},
+  {label:'Saved Internships',icon:'🔖',page:'saved',keywords:'saved bookmarked wishlist'},
+  {label:'My Profile',icon:'👤',page:'profile',keywords:'profile account settings edit'},
+];
+
+function openGlobalSearch(){
+  S.srchOpen=true;
+  // create overlay if not exists
+  let overlay=document.getElementById('gsearch-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='gsearch-overlay';
+    overlay.innerHTML=`
+      <div class="gsearch-backdrop" onclick="closeGlobalSearch()"></div>
+      <div class="gsearch-modal">
+        <div class="gsearch-bar">
+          <span class="gsearch-ic">🔍</span>
+          <input id="gsearch-input" class="gsearch-input" placeholder="${S.lang==='hi'?'इंटर्नशिप, स्किल्स, फीचर खोजें…':'Search internships, skills, features…'}" autocomplete="off" />
+          <button class="gsearch-close-btn" onclick="closeGlobalSearch()">✕</button>
+        </div>
+        <div class="gsearch-results" id="gsearch-results"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const inp=document.getElementById('gsearch-input');
+    inp.addEventListener('input',function(){runGSearch(this.value);});
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Escape') closeGlobalSearch();
+      if(e.key==='Enter'){
+        const first=document.querySelector('.gsearch-item');
+        if(first) first.click();
+      }
+      if(e.key==='ArrowDown'){
+        e.preventDefault();
+        const items=[...document.querySelectorAll('.gsearch-item')];
+        const cur=document.querySelector('.gsearch-item.focused');
+        const idx=cur?items.indexOf(cur):-1;
+        if(items[idx+1]){items[idx+1].classList.add('focused');if(cur)cur.classList.remove('focused');}
+      }
+      if(e.key==='ArrowUp'){
+        e.preventDefault();
+        const items=[...document.querySelectorAll('.gsearch-item')];
+        const cur=document.querySelector('.gsearch-item.focused');
+        const idx=cur?items.indexOf(cur):items.length;
+        if(items[idx-1]){items[idx-1].classList.add('focused');if(cur)cur.classList.remove('focused');}
+      }
+    });
+  }
+  overlay.classList.add('open');
+  // reset and focus
+  const inp=document.getElementById('gsearch-input');
+  inp.value='';
+  runGSearch('');
+  setTimeout(()=>inp.focus(),80);
+}
+
+function closeGlobalSearch(){
+  S.srchOpen=false;
+  const overlay=document.getElementById('gsearch-overlay');
+  if(overlay) overlay.classList.remove('open');
+}
+
+function runGSearch(q){
+  const res=document.getElementById('gsearch-results');
+  if(!res) return;
+  const query=q.trim().toLowerCase();
+
+  // Internship results
+  const internHits=INTERNS.filter(i=>
+    !query ||
+    i.title.toLowerCase().includes(query)||
+    i.co.toLowerCase().includes(query)||
+    i.skills.some(s=>s.toLowerCase().includes(query))||
+    i.field.toLowerCase().includes(query)||
+    i.loc.toLowerCase().includes(query)
+  ).slice(0,5);
+
+  // Page results
+  const pageHits=SEARCH_PAGES.filter(p=>
+    !query||
+    p.label.toLowerCase().includes(query)||
+    p.keywords.includes(query)
+  ).slice(0,4);
+
+  let html='';
+
+  if(!query){
+    html+=`<div class="gsearch-section-hd">${S.lang==='hi'?'⚡ जल्दी जाएं':'⚡ Quick Jump'}</div>`;
+    html+=pageHits.map(p=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('${p.page}')">
+      <span class="gsearch-item-ic">${p.icon}</span>
+      <div class="gsearch-item-txt"><div class="gsearch-item-label">${p.label}</div><div class="gsearch-item-sub">Page</div></div>
+      <span class="gsearch-item-arrow">→</span>
+    </div>`).join('');
+
+    html+=`<div class="gsearch-section-hd" style="margin-top:.75rem">${S.lang==='hi'?'✨ टॉप इंटर्नशिप':'✨ Top Internships'}</div>`;
+    html+=internHits.map(i=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('recs')">
+      <span class="gsearch-item-ic">${i.logo}</span>
+      <div class="gsearch-item-txt"><div class="gsearch-item-label">${i.title}</div><div class="gsearch-item-sub">${i.co} · ${i.loc} · ${i.match}% match</div></div>
+      <span class="gsearch-item-badge">${i.pay}</span>
+    </div>`).join('');
+  } else {
+    const total=internHits.length+pageHits.length;
+    if(total===0){
+      html=`<div class="gsearch-empty">
+        <div style="font-size:2rem;margin-bottom:.5rem">🔍</div>
+        <div style="font-weight:700;color:var(--t)">${S.lang==='hi'?'कोई परिणाम नहीं':'No results found'}</div>
+        <div style="font-size:.8rem;color:var(--t3);margin-top:.3rem">${S.lang==='hi'?'अलग शब्द आज़माएं':'Try a different keyword'}</div>
+      </div>`;
+    } else {
+      if(pageHits.length){
+        html+=`<div class="gsearch-section-hd">${S.lang==='hi'?'पेज':'Pages'}</div>`;
+        html+=pageHits.map(p=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('${p.page}')">
+          <span class="gsearch-item-ic">${p.icon}</span>
+          <div class="gsearch-item-txt"><div class="gsearch-item-label">${p.label}</div><div class="gsearch-item-sub">Page</div></div>
+          <span class="gsearch-item-arrow">→</span>
+        </div>`).join('');
+      }
+      if(internHits.length){
+        html+=`<div class="gsearch-section-hd" style="margin-top:.5rem">${S.lang==='hi'?'इंटर्नशिप':'Internships'} <span style="font-weight:400;font-size:.75rem;color:var(--t3)">(${internHits.length})</span></div>`;
+        html+=internHits.map(i=>`<div class="gsearch-item" onclick="closeGlobalSearch();S.srchQ='${q.replace(/'/g,"\'")}';go('recs')">
+          <span class="gsearch-item-ic">${i.logo}</span>
+          <div class="gsearch-item-txt"><div class="gsearch-item-label">${i.title}</div><div class="gsearch-item-sub">${i.co} · ${i.loc} · <strong style="color:var(--p)">${i.match}%</strong> match</div></div>
+          <span class="gsearch-item-badge">${i.pay}</span>
+        </div>`).join('');
+      }
+    }
+  }
+
+  res.innerHTML=html;
+}
+
+// Keyboard shortcut: Ctrl+K / Cmd+K opens search from anywhere
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+    e.preventDefault();
+    const overlay=document.getElementById('gsearch-overlay');
+    if(overlay&&overlay.classList.contains('open')) closeGlobalSearch();
+    else openGlobalSearch();
+  }
+  if(e.key==='Escape'&&S.srchOpen) closeGlobalSearch();
+});
+window.openGlobalSearch=openGlobalSearch;
+window.closeGlobalSearch=closeGlobalSearch;
 
 synth&&synth.getVoices();
 initSW(); // register service worker on boot

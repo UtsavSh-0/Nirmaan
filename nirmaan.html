@@ -804,5 +804,555 @@ document.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 
+
+<!-- ══════════════════════════════════════════════════════
+     NIRMAAN ACCESSIBILITY WIDGET  ·  v1.0
+     Features: font size, contrast, dyslexia font,
+     reduced motion, line spacing, cursor size,
+     highlight links, text-to-speech, reset all
+     ══════════════════════════════════════════════════════ -->
+<style>
+/* ── Widget FAB ─────────────────────────────────────────── */
+#a11y-fab {
+  position: fixed;
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  left: 20px;
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0ea5e9, #6366F1);
+  color: #fff;
+  font-size: 22px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(14,165,233,0.45);
+  z-index: 10002;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .2s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+#a11y-fab:hover  { transform: scale(1.1); box-shadow: 0 6px 28px rgba(14,165,233,0.55); }
+#a11y-fab:active { transform: scale(0.93); }
+#a11y-fab-badge {
+  position: absolute;
+  top: -3px; right: -3px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #F59E0B;
+  font-size: 9px; font-weight: 800;
+  color: #fff;
+  display: none;
+  align-items: center; justify-content: center;
+  border: 2px solid #fff;
+}
+#a11y-fab-badge.show { display: flex; }
+
+/* ── Panel ──────────────────────────────────────────────── */
+#a11y-panel {
+  display: none;
+  position: fixed;
+  bottom: calc(152px + env(safe-area-inset-bottom, 0px));
+  left: 20px;
+  width: 300px;
+  background: var(--bg2, #fff);
+  border: 1.5px solid var(--b, #E0E1F5);
+  border-radius: 20px;
+  box-shadow: 0 16px 48px rgba(99,102,241,0.18);
+  z-index: 10003;
+  overflow: hidden;
+  font-family: var(--fb, 'General Sans', sans-serif);
+  color: var(--t, #0D0E1A);
+  animation: a11ySlide .28s cubic-bezier(.34,1.56,.64,1);
+}
+#a11y-panel.open { display: block; }
+@keyframes a11ySlide {
+  from { opacity:0; transform: translateY(16px) scale(.97); }
+  to   { opacity:1; transform: translateY(0) scale(1); }
+}
+
+/* Header */
+.a11y-hd {
+  background: linear-gradient(135deg, #0ea5e9, #6366F1);
+  padding: 14px 16px 12px;
+  display: flex; align-items: center; gap: 10px;
+  color: #fff;
+}
+.a11y-hd-icon { font-size: 20px; }
+.a11y-hd-title { font-size: 14px; font-weight: 700; flex:1; }
+.a11y-hd-sub { font-size: 10px; opacity:.78; }
+.a11y-close {
+  background: rgba(255,255,255,.18); border: none;
+  color: #fff; font-size: 16px; cursor: pointer;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.a11y-close:hover { background: rgba(255,255,255,.32); }
+
+/* Body */
+.a11y-body { padding: 14px 14px 10px; display: flex; flex-direction: column; gap: 10px; max-height: 60vh; overflow-y: auto; }
+.a11y-body::-webkit-scrollbar { width: 3px; }
+.a11y-body::-webkit-scrollbar-thumb { background: var(--b2, #C8CAE8); border-radius: 4px; }
+
+/* Section label */
+.a11y-sec { font-size: 9.5px; font-weight: 700; color: var(--t3, #9295B8); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 2px; }
+
+/* Toggle row */
+.a11y-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 11px;
+  background: var(--bg3, #EEEFFE);
+  border-radius: 11px;
+  border: 1px solid var(--b, #E0E1F5);
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  user-select: none;
+}
+.a11y-row:hover { border-color: var(--p, #6366F1); }
+.a11y-row.active { border-color: #0ea5e9; background: rgba(14,165,233,.08); }
+.a11y-row-icon { font-size: 18px; flex-shrink: 0; width: 24px; text-align: center; }
+.a11y-row-txt { flex:1; }
+.a11y-row-label { font-size: 12.5px; font-weight: 600; color: var(--t, #0D0E1A); }
+.a11y-row-desc  { font-size: 10.5px; color: var(--t3, #9295B8); margin-top: 1px; }
+
+/* Toggle switch */
+.a11y-tog {
+  width: 34px; height: 19px; border-radius: 99px;
+  background: var(--b2, #C8CAE8);
+  position: relative; flex-shrink: 0;
+  transition: background .2s;
+}
+.a11y-tog::after {
+  content:''; position: absolute;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #fff; top: 2.5px; left: 2.5px;
+  transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.a11y-row.active .a11y-tog { background: #0ea5e9; }
+.a11y-row.active .a11y-tog::after { transform: translateX(15px); }
+
+/* Stepper */
+.a11y-stepper {
+  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+}
+.a11y-step-btn {
+  width: 26px; height: 26px; border-radius: 8px;
+  background: var(--bg2, #fff); border: 1.5px solid var(--b2, #C8CAE8);
+  font-size: 15px; font-weight: 700; color: var(--t2, #4B5270);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.a11y-step-btn:hover { border-color: #0ea5e9; color: #0ea5e9; }
+.a11y-step-val { font-size: 12px; font-weight: 700; color: var(--p, #6366F1); min-width: 22px; text-align: center; }
+
+/* TTS status */
+#a11y-tts-status { font-size: 10px; color: #0ea5e9; text-align: center; padding: 2px 0 0; display: none; }
+#a11y-tts-status.show { display: block; }
+
+/* Footer */
+.a11y-foot {
+  padding: 10px 14px 12px;
+  border-top: 1px solid var(--b, #E0E1F5);
+  display: flex; gap: 8px;
+}
+.a11y-reset-btn {
+  flex:1; padding: 9px; border-radius: 10px;
+  background: rgba(239,68,68,.08); color: #EF4444;
+  border: 1.5px solid rgba(239,68,68,.2);
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: var(--fb, 'General Sans', sans-serif);
+  transition: all .15s;
+}
+.a11y-reset-btn:hover { background: rgba(239,68,68,.15); }
+.a11y-profile-btn {
+  flex:1; padding: 9px; border-radius: 10px;
+  background: var(--g1, linear-gradient(135deg,#6366F1,#8B5CF6)); color: #fff;
+  border: none;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: var(--fb, 'General Sans', sans-serif);
+  transition: opacity .15s;
+}
+.a11y-profile-btn:hover { opacity: .85; }
+
+/* ── Global accessibility CSS injections ─────────────────── */
+/* Applied via data-a11y-* attributes on <html> */
+[data-a11y-contrast="high"] {
+  filter: contrast(1.55) !important;
+}
+[data-a11y-contrast="inverted"] {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+[data-a11y-dyslexia="1"] * {
+  font-family: 'Arial', 'Helvetica', sans-serif !important;
+  letter-spacing: .05em !important;
+  word-spacing: .15em !important;
+}
+[data-a11y-motion="1"] *, [data-a11y-motion="1"] *::before, [data-a11y-motion="1"] *::after {
+  animation-duration: .001ms !important;
+  transition-duration: .001ms !important;
+}
+[data-a11y-links="1"] a,
+[data-a11y-links="1"] [onclick],
+[data-a11y-links="1"] .nav-lk,
+[data-a11y-links="1"] .sb-item,
+[data-a11y-links="1"] .btn {
+  outline: 2.5px solid #F59E0B !important;
+  outline-offset: 2px !important;
+}
+[data-a11y-cursor="large"] * { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Ccircle cx='4' cy='4' r='4' fill='%236366F1'/%3E%3C/svg%3E") 4 4, auto !important; }
+/* Mobile: keep fab above bottom nav */
+@media (max-width: 600px) {
+  #a11y-fab {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    left: 16px;
+    width: 46px; height: 46px;
+    font-size: 19px;
+  }
+  #a11y-panel {
+    left: 10px; right: 10px;
+    width: auto;
+    bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+  }
+}
+</style>
+
+<!-- FAB -->
+<button id="a11y-fab" onclick="toggleA11yPanel()" aria-label="Accessibility Options" title="Accessibility">
+  ♿
+  <span id="a11y-fab-badge">0</span>
+</button>
+
+<!-- Panel -->
+<div id="a11y-panel" role="dialog" aria-label="Accessibility Settings" aria-modal="true">
+
+  <div class="a11y-hd">
+    <span class="a11y-hd-icon">♿</span>
+    <div class="a11y-hd-txt">
+      <div class="a11y-hd-title">Accessibility</div>
+      <div class="a11y-hd-sub">Customise your experience</div>
+    </div>
+    <button class="a11y-close" onclick="toggleA11yPanel()" aria-label="Close accessibility panel">×</button>
+  </div>
+
+  <div class="a11y-body">
+
+    <!-- Vision -->
+    <div class="a11y-sec">Vision</div>
+
+    <!-- Font size -->
+    <div class="a11y-row" id="a11y-fs-row" style="cursor:default;">
+      <span class="a11y-row-icon">🔤</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Font Size</div>
+        <div class="a11y-row-desc">Adjust text size</div>
+      </div>
+      <div class="a11y-stepper">
+        <button class="a11y-step-btn" onclick="changeFontSize(-1)" aria-label="Decrease font size">−</button>
+        <span class="a11y-step-val" id="a11y-fs-val">100%</span>
+        <button class="a11y-step-btn" onclick="changeFontSize(1)" aria-label="Increase font size">+</button>
+      </div>
+    </div>
+
+    <!-- High contrast -->
+    <div class="a11y-row" id="a11y-contrast-row" onclick="toggleA11y('contrast')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">🔆</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">High Contrast</div>
+        <div class="a11y-row-desc">Boost colour contrast</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Colour invert -->
+    <div class="a11y-row" id="a11y-invert-row" onclick="toggleA11y('invert')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">🌗</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Invert Colours</div>
+        <div class="a11y-row-desc">Reverse screen colours</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Motor / Reading -->
+    <div class="a11y-sec" style="margin-top:4px;">Reading & Motor</div>
+
+    <!-- Dyslexia font -->
+    <div class="a11y-row" id="a11y-dyslexia-row" onclick="toggleA11y('dyslexia')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">📖</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Dyslexia-Friendly Font</div>
+        <div class="a11y-row-desc">Easier-to-read typeface</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Line spacing -->
+    <div class="a11y-row" id="a11y-spacing-row" onclick="toggleA11y('spacing')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">↕️</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Line Spacing</div>
+        <div class="a11y-row-desc">Extra breathing room</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Highlight links -->
+    <div class="a11y-row" id="a11y-links-row" onclick="toggleA11y('links')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">🔗</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Highlight Links</div>
+        <div class="a11y-row-desc">Outline all clickable items</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Reduce motion -->
+    <div class="a11y-row" id="a11y-motion-row" onclick="toggleA11y('motion')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">🚫</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Reduce Motion</div>
+        <div class="a11y-row-desc">Stop animations</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Large cursor -->
+    <div class="a11y-row" id="a11y-cursor-row" onclick="toggleA11y('cursor')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">🖱️</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Large Cursor</div>
+        <div class="a11y-row-desc">Bigger mouse pointer</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+
+    <!-- Audio -->
+    <div class="a11y-sec" style="margin-top:4px;">Audio</div>
+
+    <!-- Text to speech -->
+    <div class="a11y-row" id="a11y-tts-row" onclick="toggleA11y('tts')" role="switch" aria-checked="false" tabindex="0">
+      <span class="a11y-row-icon">🔊</span>
+      <div class="a11y-row-txt">
+        <div class="a11y-row-label">Text to Speech</div>
+        <div class="a11y-row-desc">Click any text to hear it</div>
+      </div>
+      <div class="a11y-tog"></div>
+    </div>
+    <div id="a11y-tts-status">🎙️ Click any paragraph or heading to read it aloud</div>
+
+  </div><!-- /.a11y-body -->
+
+  <div class="a11y-foot">
+    <button class="a11y-reset-btn" onclick="resetA11y()">↺ Reset All</button>
+    <button class="a11y-profile-btn" onclick="saveA11yProfile()">💾 Save Profile</button>
+  </div>
+
+</div><!-- /#a11y-panel -->
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── State ─────────────────────────────────────────────── */
+  var A = {
+    contrast : false,
+    invert   : false,
+    dyslexia : false,
+    spacing  : false,
+    links    : false,
+    motion   : false,
+    cursor   : false,
+    tts      : false,
+    fontSize : 100,   // percent
+  };
+
+  var panelOpen = false;
+  var ttsUnlisteners = [];
+
+  /* ── Persist ───────────────────────────────────────────── */
+  function save() {
+    try { localStorage.setItem('nirmaan_a11y', JSON.stringify(A)); } catch(_){}
+  }
+  function load() {
+    try {
+      var raw = localStorage.getItem('nirmaan_a11y');
+      if (raw) { var parsed = JSON.parse(raw); Object.assign(A, parsed); }
+    } catch(_){}
+  }
+
+  /* ── Apply state to DOM ────────────────────────────────── */
+  function applyAll() {
+    var html = document.documentElement;
+
+    // Contrast
+    if (A.contrast) { html.setAttribute('data-a11y-contrast','high'); }
+    else            { html.removeAttribute('data-a11y-contrast'); }
+
+    // Invert
+    if (A.invert)   { html.setAttribute('data-a11y-contrast','inverted'); }
+    // Note: contrast overrides invert if both on — design choice
+    if (!A.contrast && !A.invert) html.removeAttribute('data-a11y-contrast');
+    if (A.contrast && A.invert)   html.setAttribute('data-a11y-contrast','inverted');
+
+    // Dyslexia font
+    html[A.dyslexia ? 'setAttribute' : 'removeAttribute']('data-a11y-dyslexia','1');
+
+    // Reduce motion
+    html[A.motion ? 'setAttribute' : 'removeAttribute']('data-a11y-motion','1');
+
+    // Highlight links
+    html[A.links ? 'setAttribute' : 'removeAttribute']('data-a11y-links','1');
+
+    // Large cursor
+    html[A.cursor ? 'setAttribute' : 'removeAttribute']('data-a11y-cursor','large');
+
+    // Line spacing
+    document.body.style.lineHeight = A.spacing ? '2.1' : '';
+
+    // Font size
+    document.documentElement.style.fontSize = A.fontSize + '%';
+
+    // TTS
+    applyTTS();
+
+    // Update UI
+    syncUI();
+    updateBadge();
+  }
+
+  /* ── TTS ────────────────────────────────────────────────── */
+  function applyTTS() {
+    // Remove old listeners
+    ttsUnlisteners.forEach(function(fn){ fn(); });
+    ttsUnlisteners = [];
+
+    var statusEl = document.getElementById('a11y-tts-status');
+    if (!statusEl) return;
+
+    if (!A.tts) {
+      statusEl.classList.remove('show');
+      window.speechSynthesis && window.speechSynthesis.cancel();
+      return;
+    }
+    statusEl.classList.add('show');
+
+    // Click-to-speak on headings and paragraphs
+    var els = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, .card, .a11y-row-label');
+    els.forEach(function(el) {
+      el.style.cursor = 'pointer';
+      var fn = function() {
+        var text = el.innerText || el.textContent;
+        if (!text.trim()) return;
+        window.speechSynthesis.cancel();
+        var utt = new SpeechSynthesisUtterance(text.trim().slice(0, 300));
+        utt.rate = 0.92;
+        window.speechSynthesis.speak(utt);
+        // Brief highlight
+        var prev = el.style.outline;
+        el.style.outline = '2.5px solid #0ea5e9';
+        setTimeout(function(){ el.style.outline = prev; }, 1800);
+      };
+      el.addEventListener('click', fn);
+      ttsUnlisteners.push(function(){ el.removeEventListener('click', fn); el.style.cursor = ''; });
+    });
+  }
+
+  /* ── Sync toggle UI ─────────────────────────────────────── */
+  function syncUI() {
+    syncRow('contrast');
+    syncRow('invert');
+    syncRow('dyslexia');
+    syncRow('spacing');
+    syncRow('links');
+    syncRow('motion');
+    syncRow('cursor');
+    syncRow('tts');
+    var fsEl = document.getElementById('a11y-fs-val');
+    if (fsEl) fsEl.textContent = A.fontSize + '%';
+  }
+
+  function syncRow(key) {
+    var row = document.getElementById('a11y-' + key + '-row');
+    if (!row) return;
+    row.classList.toggle('active', !!A[key]);
+    row.setAttribute('aria-checked', !!A[key]);
+  }
+
+  /* ── Badge (count of active features) ──────────────────── */
+  function updateBadge() {
+    var count = ['contrast','invert','dyslexia','spacing','links','motion','cursor','tts']
+      .filter(function(k){ return !!A[k]; }).length;
+    if (A.fontSize !== 100) count++;
+    var badge = document.getElementById('a11y-fab-badge');
+    if (!badge) return;
+    badge.textContent = count;
+    badge.classList.toggle('show', count > 0);
+  }
+
+  /* ── Public API ─────────────────────────────────────────── */
+  window.toggleA11yPanel = function() {
+    panelOpen = !panelOpen;
+    var panel = document.getElementById('a11y-panel');
+    if (!panel) return;
+    panel.classList.toggle('open', panelOpen);
+    // Re-apply TTS listeners whenever panel opens (DOM may have changed)
+    if (panelOpen && A.tts) applyTTS();
+  };
+
+  window.toggleA11y = function(key) {
+    A[key] = !A[key];
+    // Mutual exclusion: contrast & invert can't both be "default off"
+    applyAll();
+    save();
+  };
+
+  window.changeFontSize = function(dir) {
+    A.fontSize = Math.min(150, Math.max(80, A.fontSize + dir * 10));
+    applyAll();
+    save();
+  };
+
+  window.resetA11y = function() {
+    window.speechSynthesis && window.speechSynthesis.cancel();
+    A = { contrast:false, invert:false, dyslexia:false, spacing:false,
+          links:false, motion:false, cursor:false, tts:false, fontSize:100 };
+    applyAll();
+    save();
+  };
+
+  window.saveA11yProfile = function() {
+    save();
+    // Brief toast
+    var btn = document.querySelector('.a11y-profile-btn');
+    if (!btn) return;
+    var orig = btn.textContent;
+    btn.textContent = '✓ Saved!';
+    setTimeout(function(){ btn.textContent = orig; }, 1400);
+  };
+
+  /* ── Keyboard: Escape closes panel ─────────────────────── */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && panelOpen) window.toggleA11yPanel();
+  });
+
+  /* ── Init on load ───────────────────────────────────────── */
+  function init() {
+    load();
+    // Honour prefers-reduced-motion by default
+    if (!localStorage.getItem('nirmaan_a11y') &&
+        window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      A.motion = true;
+    }
+    applyAll();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+
 </body>
 </html>
