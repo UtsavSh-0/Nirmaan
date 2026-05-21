@@ -1,237 +1,380 @@
 # ✦ Nirmaan — AI Internship Platform
-### v3.0 · Made in India 🇮🇳
 
-> **Democratizing internship access for every student in India.**
-
-Nirmaan uses semantic AI to match students with internships based on skills, projects, and potential — not just keywords or college pedigree. Built as a complete career operating system: from profile to placement. Companies get a fully separate hiring dashboard with AI-ranked candidates.
+> **AI-powered internship matching for every student in India.**
+> Version 3.0 · Made in India 🇮🇳 · PWA · Bilingual (EN / हिंदी)
 
 ---
 
-## 🚀 Features
+## Table of Contents
 
-### For Students
-| Feature | Description |
-|---|---|
-| 🤖 **AI Matching** | Sentence Transformers + cosine similarity across 40+ dimensions — every internship gets a personalised match score |
-| 📊 **Skill Gap Analyzer** | Compares your skills vs. role requirements; recommends curated courses to close every gap |
-| 🗺️ **Career Roadmap** | Week-by-week personalised plan from profile-building to landing your first offer |
-| 📄 **Resume Builder** | Live AI-assisted resume editor with real-time preview and one-click PDF export |
-| 🤝 **Networking Hub** | Connect with seniors, alumni, and professionals at target companies for referrals and advice |
-| 🎙️ **Arya AI Assistant** | Voice-enabled career chatbot — interview prep, salary info, DSA tips, and full platform navigation in English or Hindi |
-| 🔖 **Saved & Applied** | Track saved internships and application status in one place |
-| 🔔 **Smart Notifications** | In-app alert feed with match updates, company views, application status, and career tips |
-
-### For Companies
-| Feature | Description |
-|---|---|
-| ➕ **Post Internships** | Create listings with role, stipend, skills, perks, and deadlines |
-| 👥 **AI Candidate Ranking** | Browse candidates automatically ranked by AI match score for your specific role |
-| 📈 **Analytics** | Platform-level insights on applications, shortlists, and match quality |
-| 🏢 **Employer Profile** | Company page visible to 10,000+ active students, with industry, size, culture, and perks |
-
-### For Admins
-| Feature | Description |
-|---|---|
-| 🛡️ **User Management** | View, edit, suspend, or impersonate any user account |
-| 💼 **Internship Management** | Moderate listings across all company partners |
-| 🤖 **AI Engine Monitor** | Live stats on the embedding model, vector DB, query latency, and accuracy |
+1. [Overview](#overview)
+2. [File Structure](#file-structure)
+3. [Features](#features)
+4. [Pages & Navigation](#pages--navigation)
+5. [Global Search](#global-search)
+6. [AI Chatbot (Arya)](#ai-chatbot-arya)
+7. [Accessibility Widget](#accessibility-widget)
+8. [PWA & Service Worker](#pwa--service-worker)
+9. [Push Notifications](#push-notifications)
+10. [Bilingual Support](#bilingual-support)
+11. [Dark Mode](#dark-mode)
+12. [Onboarding Tour](#onboarding-tour)
+13. [Admin Panel](#admin-panel)
+14. [Company Dashboard](#company-dashboard)
+15. [Getting Started](#getting-started)
+16. [Keyboard Shortcuts](#keyboard-shortcuts)
+17. [Browser Support](#browser-support)
+18. [Changelog](#changelog)
 
 ---
 
-## 🗂️ Project Structure
+## Overview
+
+Nirmaan is a fully client-side, single-page web application that helps Indian students find AI-ranked internship opportunities tailored to their skills, education, and career goals. It runs entirely in the browser with no backend required — all data, state, and AI logic is handled in JavaScript.
+
+**Key design principles:**
+- Zero backend dependency — ships as static HTML/CSS/JS files
+- Mobile-first, PWA-installable
+- Fully bilingual (English + Hindi) with one-click language switching
+- Accessible (WCAG-conscious, screen reader hints, full accessibility widget)
+
+---
+
+## File Structure
 
 ```
 nirmaan/
-├── index.html            # Splash / loading screen → auto-redirects to nirmaan.html
-├── nirmaan.html          # App shell — links CSS and JS (18 lines)
-├── nirmaan.css           # All styles: design tokens, components, dark mode, responsive (~450 lines)
-├── nirmaan.js            # Full application: state, routing, page builders, auth, chat, voice (~3000 lines)
-├── nirmaan-chatbot.html  # Standalone chatbot popup (opened via nirmaan-chat-opener.html)
-├── nirmaan-chat-opener.html  # Launcher page for the popup chatbot
-└── nirmaan-loader.html   # Alternate loader screen
+├── index.html              # Splash / loading screen → redirects to nirmaan.html
+├── nirmaan.html            # Main app shell (injects chat modal, hero animations, a11y widget)
+├── nirmaan.js              # All app logic, state, page builders, data (~4100 lines)
+├── nirmaan.css             # All styles including global search overlay, dark theme
+├── nirmaan-chatbot.html    # Standalone chatbot popup window
+├── nirmaan-chat-opener.html# Demo page to launch chatbot in a popup
+├── nirmaan-loader.html     # Reusable loader animation page
+├── manifest.json           # PWA manifest (icons, shortcuts, display mode)
+├── sw.js                   # Service Worker (caching + push notifications)
+└── icons/
+    ├── icon-72.png … icon-512.png
+    └── badge-72.png
 ```
 
-> All files can live in the same directory. Open `index.html` (or `nirmaan.html` directly) in any modern browser — no build step required.
-
 ---
 
-## 🛠️ Tech Stack
+## Features
 
-| Layer | Technology |
+### Core Platform
+| Feature | Description |
 |---|---|
-| Language | Vanilla JS — zero dependencies, no build step |
-| Styling | CSS Custom Properties — full dark/light theme via `data-theme` |
-| AI Matching | Simulated Sentence Transformers + cosine similarity |
-| Voice | Web Speech API — voice input and TTS for Arya assistant |
-| Fonts | Clash Display (headings) · General Sans (body) via Google Fonts |
-| PWA | `apple-mobile-web-app-capable`, `theme-color`, `viewport-fit=cover` |
+| **AI Matching** | Internships ranked by percentage match against the user's skills, interests, and profile |
+| **Skill Gap Analysis** | Identifies missing skills for top internship matches; recommends courses |
+| **Career Roadmap** | Week-by-week personalised plan from profile setup to landing an offer |
+| **Resume Builder** | AI-assisted resume creation with ATS optimisation tips |
+| **Networking Hub** | Connect with alumni, seniors, and professionals for referrals |
+| **Saved Internships** | Bookmark and track applied/saved listings |
+| **Smart Apply** | One-tap application with personalised message suggestions |
+| **Job Alerts** | Push notification alerts for new matching internships |
 
----
-
-## 🎭 Demo Roles
-
-Open the app → **Login** to instantly try any role — no registration needed:
-
-| Role | Email | What you'll see |
-|---|---|---|
-| 🎓 Student | `student@test.com` | Dashboard, AI matches, skill gap, roadmap, resume, networking |
-| 🏢 Company | `hr@techcorp.com` | Post internships, AI-ranked candidate shortlist |
-| 🛡️ Admin | `admin@nirmaan.in` | User management, internship control, AI engine stats |
-
-There is also a **5-second auto-login** countdown on the login page for quick demo access.
-
----
-
-## 🔐 Sign Up Flow
-
-Nirmaan has **two completely separate sign-up paths** that branch at Step 2:
-
-### Student Path (7 Steps)
-| Step | Content |
+### Platform-Wide
+| Feature | Description |
 |---|---|
-| 1 — Account | Name, email, phone, password (with live strength meter + criteria checklist), email OTP verification |
-| 2 — Role | Choose Student; set city and preferred work mode |
-| 3 — Academic | Degree, major, college, year, CGPA, experience level |
-| 4 — Skills | Technical skill tags, areas of interest, duration and stipend preferences |
-| 5 — Portfolio | LinkedIn, GitHub, portfolio URL, project list, resume upload |
-| 6 — Extras | Certifications, optional message to companies |
-| 7 — Review | AI pre-analysis, profile score, top match preview, summary |
-
-### Company Path (5 Steps)
-| Step | Content |
-|---|---|
-| 1 — Account | Name, email, phone, password (with live strength meter), email OTP verification |
-| 2 — Role | Choose Company / Recruiter; set headquarters city; feature overview |
-| 3 — Company Info | Company name, industry, size, website, description, LinkedIn |
-| 4 — Hiring Needs | Roles typically hired for (tag picker), work mode, stipend range, perks & benefits, headcount |
-| 5 — Review | Employer profile preview, candidate pool stats, summary |
-
-**Password security on Step 1:**
-- Live strength bar (Too short → Weak → Fair → Good → Strong)
-- 5 criteria checklist: 8+ characters, Uppercase, Lowercase, Number, Symbol — each shows ○ / ✓ in real time
-- "Passwords do not match" inline message on the confirm field
-- Fields survive OTP send/verify — no data loss on re-render
+| **Global Search** | Ctrl+K overlay searches internships + pages from anywhere in the app |
+| **AI Chatbot (Arya)** | Bilingual voice + text assistant embedded in the app |
+| **Accessibility Widget** | Font size, contrast, dyslexia font, TTS, reduced motion, and more |
+| **Dark Mode** | Full dark theme toggle, persisted in localStorage |
+| **Bilingual UI** | English ↔ Hindi toggle, persisted per session |
+| **PWA Install** | Installable as a native-feeling app on Android, iOS, and desktop |
+| **Push Notifications** | Admin-sent push alerts reach users even when app is closed |
+| **Onboarding Tour** | Guided spotlight tour for new users (student and company flows) |
+| **Rewards** | Gamified achievement badges and milestones |
 
 ---
 
-## 📱 Mobile Support
+## Pages & Navigation
 
-Nirmaan is fully optimised for mobile with a dedicated bottom navigation bar and mobile-specific bottom-sheet drawers.
+### Desktop Sidebar (logged-in users)
+- ⚡ Dashboard
+- ✨ AI Matches
+- 📊 Skill Gap
+- 🗺️ Career Roadmap
+- 📄 Resume Builder
+- 🤝 Networking Hub
+- 🔖 Saved
+- 👤 Profile
 
-### Bottom Navigation Bar
-After login, the mobile nav shows:
+### Mobile Bottom Navigation (logged-in users)
 - ⚡ Home (Dashboard)
-- ✨ Matches (Top Match page)
-- 📊 Skills (Skill Gap)
+- ✨ Matches
+- 📊 Skills
+- 🔍 **Search** ← accessible from every page
 - 🗺️ Roadmap
-- 🔔 Alerts (Notification bottom sheet)
-- ☰ More (slide-up drawer)
+- ☰ More (drawer with remaining pages)
+- 🔔 Alerts
 
-### More Drawer (☰)
-Opens as a smooth slide-up bottom sheet with:
-- Resume, Networking, Saved, Profile links
-- Language toggle (English ↔ हिन्दी)
-- Dark / Light mode toggle
-- Logout (red)
-- Close button (×) and tap-backdrop-to-dismiss
-
-### Notifications Bottom Sheet (🔔)
-Full-height scrollable bottom sheet with:
-- Unread count badge
-- Mark All Read button
-- Each notification: icon, title, body, timestamp, dismiss (×)
-- Notification Settings link
-
-### Top Matches Page
-- Filter bar scrolls **horizontally** — no overflow or wrapping on narrow screens
-- Perfect Matches grid is **single column** on mobile
-- Job title truncates with ellipsis — no card overflow
-- Apply button expands to full width on mobile; Save / Gap / Company share a second row
-- Compact pills and skill tags that wrap cleanly
-
-### General Mobile Optimisations
-- Native bottom nav (context-aware: public vs. dashboard pages)
-- Horizontally scrollable metric cards on the dashboard
-- Bottom-sheet modals on small screens
-- iOS safe area insets (`env(safe-area-inset-*)`) for notch and home indicator
-- `font-size: 16px` on all inputs to prevent iOS auto-zoom
-- `touch-action: manipulation` — eliminates 300 ms tap delay
-- Chat FAB repositioned above the bottom nav bar
+### Public Pages
+- 🏠 Home (landing page with hero, stats, features)
+- ℹ️ About
+- ✉️ Contact
+- 🔑 Login
+- 📝 Sign Up (multi-step: 7 steps for students, 6 for companies)
+- 📲 Install App
 
 ---
 
-## 🌙 Dark Mode
+## Global Search
 
-Click the 🌙 icon in the nav (or in the More drawer on mobile) to toggle dark mode. The theme applies instantly via `data-theme="dark"` on the root element — all colours are CSS variables, so zero flicker.
+Accessible from **every page and every screen size**.
 
----
+### How to open
+| Method | Action |
+|---|---|
+| Desktop nav | Click the 🔍 icon in the top-right nav bar |
+| Mobile bottom nav | Tap the 🔍 Search button |
+| Keyboard | `Ctrl+K` (Windows/Linux) or `Cmd+K` (Mac) |
 
-## 🌐 Bilingual (English / Hindi)
+### What it searches
+- **Internships** — by title, company, skills, field, location, and match percentage
+- **Pages & features** — Dashboard, Skill Gap, Roadmap, Resume Builder, Networking Hub, Saved, Profile
 
-Full i18n support. Every visible string is key-mapped in a `T` object with `en` and `hi` entries. Switch language from:
-- The nav bar (desktop)
-- The More drawer (mobile)
-- The language popup shown on first visit
-
----
-
-## 🗺️ Page Map
-
-```
-/           → Splash loader (index.html) → auto-redirects after 2.8 s
-/home       → Hero, features, stats, CTA, footer
-/login      → Role selector (Student / Company / Admin), 5s auto-login, Google OAuth button
-/signup     → 7-step student onboarding OR 5-step company onboarding (branches at step 2)
-/dash       → Student dashboard: metrics, matches, activity chart, AI insights
-/recs       → AI-ranked internship recommendations with filters + perfect/other match sections
-/skillgap   → Skill radar, gap analysis, course recommendations
-/roadmap    → Week-by-week career plan with progress tracking
-/resume     → Live resume builder with preview pane
-/network    → Networking hub: connect with professionals, send messages
-/saved      → Saved internships
-/profile    → Edit profile, skills, projects, certifications
-/codash     → Company dashboard: post internship, candidate pipeline
-/admin      → Admin panel: users, internships, analytics, AI engine stats
-/about      → Team and mission
-/contact    → Contact form + office details
-```
+### Behaviour
+- Empty query shows Quick Jump shortcuts + top internships
+- Typing filters both categories live
+- Clicking an internship result navigates to AI Matches with the query pre-filled
+- Clicking a page result navigates directly to that page
+- **Arrow keys** navigate the result list; **Enter** opens the first (or focused) result
+- **Escape** closes the overlay
+- Full dark mode and mobile support
 
 ---
 
-## ⚙️ Getting Started
+## AI Chatbot (Arya)
 
-No install. No build. Just open the file:
+An embedded bilingual voice + text assistant available on every page.
+
+### Opening the chatbot
+- Click the 💬 floating action button (bottom-right corner)
+- Click the 🎙️ microphone icon in the top nav to open chat and activate voice immediately
+
+### Features
+- **Bilingual** — auto-detects the app's current language (EN/हिंदी) and responds accordingly
+- **Voice input** — uses Web Speech API (`webkitSpeechRecognition`) for hands-free queries
+- **Voice output** — reads bot replies aloud via `SpeechSynthesis`
+- **Keyword knowledge base** — covers internships, skills, resume, roadmap, networking, coding, platform features
+- **Mobile layout** — full-screen bottom sheet on mobile; floating panel on desktop
+
+### Standalone mode
+Open `nirmaan-chatbot.html` directly, or use `nirmaan-chat-opener.html` to launch it as a compact popup window (420×600 px).
+
+---
+
+## Accessibility Widget
+
+A floating ♿ button (bottom-left) opens a full accessibility settings panel.
+
+### Options
+| Setting | Effect |
+|---|---|
+| Font Size | Scales from 80% to 150% in 10% steps |
+| High Contrast | `filter: contrast(1.55)` on the entire page |
+| Invert Colours | `filter: invert(1) hue-rotate(180deg)` |
+| Dyslexia-Friendly Font | Switches to Arial with increased letter/word spacing |
+| Line Spacing | Sets `line-height: 2.1` globally |
+| Highlight Links | Outlines all clickable elements in amber |
+| Reduce Motion | Sets all animation durations to 0.001 ms |
+| Large Cursor | Custom SVG cursor |
+| Text to Speech | Click any heading or paragraph to hear it read aloud |
+
+All settings persist in `localStorage` under the key `nirmaan_a11y`. The badge on the ♿ button shows how many options are currently active.
+
+---
+
+## PWA & Service Worker
+
+Nirmaan is a fully installable Progressive Web App.
+
+### Install flow
+1. Visit the app in Chrome/Edge/Safari
+2. Click **📲 Install App** in the top nav, or use the browser's native install prompt
+3. The app installs to the home screen / taskbar with standalone display mode
+
+### Service Worker (`sw.js`) — v3.1
+- **Pre-caches** core shell files on install: `index.html`, `nirmaan.html`, `nirmaan.css`, `nirmaan.js`
+- **Network-first** fetch strategy with cache fallback for offline support
+- **Cache versioning** — old caches (`nirmaan-v*`) are cleaned on activate
+- Handles push events and notification click routing
+
+### PWA Shortcuts (manifest)
+- **AI Matches** → `nirmaan.html#recs`
+- **Skill Gap** → `nirmaan.html#skillgap`
+
+---
+
+## Push Notifications
+
+### User-facing
+- Users can grant push permission from the dashboard notification banner
+- Notifications are shown even when the app is closed (via Service Worker)
+- Clicking a notification opens the app and navigates to the relevant page
+
+### Admin push (from Admin Panel)
+Admins can compose and send push notifications to all users:
+1. Go to **Admin → Push Notifications** tab
+2. Fill in title, body, icon emoji, and target URL
+3. Click **Send Now**
+
+The Service Worker relays the push to all open client windows and shows a system notification for closed tabs.
+
+---
+
+## Bilingual Support
+
+The entire UI is available in **English** and **Hindi**.
+
+- Language is chosen on first visit via a language selection popup
+- Switch at any time via the 🌐 globe button (desktop nav or mobile nav)
+- Persisted in `localStorage` as `nirmaan_lang`
+- All strings including chatbot responses, tour text, form labels, error messages, and navigation are translated
+
+---
+
+## Dark Mode
+
+- Toggle via the 🌙 / ☀️ button in the top nav
+- Persisted in `localStorage` as `nirmaan_dark`
+- Implemented via `data-theme="dark"` on `<html>` with CSS custom properties
+- All components — including the global search overlay, chatbot, accessibility panel, and notifications — support dark mode
+
+---
+
+## Onboarding Tour
+
+A guided spotlight tour launches automatically for new users after login/signup.
+
+- **Student tour** — 6 steps covering the dashboard, AI matches, skill gap, roadmap, resume builder, and networking hub
+- **Company tour** — covers the company dashboard, posting internships, and reviewing candidates
+- Spotlight highlights the relevant UI element; overlay dims the rest
+- Can be skipped at any step; re-triggerable from the profile/settings area
+
+---
+
+## Admin Panel
+
+Accessible to users with the `admin` role at `/admin` (or `go('admin')`).
+
+### Tabs
+- **Users** — view, edit, suspend, or impersonate any user account; export user list
+- **Internships** — manage all internship listings; approve/reject/feature
+- **Analytics** — platform stats, match rates, engagement metrics (charts)
+- **Push Notifications** — compose and broadcast push messages to all users
+
+---
+
+## Company Dashboard
+
+Companies log in with a separate signup flow and access `go('codash')`.
+
+### Features
+- Post new internship listings (role, skills, location, stipend, duration)
+- Review AI-ranked candidate applications
+- Shortlist, reject, or message candidates
+- View analytics on listing performance
+
+---
+
+## Getting Started
+
+### Running locally
+
+No build step required. Serve the files with any static file server:
 
 ```bash
-# Clone or download all files into one folder, then:
-open index.html
-
-# Or serve locally for best results:
+# Python
 python3 -m http.server 8080
-# then visit http://localhost:8080
+
+# Node.js (npx)
+npx serve .
+
+# VS Code
+# Use the "Live Server" extension
 ```
 
-Any static server works for local dev — VS Code Live Server, `npx serve`, `npx http-server`, etc.
+Then open `http://localhost:8080` in your browser. The splash screen (`index.html`) will load and redirect to `nirmaan.html` after ~2.8 seconds.
+
+### Demo credentials
+
+The app ships with mock data. Use any of these to log in:
+
+| Role | Email | Password |
+|---|---|---|
+| Student | `demo@student.com` | any |
+| Company | `hr@company.com` | any |
+| Admin | `admin@nirmaan.ai` | any |
+
+> All data is in-memory and resets on page refresh.
+
+### Deploying
+
+Drop all files into any static hosting service:
+- **GitHub Pages** — push to a repo and enable Pages
+- **Netlify / Vercel** — drag-and-drop the folder
+- **Firebase Hosting** — `firebase deploy`
+
+Ensure `manifest.json` and `sw.js` are served from the root path for PWA features to work.
 
 ---
 
-## 🐛 Known Fixes in v3.0
+## Keyboard Shortcuts
 
-| Issue | Fix |
+| Shortcut | Action |
 |---|---|
-| Sign-up fields reset on OTP send/verify | All step-1 values (including passwords) saved to state before every `render()` and restored via JS after DOM rebuild |
-| Password fields always blank after re-render | Browsers block `value=""` attr on `type=password` — now restored via `element.value = S.pw` in JS post-render |
-| More button not working on mobile | Eliminated `render()` from toggle; drawer is always in DOM, shown/hidden via CSS class + JS — no race with global click handler |
-| Notification panel broken on mobile | Desktop dropdown hidden on mobile via CSS; replaced with a dedicated bottom-sheet drawer wired in `attachEv()` |
-| Top Matches page overflowing on mobile | Single-column grid, horizontal filter scroll, ellipsis truncation, full-width apply button |
-| Company signup identical to student | Step 2 now branches: company gets 5-step flow (Company Info → Hiring Needs → Review) instead of student's 7-step academic flow |
+| `Ctrl+K` / `Cmd+K` | Open / close Global Search overlay |
+| `↑` / `↓` | Navigate search results |
+| `Enter` | Open focused/first search result |
+| `Escape` | Close any open overlay (search, chat, accessibility panel) |
+| `Ctrl+O` | Open standalone chatbot popup (from `nirmaan-chat-opener.html`) |
 
 ---
 
-## 📄 License
+## Browser Support
 
-MIT — free to use, modify, and distribute.
+| Browser | Support |
+|---|---|
+| Chrome 90+ | ✅ Full (PWA + Voice) |
+| Edge 90+ | ✅ Full (PWA + Voice) |
+| Firefox 95+ | ✅ (no voice input — SpeechRecognition not supported) |
+| Safari 15+ (iOS/macOS) | ✅ PWA installable on iOS 16.4+; voice input limited |
+| Samsung Internet | ✅ Full |
+
+**Voice features** (speech recognition + synthesis) require Chrome or a Chromium-based browser.
 
 ---
 
-*Built with ♥ for every student in India chasing their first break.*
+## Changelog
+
+### v3.0 (current)
+- ✅ **Global Search** — Ctrl+K overlay with internship + page search, accessible from every page and mobile nav
+- ✅ **Search button in mobile bottom nav** — persistent 🔍 tab available on all dashboard pages
+- ✅ **Search icon in desktop nav** — always-visible 🔍 in top-right nav actions (not just dashboard)
+- ✅ Accessibility widget with 9 settings, badge counter, and localStorage persistence
+- ✅ Hero section particle canvas animation + typewriter effect
+- ✅ Bilingual chatbot (Arya) with voice input/output
+- ✅ Admin push notification composer
+- ✅ Rewards / gamification system
+- ✅ PWA install banner with deferred prompt
+- ✅ Service Worker v3.1 with push notification support
+- ✅ Onboarding spotlight tour (student + company)
+
+### v2.x
+- Skill Gap analysis with course recommendations
+- Career Roadmap with weekly milestones
+- Resume Builder with ATS tips
+- Networking Hub with connection management
+- Dark mode and bilingual (EN/HI) support
+
+### v1.x
+- Initial AI matching engine
+- Basic internship listings
+- Student sign-up and profile
+
+---
+
+*Built with ❤️ in India 🇮🇳 — Nirmaan Technologies Pvt. Ltd. © 2025*
