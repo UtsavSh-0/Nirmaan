@@ -723,7 +723,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!afterBr) return;
 
     /* Only animate the suffix text after <br> */
-    const suffix = afterBr.replace(/<[^>]*>/g, '').trim();
+    const suffixContainer = document.createElement('div');
+    suffixContainer.innerHTML = afterBr;
+    const suffix = (suffixContainer.textContent || '').trim();
     const prefix = h1.innerHTML.split('<br>')[0] + '<br>';
 
     h1.innerHTML = prefix + '<span id="tw-text"></span><span class="tw-cursor"></span>';
