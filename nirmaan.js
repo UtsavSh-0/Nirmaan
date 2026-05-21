@@ -13,7 +13,6 @@ const S={
   pushSubscription:null,
   pushBannerDismissed: localStorage.getItem('nirmaan_push_dismissed')==='1',
   installBannerDismissed: localStorage.getItem('nirmaan_install_dismissed')==='1',
-  installSelectedPlatform: null, // tracks which platform tab is open on /install page
   // Admin push composer
   adminPushTab:'compose',
   adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
@@ -1945,7 +1944,7 @@ function buildMobNav(){
       <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
-      ${!S.pwaInstalled ? `<button class="sb-item" onclick="closeMobMenu();${S.pwaInstallPrompt?'triggerInstall()':window._isIOS?'showIOSInstallTip()':'notif(\'Open in Chrome or Edge to install the app\',\'in\')'}"><span class="sb-ic">📲</span>Install App</button>` : `<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>`}
+      ${!S.pwaInstalled ? `<button class="sb-item" onclick="closeMobMenu();go('install')"><span class="sb-ic">📲</span>Install App</button>` : `<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>`}
       <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
       <button class="sb-item" onclick="closeMobMenu();S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
       <button class="sb-item" onclick="closeMobMenu();toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
@@ -2003,7 +2002,7 @@ function buildNav(){
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
-      ${!S.pwaInstalled && S.pwaInstallPrompt ? `<button class="btn btn-p btn-sm" onclick="triggerInstall()" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : !S.pwaInstalled && !S.pwaInstallPrompt && window._isIOS ? `<button class="btn btn-ghost btn-sm" onclick="showIOSInstallTip()" title="Install on iOS">📲 Add to Home</button>` : ''}
+      ${!S.pwaInstalled ? `<button class="btn btn-p btn-sm" onclick="go('install')" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : ''}
       ${S.user?`<div style="position:relative">
         <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" id="tour-bell" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
@@ -2065,7 +2064,7 @@ function sb(role){
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
-      ${!S.pwaInstalled ? `<button class="sb-item" onclick="${S.pwaInstallPrompt?'triggerInstall()':window._isIOS?'showIOSInstallTip()':'notif(\'Open in Chrome/Edge to install\',\'in\')'}"><span class="sb-ic">📲</span>Install App</button>` : '<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>'}
+      ${!S.pwaInstalled ? `<button class="sb-item" onclick="go('install')"><span class="sb-ic">📲</span>Install App</button>` : '<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>'}
       <button class="sb-item" onclick="toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
       <button class="sb-item" onclick="doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
     </div>
@@ -2111,7 +2110,6 @@ function buildHome(){
         <button class="btn btn-p" style="font-size:.95rem;padding:.75rem 1.85rem" onclick="go('signup')">🚀 Get Started Free</button>
         <button class="btn btn-ghost" style="font-size:.95rem;padding:.75rem 1.65rem" onclick="go('login')">→ Sign In</button>
         <button class="btn btn-ghost" style="font-size:.95rem;padding:.75rem 1.5rem" onclick="toggleVoice()">🎙️ Try Voice</button>
-        ${!S.pwaInstalled ? `<button class="btn btn-ghost" style="font-size:.95rem;padding:.75rem 1.5rem;display:inline-flex;align-items:center;gap:.4rem" onclick="${S.pwaInstallPrompt?'triggerInstall()':'go(\'install\')'}">📲 Install App</button>` : ''}
       </div>
       <div style="display:flex;gap:2.75rem;justify-content:center;margin-top:3.75rem;padding-top:2.75rem;border-top:1px solid var(--b);flex-wrap:wrap">
         ${(t('stats')||[['15k+','Internships'],['97%','AI Accuracy'],['6.2k+','Placed'],['1.1k+','Companies']]).map(([v,l])=>`<div style="text-align:center"><div style="font-family:var(--fh);font-size:1.9rem;font-weight:700;background:var(--g1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-.03em">${v}</div><div style="font-size:.79rem;color:var(--t3);margin-top:.2rem">${l}</div></div>`).join('')}
@@ -3052,27 +3050,43 @@ function buildChat(){
   const ph=t('chatPlaceholder')||'Ask me anything…';
   const quickBtns=(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']);
   return `
-    ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
+    ${!S.chatOpen&&!S.chatHintDismissed?`
+    <div id="chat-hint-bubble" class="chat-hint" style="cursor:pointer">
+      <span style="flex:1">${hint}</span>
+      <span id="chat-hint-close" style="
+        display:inline-flex;align-items:center;justify-content:center;
+        width:24px;height:24px;border-radius:50%;
+        background:rgba(0,0,0,.08);font-size:1rem;font-weight:700;
+        margin-left:.35rem;flex-shrink:0;color:var(--t2)
+      ">×</span>
+    </div>`:''}
     <button id="chat-fab-btn" style="display:none"></button>
     ${S.chatOpen?`<div class="cw">
       <!-- Header -->
-      <div class="ch">
+      <div class="ch" style="display:flex;align-items:center;gap:.55rem;background:var(--g1);padding:.8rem 1rem;flex-shrink:0">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
         <div style="flex:1;min-width:0">
-          <div style="color:#fff;font-weight:700;font-size:.88rem;font-family:var(--fh)">Arya AI</div>
+          <div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div>
           <div style="color:rgba(255,255,255,.65);font-size:.65rem">● Online · 50+ topics</div>
         </div>
         <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.16rem .45rem;font-size:.62rem;cursor:pointer;font-family:var(--fb);flex-shrink:0">🗑</button>
-        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.35rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+        <!-- Close button — large, always visible, works on all screens -->
+        <button id="chat-close-btn" class="ch-close-btn" aria-label="Close chat" style="
+          background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);
+          color:#fff;border-radius:50%;width:34px;height:34px;
+          cursor:pointer;font-size:1.15rem;margin-left:.3rem;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+          font-weight:700;line-height:1;transition:background .15s
+        ">×</button>
       </div>
 
       <!-- Messages -->
-      <div class="cms" id="chatmsgs">
+      <div class="cms" id="chatmsgs" style="flex:1;overflow-y:auto;padding:.65rem">
         ${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
         ${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}
       </div>
 
-      <!-- Quick buttons: horizontal scroll, no wrap -->
+      <!-- Quick buttons -->
       <div class="cqb">
         ${quickBtns.map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}
       </div>
@@ -3290,219 +3304,113 @@ function buildModal(){
 }
 
 // ══════════════════════ INSTALL PAGE ══════════════════════
-function buildInstallPage() {
-  const ua        = navigator.userAgent;
-  const isIOS     = /iphone|ipad|ipod/i.test(ua) && !window.MSStream;
-  const isAndroid = /android/i.test(ua);
-  const isPC      = !isIOS && !isAndroid;
-  const isChrome  = /chrome|chromium|crios/i.test(ua) && !/edg/i.test(ua);
-  const isEdge    = /edg/i.test(ua);
-  const isSafari  = /safari/i.test(ua) && !isChrome && !isEdge;
-  const isFirefox = /firefox|fxios/i.test(ua);
-  const isSamsung = /samsungbrowser/i.test(ua);
+function buildInstallPage(){
+  const isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /android/i.test(navigator.userAgent);
   const hasPWA    = !!S.pwaInstallPrompt;
   const installed = S.pwaInstalled;
 
-  // ── Detect current platform label ──
-  let platform = 'Windows / Linux PC';
-  if (/mac/i.test(ua) && isPC)      platform = 'Mac';
-  if (isAndroid && isChrome)         platform = 'Android · Chrome';
-  if (isAndroid && isSamsung)        platform = 'Android · Samsung Browser';
-  if (isAndroid && isFirefox)        platform = 'Android · Firefox';
-  if (isIOS && isSafari)             platform = 'iPhone / iPad · Safari';
-  if (isIOS && isChrome)             platform = 'iPhone / iPad · Chrome';
-
-  // ── Per-platform install steps ──
-  function stepsFor(pid) {
-    const s = {
-      chrome_desktop: [
-        ['🌐','Open in Chrome','Make sure you\'re using Google Chrome (version 73+) on Windows, Mac, or Linux.'],
-        ['📍','Look for the install icon','In the address bar, click the <strong>⊕ Install</strong> icon (or the computer icon with a down arrow) on the right side.'],
-        ['✅','Click "Install"','A dialog will appear. Click <strong>Install</strong> — Nirmaan will open as a standalone app instantly.'],
-        ['🚀','Done!','Find Nirmaan in your Start Menu (Windows), Applications (Mac), or desktop shortcut.'],
-      ],
-      edge_desktop: [
-        ['🌐','Open in Edge','Use Microsoft Edge (version 79+) on Windows or Mac.'],
-        ['⋯','Open the menu','Click the <strong>⋯</strong> (three dots) menu in the top-right corner.'],
-        ['📲','Click "Apps"','Select <strong>Apps → Install this site as an app</strong>.'],
-        ['✅','Confirm install','Click <strong>Install</strong> in the dialog. Nirmaan appears in your taskbar and Start Menu.'],
-      ],
-      android_chrome: [
-        ['🌐','Open in Chrome','Visit Nirmaan in Google Chrome on Android.'],
-        ['⋮','Tap the menu','Tap the <strong>⋮</strong> (three-dot) menu in the top-right corner.'],
-        ['📲','Tap "Add to Home screen"','Select <strong>Add to Home screen</strong> from the menu.'],
-        ['✅','Confirm','Tap <strong>Add</strong> — Nirmaan\'s icon appears on your home screen like a native app.'],
-      ],
-      android_samsung: [
-        ['🌐','Open in Samsung Browser','Visit Nirmaan in Samsung Internet browser.'],
-        ['☰','Open the menu','Tap the <strong>☰</strong> menu at the bottom of the screen.'],
-        ['➕','Tap "Add page to"','Select <strong>Add page to → Home screen</strong>.'],
-        ['✅','Confirm','Tap <strong>Add</strong> to install Nirmaan.'],
-      ],
-      ios_safari: [
-        ['🧭','Open in Safari','This only works in Safari — if you\'re in another browser, copy the URL and open it in Safari.'],
-        ['⬆️','Tap the Share button','Tap the <strong>Share ⬆️</strong> icon at the bottom of the screen (box with arrow).'],
-        ['➕','Tap "Add to Home Screen"','Scroll through the share sheet and tap <strong>Add to Home Screen</strong>.'],
-        ['✅','Tap "Add"','Optionally rename the app, then tap <strong>Add</strong>. Done — Nirmaan is on your home screen!'],
-      ],
-      ios_chrome: [
-        ['⚠️','Chrome on iOS has a limitation','Apple restricts PWA install on iOS to Safari only.'],
-        ['🧭','Copy & open in Safari','Copy the URL from Chrome\'s address bar, then open Safari and paste it.'],
-        ['⬆️','Use Share → Add to Home Screen','Follow the Safari steps above to install.'],
-        ['✅','Nirmaan is installed','Launch it from your home screen for the full app experience.'],
-      ],
-      firefox: [
-        ['ℹ️','Firefox note','Firefox for Android and Desktop supports adding to home screen, but not full PWA install via prompt.'],
-        ['⋮','Open the menu','Tap or click the <strong>⋮</strong> menu.'],
-        ['🏠','Tap "Add to Home Screen"','Select <strong>Install</strong> or <strong>Add to Home screen</strong>.'],
-        ['✅','Done','Nirmaan will launch in a dedicated window.'],
-      ],
-    };
-    return s[pid] || s['chrome_desktop'];
+  // Auto-fire install prompt if available and user lands here
+  if(hasPWA && !installed && !S._installPagePromptFired){
+    S._installPagePromptFired = true;
+    setTimeout(()=>triggerInstall(), 400);
   }
 
-  // Auto-pick recommended steps
-  let stepsKey = 'chrome_desktop';
-  if (isIOS && isSafari)       stepsKey = 'ios_safari';
-  else if (isIOS)              stepsKey = 'ios_chrome';
-  else if (isAndroid && isSamsung) stepsKey = 'android_samsung';
-  else if (isAndroid)          stepsKey = 'android_chrome';
-  else if (isEdge)             stepsKey = 'edge_desktop';
-  else if (isFirefox)          stepsKey = 'firefox';
-  else if (isChrome || isPC)   stepsKey = 'chrome_desktop';
+  return `<div class="page" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.25rem;background:var(--bg2);text-align:center">
 
-  const steps = stepsFor(stepsKey);
-
-  const platforms = [
-    { id:'chrome_desktop', icon:'🖥️', label:'PC · Chrome / Chromium', badge:'Recommended' },
-    { id:'edge_desktop',   icon:'🪟', label:'PC · Microsoft Edge',   badge:'' },
-    { id:'android_chrome', icon:'🤖', label:'Android · Chrome',      badge:'Most Popular' },
-    { id:'android_samsung',icon:'📱', label:'Android · Samsung Browser', badge:'' },
-    { id:'ios_safari',     icon:'🍎', label:'iPhone / iPad · Safari', badge:'Required for iOS' },
-    { id:'ios_chrome',     icon:'🔵', label:'iPhone / iPad · Chrome', badge:'Workaround' },
-    { id:'firefox',        icon:'🦊', label:'Firefox (Any Device)',   badge:'' },
-  ];
-
-  const selPlatform = S.installSelectedPlatform || stepsKey;
-  const selSteps    = stepsFor(selPlatform);
-
-  return `<div class="page">
-  <!-- ── Hero ── -->
-  <section style="background:var(--bg2);border-bottom:1px solid var(--b);padding:3.5rem 2rem 3rem;text-align:center;position:relative;overflow:hidden">
-    <div style="position:absolute;inset:0;background-image:linear-gradient(rgba(99,102,241,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,0.05) 1px,transparent 1px);background-size:28px 28px;pointer-events:none"></div>
-    <div style="position:relative;z-index:1;max-width:680px;margin:0 auto">
-      <div style="width:72px;height:72px;border-radius:20px;background:var(--p);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:1.25rem;box-shadow:0 8px 28px rgba(99,102,241,.28)">📲</div>
-      <h1 style="font-family:var(--fh);font-size:clamp(1.8rem,4vw,2.7rem);font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.7rem">Install Nirmaan App</h1>
-      <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:1.75rem">Add Nirmaan to your home screen or desktop for <strong>instant access</strong>, offline support, and push notifications — no App Store required.</p>
-      ${installed
-        ? `<div style="display:inline-flex;align-items:center;gap:.6rem;background:rgba(34,197,94,.1);border:1.5px solid var(--green);border-radius:99px;padding:.55rem 1.35rem;font-size:.88rem;font-weight:700;color:var(--green)">✅ Nirmaan is already installed on this device!</div>`
-        : hasPWA
-          ? `<div style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap">
-              <button onclick="triggerInstall()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.7rem 1.85rem;font-size:.95rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:inline-flex;align-items:center;gap:.5rem;box-shadow:0 4px 18px rgba(99,102,241,.3)">📲 Install Now — One Click</button>
-              <div style="display:flex;align-items:center;gap:.4rem;font-size:.78rem;color:var(--t3);font-weight:600"><span style="width:8px;height:8px;border-radius:50%;background:var(--green);display:inline-block"></span>Your browser supports direct install</div>
-            </div>`
-          : `<div style="display:inline-flex;align-items:center;gap:.55rem;background:var(--pl);border:1.5px solid var(--p);border-radius:12px;padding:.65rem 1.2rem;font-size:.83rem;font-weight:600;color:var(--p)">📋 Detected: <strong>${platform}</strong> — follow the steps below</div>`
-      }
+    <!-- animated bg rings -->
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;border-radius:50%;border:1px solid rgba(99,102,241,.1);animation:spin 18s linear infinite"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;border-radius:50%;border:1px solid rgba(99,102,241,.13);animation:spin 11s linear reverse infinite"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;border-radius:50%;border:1px solid rgba(99,102,241,.16);animation:spin 7s linear infinite"></div>
+      <div style="position:absolute;inset:0;background-image:radial-gradient(rgba(99,102,241,.06) 1px,transparent 1px);background-size:28px 28px"></div>
     </div>
-  </section>
 
-  <!-- ── Benefits strip ── -->
-  <section style="background:var(--bg3);border-bottom:1px solid var(--b);padding:1.4rem 2rem">
-    <div style="max-width:1000px;margin:0 auto;display:flex;gap:2rem;justify-content:center;flex-wrap:wrap">
-      ${[['⚡','Instant Launch','Opens in under 1 second'],['📴','Works Offline','Core features without internet'],['🔔','Push Alerts','Admin & match notifications'],['🖥️','No App Store','Direct install from browser'],['📱','Home Screen Icon','Looks & feels native'],['🔒','Secure','HTTPS + sandboxed']].map(([ic,t,d])=>`<div style="text-align:center;min-width:100px">
-        <div style="font-size:1.35rem">${ic}</div>
-        <div style="font-size:.8rem;font-weight:700;color:var(--t);margin:.22rem 0 .12rem">${t}</div>
-        <div style="font-size:.71rem;color:var(--t3)">${d}</div>
-      </div>`).join('')}
-    </div>
-  </section>
+    <div style="position:relative;z-index:1;max-width:420px;width:100%">
 
-  <!-- ── Main content ── -->
-  <section style="padding:2.75rem 1.5rem;max-width:1060px;margin:0 auto">
-    <div style="display:grid;grid-template-columns:260px 1fr;gap:1.75rem;align-items:start">
-
-      <!-- Sidebar: platform picker -->
-      <div class="card" style="padding:0;overflow:hidden;position:sticky;top:1rem">
-        <div style="padding:.85rem 1rem;border-bottom:1px solid var(--b)">
-          <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">Choose Your Device</div>
-          <div style="font-size:.73rem;color:var(--t3);margin-top:.18rem">Auto-detected: <strong>${platform}</strong></div>
-        </div>
-        ${platforms.map(p => `<button onclick="S.installSelectedPlatform='${p.id}';render()" style="width:100%;background:${selPlatform===p.id?'var(--pl)':'transparent'};border:none;border-left:3px solid ${selPlatform===p.id?'var(--p)':'transparent'};padding:.72rem 1rem;text-align:left;cursor:pointer;display:flex;align-items:center;gap:.7rem;border-bottom:1px solid var(--b);transition:all .12s">
-          <span style="font-size:1.15rem">${p.icon}</span>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:.8rem;font-weight:${selPlatform===p.id?'700':'600'};color:${selPlatform===p.id?'var(--p)':'var(--t)'};line-height:1.3">${p.label}</div>
-            ${p.badge?`<div style="font-size:.65rem;font-weight:700;color:var(--p);margin-top:.1rem">${p.badge}</div>`:''}
-          </div>
-          ${selPlatform===p.id?'<span style="color:var(--p);font-size:.8rem">›</span>':''}
-        </button>`).join('')}
+      <!-- icon -->
+      <div style="width:88px;height:88px;border-radius:26px;background:var(--g1);display:inline-flex;align-items:center;justify-content:center;font-size:2.4rem;margin-bottom:1.5rem;box-shadow:0 10px 40px rgba(99,102,241,.35);position:relative">
+        ✦
+        <div style="position:absolute;inset:-6px;border-radius:32px;border:1.5px solid rgba(99,102,241,.25);animation:ring2 2.2s ease-in-out infinite"></div>
       </div>
 
-      <!-- Steps panel -->
-      <div>
-        <div class="card" style="margin-bottom:1.1rem">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.35rem;flex-wrap:wrap;gap:.6rem">
-            <div>
-              <h2 style="font-family:var(--fh);font-weight:700;font-size:1.05rem;color:var(--t)">${platforms.find(p=>p.id===selPlatform)?.icon||'📲'} ${platforms.find(p=>p.id===selPlatform)?.label||'Install Guide'}</h2>
-              <p style="font-size:.78rem;color:var(--t3);margin-top:.2rem">Follow these ${selSteps.length} steps</p>
-            </div>
-            ${(selPlatform==='chrome_desktop'||selPlatform==='android_chrome'||selPlatform==='edge_desktop') && hasPWA
-              ? `<button onclick="triggerInstall()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.52rem 1.25rem;font-size:.82rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:inline-flex;align-items:center;gap:.4rem">📲 Install Now</button>`
-              : ''}
-          </div>
+      ${installed ? `
+        <!-- Already installed -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Already Installed! 🎉</h1>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:2rem">Nirmaan is on your device. Open it from your home screen or app drawer anytime.</p>
+        <div style="display:inline-flex;align-items:center;gap:.55rem;background:rgba(34,197,94,.1);border:1.5px solid var(--green);border-radius:99px;padding:.6rem 1.4rem;font-size:.9rem;font-weight:700;color:var(--green);margin-bottom:1.5rem">✅ App installed on this device</div>
+        <div><button onclick="go('home')" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.75rem 2rem;font-size:.95rem;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back to Home</button></div>
 
-          <!-- Step cards -->
-          ${selSteps.map(([ico,title,desc],i) => `<div style="display:flex;gap:1rem;margin-bottom:${i<selSteps.length-1?'1.35rem':'0'};align-items:flex-start">
-            <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:0">
-              <div style="width:40px;height:40px;border-radius:50%;background:${i===selSteps.length-1?'var(--green)':'var(--p)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem;font-weight:800;box-shadow:0 3px 10px rgba(99,102,241,.2)">${i+1}</div>
-              ${i<selSteps.length-1?`<div style="width:2px;height:28px;background:var(--b);margin-top:4px"></div>`:''}
-            </div>
-            <div style="flex:1;padding-top:.3rem">
-              <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
-                <span style="font-size:1.1rem">${ico}</span>
-                <div style="font-size:.88rem;font-weight:700;color:var(--t)">${title}</div>
-              </div>
-              <div style="font-size:.8rem;color:var(--t2);line-height:1.65">${desc}</div>
+      ` : hasPWA ? `
+        <!-- Chrome / Edge / Android — direct one-click install -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Install Nirmaan</h1>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:.75rem">Your browser is asking for permission right now. Just click <strong>Install</strong> in the dialog above ↑</p>
+        <p style="font-size:.8rem;color:var(--t3);margin-bottom:2rem">If the dialog didn't appear, tap the button below.</p>
+
+        <button onclick="triggerInstall()" style="
+          background:var(--g1);color:#fff;border:none;border-radius:99px;
+          padding:.85rem 2.4rem;font-size:1.05rem;font-weight:800;cursor:pointer;
+          font-family:var(--fb);display:inline-flex;align-items:center;gap:.6rem;
+          box-shadow:0 8px 28px rgba(99,102,241,.38);transition:transform .15s,box-shadow .15s;
+          margin-bottom:1.75rem
+        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 36px rgba(99,102,241,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(99,102,241,.38)'">
+          📲 Install App — One Tap
+        </button>
+
+        <!-- what you get -->
+        <div class="card" style="text-align:left;margin-bottom:1.5rem">
+          <div style="font-family:var(--fh);font-weight:700;font-size:.85rem;color:var(--t);margin-bottom:.85rem">What you get</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+            ${[['⚡','Loads instantly'],['📴','Works offline'],['🔔','Push alerts'],['🏠','Home screen icon'],['🖥️','Dedicated window'],['🔒','Auto-updates']].map(([ic,lbl])=>`
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--t2)">
+              <span style="font-size:1rem">${ic}</span>${lbl}
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <button onclick="go('home')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:.83rem;text-decoration:underline">Not now</button>
+
+      ` : isIOS ? `
+        <!-- iOS Safari — browser API blocked by Apple, show 3-step inline -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Install on iPhone</h1>
+        <p style="font-size:.9rem;color:var(--t2);line-height:1.7;margin-bottom:1.75rem">Apple requires a quick 3-tap process through Safari to add apps to your home screen.</p>
+
+        <div style="text-align:left;margin-bottom:2rem">
+          ${[
+            ['⬆️','Tap the Share button','The box-with-arrow icon at the <strong>bottom</strong> of Safari.'],
+            ['➕','Tap "Add to Home Screen"','Scroll the share sheet and tap <strong>Add to Home Screen</strong>.'],
+            ['✅','Tap "Add"','Nirmaan appears on your home screen — tap it anytime to launch!'],
+          ].map(([ico,title,desc],i)=>`
+          <div style="display:flex;gap:.9rem;align-items:flex-start;margin-bottom:${i<2?'1.1rem':'0'}">
+            <div style="width:38px;height:38px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0">${i+1}</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:700;color:var(--t)">${ico} ${title}</div>
+              <div style="font-size:.78rem;color:var(--t2);margin-top:.18rem;line-height:1.6">${desc}</div>
             </div>
           </div>`).join('')}
         </div>
 
-        <!-- What you get after install -->
-        <div class="card" style="background:var(--pl);border:1.5px solid var(--p)">
-          <h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--p);margin-bottom:1rem">🎁 What you get after installing</h3>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.65rem">
-            ${[['🚀','Loads 3× faster','No browser chrome overhead'],['🔔','Push notifications','Match alerts & admin messages'],['📴','Offline mode','Browse saved internships offline'],['🏠','Home screen icon','One tap to open, always'],['🖥️','Dedicated window','No tab clutter in your browser'],['🔒','Auto-updates','Always the latest version']].map(([ic,t,d])=>`<div style="display:flex;gap:.6rem;align-items:flex-start">
-              <span style="font-size:1rem;flex-shrink:0;margin-top:.05rem">${ic}</span>
-              <div><div style="font-size:.8rem;font-weight:700;color:var(--t)">${t}</div><div style="font-size:.72rem;color:var(--t2)">${d}</div></div>
-            </div>`).join('')}
-          </div>
+        <div style="background:var(--pl);border:1.5px solid var(--p);border-radius:14px;padding:.75rem 1rem;font-size:.8rem;color:var(--p);font-weight:600;margin-bottom:1.5rem">
+          💡 Make sure you're using <strong>Safari</strong> — this doesn't work in Chrome on iOS.
         </div>
+        <button onclick="go('home')" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.7rem 2rem;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back to Home</button>
 
-        <!-- Troubleshooting -->
-        <details style="margin-top:1rem" ontoggle="">
-          <summary style="cursor:pointer;font-size:.83rem;font-weight:700;color:var(--t2);padding:.65rem .9rem;background:var(--bg3);border-radius:var(--r);border:1px solid var(--b);list-style:none;display:flex;align-items:center;gap:.5rem">
-            ❓ Troubleshooting / FAQ
-          </summary>
-          <div style="background:var(--bg2);border:1px solid var(--b);border-top:none;border-radius:0 0 var(--r) var(--r);padding:1rem 1.1rem">
-            ${[["I don't see the install button",'The install prompt only appears after visiting the page for the first time and meeting browser criteria (HTTPS, manifest, service worker). Try refreshing and using Chrome or Edge.'],["The icon doesn't appear on my home screen",'Check that you tapped "Add" in the final step. On Android, check the app drawer if it\'s not on the home screen.'],['Can I uninstall?','Yes — uninstall like any app. On Windows: Settings → Apps. On Android: long-press the icon → Uninstall. On iOS: long-press → Remove.'],['Will I lose my data?','No. Your profile and preferences are stored in the cloud (or local storage for the demo). Reinstalling won\'t delete anything.'],['Does it work on Firefox desktop?','Firefox desktop does not support the install prompt yet, but you can use "Add to Desktop" from the ☰ menu.']].map(([q,a])=>`<div style="margin-bottom:.9rem;padding-bottom:.9rem;border-bottom:1px solid var(--b)">
-              <div style="font-size:.82rem;font-weight:700;color:var(--t);margin-bottom:.28rem">Q: ${q}</div>
-              <div style="font-size:.78rem;color:var(--t2);line-height:1.6">A: ${a}</div>
-            </div>`).join('')}
-          </div>
-        </details>
-      </div>
-    </div>
-  </section>
+      ` : `
+        <!-- Firefox or unsupported browser -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Install Nirmaan</h1>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:1.5rem">For the best one-click install experience, open Nirmaan in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</p>
+        <div style="background:var(--bg3);border:1px solid var(--b);border-radius:14px;padding:1rem;margin-bottom:1.5rem;text-align:left">
+          <div style="font-size:.82rem;font-weight:700;color:var(--t);margin-bottom:.6rem">Supported browsers</div>
+          ${[['🟡','Google Chrome','Windows, Mac, Android — best support'],['🔵','Microsoft Edge','Windows, Mac'],['🤖','Android Chrome','Tap menu → Add to Home Screen'],].map(([ic,br,note])=>`
+          <div style="display:flex;gap:.6rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--b);font-size:.8rem">
+            <span>${ic}</span><div><strong>${br}</strong> <span style="color:var(--t3)">${note}</span></div>
+          </div>`).join('')}
+        </div>
+        <button onclick="go('home')" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.7rem 2rem;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back</button>
+      `}
 
-  <!-- ── Bottom CTA ── -->
-  <section style="background:var(--g1);padding:3rem 2rem;text-align:center">
-    <h2 style="font-family:var(--fh);color:#fff;font-size:1.5rem;font-weight:700;letter-spacing:-.03em;margin-bottom:.6rem">Ready to install?</h2>
-    <p style="color:rgba(255,255,255,.8);margin-bottom:1.5rem;font-size:.88rem">Join 15,000+ students who use Nirmaan as a native app</p>
-    <div style="display:flex;gap:.7rem;justify-content:center;flex-wrap:wrap">
-      ${hasPWA && !installed ? `<button onclick="triggerInstall()" style="background:#fff;color:var(--pd);font-weight:800;font-size:.9rem;padding:.7rem 1.85rem;border:none;border-radius:99px;cursor:pointer;font-family:var(--fb)">📲 Install Nirmaan Free</button>` : ''}
-      <button onclick="go('home')" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);font-size:.9rem;padding:.7rem 1.65rem;border-radius:99px;cursor:pointer;font-family:var(--fb)">← Back to Home</button>
     </div>
-  </section>
-  ${buildFooter()}</div>`;
+  </div>`;
 }
 
 // ══════════════════════ FOOTER ══════════════════════
@@ -3535,7 +3443,11 @@ window.addEventListener('appinstalled', () => {
 });
 
 async function triggerInstall() {
-  if (!S.pwaInstallPrompt) return;
+  if (!S.pwaInstallPrompt) {
+    // prompt already consumed or not available — go to install page
+    if (S.page !== 'install') go('install');
+    return;
+  }
   S.pwaInstallPrompt.prompt();
   const { outcome } = await S.pwaInstallPrompt.userChoice;
   if (outcome === 'accepted') {
@@ -3543,6 +3455,7 @@ async function triggerInstall() {
     localStorage.setItem('nirmaan_pwa_installed', '1');
   }
   S.pwaInstallPrompt = null;
+  S._installPagePromptFired = false;
   render();
 }
 
@@ -3724,7 +3637,7 @@ function buildInstallBanner() {
       <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
       <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">${isIOS ? 'Tap Share then "Add to Home Screen"' : 'Add to home screen for instant access'}</div>
       <div style="display:flex;gap:.45rem">
-        <button onclick="${hasPrompt ? 'triggerInstall()' : 'showIOSInstallTip()'}" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${isIOS ? 'How to Install' : 'Install App'}</button>
+        <button onclick="${hasPrompt ? 'go(\'install\')' : 'go(\'install\')'}" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${isIOS ? 'Install' : 'Install App'}</button>
         <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
       </div>
     </div>

@@ -469,14 +469,54 @@ input,select,textarea{font-family:var(--fb)}
 
   /* chat FAB repositioned above bottom nav */
   .cfab{bottom:4.8rem!important;right:1rem!important;width:48px;height:48px;font-size:1.15rem}
-  .cw{width:calc(100vw - 1rem)!important;right:.5rem!important;bottom:7.8rem!important;height:min(420px,calc(100vh - 9rem))!important;border-radius:18px!important}
-  .ch{padding:.7rem .9rem}
-  .cms{padding:.65rem}
+
+  /* chat hint bubble: sits right above FAB, never hidden */
+  .chat-hint{
+    bottom:8.8rem!important;
+    right:.75rem!important;
+    max-width:calc(100vw - 2.5rem);
+    white-space:normal;
+    font-size:.76rem;
+    padding:.55rem .8rem;
+  }
+  .chat-hint::after{bottom:-7px;right:18px}
+
+  /* chat window: full-screen overlay on mobile */
+  .cw{
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    right:0!important;
+    bottom:0!important;
+    top:0!important;
+    height:100%!important;
+    border-radius:0!important;
+    z-index:9999!important;
+  }
+
+  /* header: taller, always visible, proper close button */
+  .ch{padding:.85rem 1rem!important;min-height:58px}
+  .ch-close-btn{
+    width:36px!important;height:36px!important;
+    font-size:1.2rem!important;
+    background:rgba(255,255,255,.2)!important;
+    border-radius:50%!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    border:none!important;color:#fff!important;cursor:pointer!important;
+    flex-shrink:0!important;
+  }
+
+  /* messages area: fill remaining space */
+  .cms{padding:.65rem;flex:1;overflow-y:auto}
   .cqb{gap:.3rem;padding:.35rem .6rem}
-  .cq{font-size:.68rem;padding:.2rem .55rem}
-  .cif{padding:.45rem .6rem}
-  .cinp{font-size:.82rem}
-  .chat-hint{max-width:calc(100vw - 3rem);right:.75rem;white-space:normal;font-size:.75rem}
+  .cq{font-size:.7rem;padding:.22rem .58rem}
+
+  /* input row: sits above system home indicator */
+  .cif{
+    padding:.5rem .6rem!important;
+    padding-bottom:calc(.5rem + env(safe-area-inset-bottom))!important;
+  }
+  .cinp{font-size:16px!important} /* prevents iOS auto-zoom */
 
   /* hero */
   .hero{padding:3rem 1.25rem 2.5rem}
