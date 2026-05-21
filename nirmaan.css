@@ -196,7 +196,9 @@ input,select,textarea{font-family:var(--fb)}
 
 /* ── NOTIFS ── */
 .nstack{position:fixed;top:72px;right:1.4rem;z-index:1002;display:flex;flex-direction:column;gap:.45rem;pointer-events:none}
+@media(max-width:640px){.nstack{top:72px;right:.75rem;left:.75rem;align-items:stretch}}
 .notif{background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:.78rem 1.1rem;display:flex;align-items:center;gap:.65rem;font-size:.81rem;font-weight:500;color:var(--t);box-shadow:var(--sh);animation:sli .28s ease;pointer-events:auto;max-width:300px}
+@media(max-width:640px){.notif{max-width:100%;width:100%;font-size:.78rem;padding:.68rem .9rem}}
 .notif.ok{border-left:3px solid var(--green)}.notif.in{border-left:3px solid var(--p)}.notif.wn{border-left:3px solid var(--amber)}.notif.er{border-left:3px solid var(--red)}
 .nx{margin-left:auto;cursor:pointer;opacity:.45;font-size:.95rem}.nx:hover{opacity:1}
 
@@ -469,14 +471,54 @@ input,select,textarea{font-family:var(--fb)}
 
   /* chat FAB repositioned above bottom nav */
   .cfab{bottom:4.8rem!important;right:1rem!important;width:48px;height:48px;font-size:1.15rem}
-  .cw{width:calc(100vw - 1rem)!important;right:.5rem!important;bottom:7.8rem!important;height:min(420px,calc(100vh - 9rem))!important;border-radius:18px!important}
-  .ch{padding:.7rem .9rem}
-  .cms{padding:.65rem}
+
+  /* chat hint bubble: sits right above FAB, never hidden */
+  .chat-hint{
+    bottom:8.8rem!important;
+    right:.75rem!important;
+    max-width:calc(100vw - 2.5rem);
+    white-space:normal;
+    font-size:.76rem;
+    padding:.55rem .8rem;
+  }
+  .chat-hint::after{bottom:-7px;right:18px}
+
+  /* chat window: full-screen overlay on mobile */
+  .cw{
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    right:0!important;
+    bottom:0!important;
+    top:0!important;
+    height:100%!important;
+    border-radius:0!important;
+    z-index:9999!important;
+  }
+
+  /* header: taller, always visible, proper close button */
+  .ch{padding:.85rem 1rem!important;min-height:58px}
+  .ch-close-btn{
+    width:36px!important;height:36px!important;
+    font-size:1.2rem!important;
+    background:rgba(255,255,255,.2)!important;
+    border-radius:50%!important;
+    display:flex!important;align-items:center!important;justify-content:center!important;
+    border:none!important;color:#fff!important;cursor:pointer!important;
+    flex-shrink:0!important;
+  }
+
+  /* messages area: fill remaining space */
+  .cms{padding:.65rem;flex:1;overflow-y:auto}
   .cqb{gap:.3rem;padding:.35rem .6rem}
-  .cq{font-size:.68rem;padding:.2rem .55rem}
-  .cif{padding:.45rem .6rem}
-  .cinp{font-size:.82rem}
-  .chat-hint{max-width:calc(100vw - 3rem);right:.75rem;white-space:normal;font-size:.75rem}
+  .cq{font-size:.7rem;padding:.22rem .58rem}
+
+  /* input row: sits above system home indicator */
+  .cif{
+    padding:.5rem .6rem!important;
+    padding-bottom:calc(.5rem + env(safe-area-inset-bottom))!important;
+  }
+  .cinp{font-size:16px!important} /* prevents iOS auto-zoom */
 
   /* hero */
   .hero{padding:3rem 1.25rem 2.5rem}
@@ -581,3 +623,27 @@ input,select,textarea{font-family:var(--fb)}
   .tour-tip-title{font-size:.88rem}
   .tour-tip-body{font-size:.75rem}
 }
+
+/* ── PWA / Push Banners ── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Install button in nav (optional future use) */
+.btn-install {
+  background: linear-gradient(135deg, var(--p), #8B5CF6);
+  color: #fff;
+  border: none;
+  border-radius: 99px;
+  padding: .38rem .95rem;
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--fb);
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  transition: opacity .15s;
+}
+.btn-install:hover { opacity: .88; }
