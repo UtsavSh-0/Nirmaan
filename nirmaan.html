@@ -507,5 +507,302 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 
+
+<!-- ══════════════════════════════════════════════════════
+     NIRMAAN LANDING ANIMATION  ·  hero canvas + effects
+     ══════════════════════════════════════════════════════ -->
+<style>
+/* ── Canvas layer ──────────────────────────────────────── */
+#hero-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+#hero-canvas.visible { opacity: 1; }
+
+/* ── Typewriter cursor ─────────────────────────────────── */
+.tw-cursor {
+  display: inline-block;
+  width: 3px;
+  height: 0.85em;
+  background: var(--p);
+  border-radius: 2px;
+  margin-left: 3px;
+  vertical-align: middle;
+  animation: twBlink 0.9s ease-in-out infinite;
+}
+@keyframes twBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* ── Floating card polish ──────────────────────────────── */
+.hfl {
+  backdrop-filter: blur(8px) saturate(1.4);
+  -webkit-backdrop-filter: blur(8px) saturate(1.4);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.hfl:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 8px 28px rgba(99,102,241,0.18) !important;
+}
+
+/* ── Glowing orb behind hero title ────────────────────── */
+.hero-orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -60%);
+  width: min(600px, 90vw);
+  height: min(400px, 60vw);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center,
+    rgba(99,102,241,0.13) 0%,
+    rgba(139,92,246,0.07) 40%,
+    transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: orbPulse 6s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%,100% { opacity:0.7; transform:translate(-50%,-60%) scale(1); }
+  50%      { opacity:1;   transform:translate(-50%,-60%) scale(1.08); }
+}
+
+/* ── Stagger-in for stats ──────────────────────────────── */
+.stat-item {
+  animation: fup .55s ease both;
+  opacity: 0;
+}
+
+/* ── Shimmer on CTA button ─────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.btn-cta-shimmer {
+  background-size: 200% auto !important;
+  animation: shimmer 3s linear infinite;
+}
+
+/* ── Ripple on click ───────────────────────────────────── */
+@keyframes ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  width: 40px; height: 40px;
+  transform: scale(0);
+  animation: ripple 0.55s linear;
+  pointer-events: none;
+  margin-left: -20px;
+  margin-top: -20px;
+}
+</style>
+
+<script>
+/* ── Run after nirmaan.js render ─────────────────────── */
+(function initHeroAnim() {
+
+  /* Wait for the hero section to be rendered */
+  function tryInit() {
+    const hero = document.querySelector('.hero');
+    if (!hero) { setTimeout(tryInit, 120); return; }
+    injectOrb(hero);
+    injectCanvas(hero);
+    initTypewriter();
+    initStaggerStats();
+    initCtaShimmer();
+    initRipples();
+  }
+
+  /* ─ Glowing orb ─ */
+  function injectOrb(hero) {
+    if (hero.querySelector('.hero-orb')) return;
+    const orb = document.createElement('div');
+    orb.className = 'hero-orb';
+    hero.insertBefore(orb, hero.firstChild);
+  }
+
+  /* ─ Particle canvas ─ */
+  function injectCanvas(hero) {
+    if (hero.querySelector('#hero-canvas')) return;
+    const canvas = document.createElement('canvas');
+    canvas.id = 'hero-canvas';
+    hero.insertBefore(canvas, hero.firstChild);
+
+    const W = () => hero.offsetWidth;
+    const H = () => hero.offsetHeight;
+    const ctx = canvas.getContext('2d');
+    const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
+
+    let particles = [];
+    const COUNT = Math.min(55, Math.floor(W() / 18));
+
+    function resize() {
+      canvas.width  = W();
+      canvas.height = H();
+    }
+    resize();
+    window.addEventListener('resize', () => { resize(); });
+
+    /* Particle factory */
+    function mkParticle() {
+      return {
+        x: Math.random() * W(),
+        y: Math.random() * H(),
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 1.8 + 0.6,
+        alpha: Math.random() * 0.5 + 0.2,
+        color: Math.random() < 0.6 ? '#6366F1' : '#8B5CF6',
+      };
+    }
+    for (let i = 0; i < COUNT; i++) particles.push(mkParticle());
+
+    /* Draw loop */
+    const LINK_DIST = 120;
+    function draw() {
+      ctx.clearRect(0, 0, W(), H());
+      const dark = isDark();
+
+      /* Connections */
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d  = Math.sqrt(dx*dx + dy*dy);
+          if (d < LINK_DIST) {
+            const alpha = (1 - d / LINK_DIST) * (dark ? 0.22 : 0.13);
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(99,102,241,${alpha})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        }
+      }
+
+      /* Dots */
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + Math.round(p.alpha * 255).toString(16).padStart(2,'0');
+        ctx.fill();
+
+        /* Move */
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > W()) p.vx *= -1;
+        if (p.y < 0 || p.y > H()) p.vy *= -1;
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    requestAnimationFrame(draw);
+    setTimeout(() => canvas.classList.add('visible'), 60);
+  }
+
+  /* ─ Typewriter on hero h1 ─ */
+  function initTypewriter() {
+    const h1 = document.querySelector('.hero h1');
+    if (!h1 || h1.dataset.tw) return;
+    h1.dataset.tw = '1';
+
+    /* grab the gradient span text and plain text separately */
+    const gradSpan = h1.querySelector('span[style]');
+    if (!gradSpan) return;
+
+    const afterBr = h1.innerHTML.split('<br>')[1] || '';
+    if (!afterBr) return;
+
+    /* Only animate the suffix text after <br> */
+    const suffix = afterBr.replace(/<[^>]*>/g, '').trim();
+    const prefix = h1.innerHTML.split('<br>')[0] + '<br>';
+
+    h1.innerHTML = prefix + '<span id="tw-text"></span><span class="tw-cursor"></span>';
+    const target = document.getElementById('tw-text');
+    if (!target) return;
+
+    let i = 0;
+    function type() {
+      if (i <= suffix.length) {
+        target.textContent = suffix.slice(0, i);
+        i++;
+        setTimeout(type, i === 1 ? 600 : 38 + Math.random() * 22);
+      } else {
+        /* Remove cursor after done */
+        setTimeout(() => {
+          const cursor = h1.querySelector('.tw-cursor');
+          if (cursor) cursor.style.display = 'none';
+        }, 1800);
+      }
+    }
+    setTimeout(type, 700);
+  }
+
+  /* ─ Staggered stat items ─ */
+  function initStaggerStats() {
+    document.querySelectorAll('.hero [style*="text-align:center"]').forEach((el, i) => {
+      if (el.querySelector('[style*="font-size:1.9rem"]') || el.style.fontSize === '1.9rem') {
+        el.classList.add('stat-item');
+        el.style.animationDelay = (0.55 + i * 0.1) + 's';
+      }
+    });
+  }
+
+  /* ─ Shimmer on primary CTA ─ */
+  function initCtaShimmer() {
+    const btn = document.querySelector('.hero .btn-p');
+    if (!btn) return;
+    btn.style.background = 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 50%, #6366F1 100%)';
+    btn.style.backgroundSize = '200% auto';
+    btn.style.animation = 'shimmer 3s linear infinite';
+  }
+
+  /* ─ Ripple effect on all buttons ─ */
+  function initRipples() {
+    document.querySelectorAll('.hero .btn').forEach(btn => {
+      btn.style.position = 'relative';
+      btn.style.overflow = 'hidden';
+      btn.addEventListener('click', function(e) {
+        const r = document.createElement('span');
+        r.className = 'ripple-effect';
+        const rect = this.getBoundingClientRect();
+        r.style.left = (e.clientX - rect.left) + 'px';
+        r.style.top  = (e.clientY - rect.top)  + 'px';
+        this.appendChild(r);
+        setTimeout(() => r.remove(), 600);
+      });
+    });
+  }
+
+  /* ── Re-run after every render() since DOM is rebuilt ── */
+  const _origRender = window.render;
+  if (_origRender) {
+    window.render = function() {
+      _origRender.apply(this, arguments);
+      if (typeof S !== 'undefined' && S.page === 'home') {
+        setTimeout(tryInit, 60);
+      }
+    };
+  }
+
+  /* First run */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(tryInit, 200));
+  } else {
+    setTimeout(tryInit, 200);
+  }
+
+})();
+</script>
+
 </body>
 </html>

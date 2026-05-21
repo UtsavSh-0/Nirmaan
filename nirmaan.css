@@ -196,7 +196,9 @@ input,select,textarea{font-family:var(--fb)}
 
 /* ── NOTIFS ── */
 .nstack{position:fixed;top:72px;right:1.4rem;z-index:1002;display:flex;flex-direction:column;gap:.45rem;pointer-events:none}
+@media(max-width:640px){.nstack{top:72px;right:.75rem;left:.75rem;align-items:stretch}}
 .notif{background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:.78rem 1.1rem;display:flex;align-items:center;gap:.65rem;font-size:.81rem;font-weight:500;color:var(--t);box-shadow:var(--sh);animation:sli .28s ease;pointer-events:auto;max-width:300px}
+@media(max-width:640px){.notif{max-width:100%;width:100%;font-size:.78rem;padding:.68rem .9rem}}
 .notif.ok{border-left:3px solid var(--green)}.notif.in{border-left:3px solid var(--p)}.notif.wn{border-left:3px solid var(--amber)}.notif.er{border-left:3px solid var(--red)}
 .nx{margin-left:auto;cursor:pointer;opacity:.45;font-size:.95rem}.nx:hover{opacity:1}
 
