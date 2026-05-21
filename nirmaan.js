@@ -30,6 +30,9 @@ const S={
   otpSent:false,otpCode:'',otpInput:'',otpVerified:false,
   modal:null,
   rmFilter:'all',
+  // ── Rewards ───────────────────────────────────────
+  rewardsShareModal:null,
+  rewardsClaimAnim:false,
   rbData:{name:'Priya Sharma',title:'Frontend Developer',email:'priya@example.com',phone:'+91 98765 43210',summary:'Passionate frontend developer with strong skills in React, TypeScript and UI design. Looking for opportunities to contribute to impactful products.',skills:['React','JavaScript','Python','CSS','Git'],exp:[{co:'Freelance Projects',role:'Frontend Dev',period:'2023–Present',desc:'Built 5+ client websites using React and Next.js'}],edu:'B.Tech Computer Science – IIT Delhi (2025)'},
   autoLoginCountdown:5,autoLoginActive:true,autoLoginRole:'student',
   tourStep:0,tourActive:false,
@@ -1943,6 +1946,7 @@ function buildMobNav(){
       <button class="sb-item ${S.page==='resume'?'on':''}" onclick="closeMobMenu();go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
       <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
+      <button class="sb-item ${S.page==='rewards'?'on':''}" onclick="closeMobMenu();go('rewards')" style="position:relative"><span class="sb-ic">🏅</span>Rewards${REWARDS_BADGES.some(b=>b.isNew&&b.earned)?`<span style="margin-left:auto;background:var(--amber);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .4rem">NEW</span>`:''}</button>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
       ${!S.pwaInstalled ? `<button class="sb-item" onclick="closeMobMenu();go('install')"><span class="sb-ic">📲</span>Install App</button>` : `<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>`}
       <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
@@ -2039,7 +2043,7 @@ function buildNav(){
 }
 
 function buildBody(){
-  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact,install:buildInstallPage};
+  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact,install:buildInstallPage,rewards:buildRewards};
   return (map[S.page]||buildHome)();
 }
 
@@ -2061,6 +2065,7 @@ function sb(role){
       <button class="sb-item ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span class="sb-ic">🗺️</span>${t('sbRoadmap')}</button>
       <button class="sb-item ${S.page==='resume'?'on':''}" onclick="go('resume')"><span class="sb-ic">📄</span>${t('sbResume')}</button>
       <button class="sb-item ${S.page==='network'?'on':''}" id="tour-sb-net" onclick="go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
+      <button class="sb-item ${S.page==='rewards'?'on':''}" onclick="go('rewards')" style="position:relative"><span class="sb-ic">🏅</span>Rewards${REWARDS_BADGES.some(b=>b.isNew&&b.earned)?`<span style="margin-left:auto;background:var(--amber);color:#fff;border-radius:99px;font-size:.58rem;font-weight:800;padding:.1rem .4rem">NEW</span>`:''}</button>
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
@@ -2498,6 +2503,7 @@ function buildDash(){
       <div class="card" id="tour-quick-actions">
         <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem" id="tour-quick">${t('quickActions')}</h3>
         ${[['🗺️','Roadmap','roadmap'],['📄','Resume','resume'],['🤝','Network','network'],['📊','Skill Gap','skillgap']].map(([ico,lbl,pg])=>`<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem;font-size:.79rem" onclick="go('${pg}')">${ico} ${lbl}</button>`).join('')}
+        <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:flex-start;margin-bottom:.38rem;font-size:.79rem;${REWARDS_BADGES.some(b=>b.isNew&&b.earned)?'border-color:var(--amber);color:var(--amber);font-weight:800':''}" onclick="go('rewards')">🏅 Rewards${REWARDS_BADGES.some(b=>b.isNew&&b.earned)?' 🔴':''}</button>
       </div>
     </div>
 
@@ -3741,10 +3747,235 @@ function buildAdminPushPanel() {
   </div>`;
 }
 
+// ══════════════════════ REWARDS DATA ══════════════════════
+const REWARDS_BADGES=[
+  {id:'first_apply',  icon:'🚀',name:'First Launch',   desc:'Applied to your first internship',       xp:100,  earned:true,  isNew:false, cat:'apply'},
+  {id:'profile_pro',  icon:'✨',name:'Profile Pro',     desc:'Completed 100% of your profile',         xp:150,  earned:true,  isNew:false, cat:'profile'},
+  {id:'ai_match',     icon:'🤖',name:'AI Whisperer',   desc:'Scored 95%+ on an AI match',             xp:200,  earned:true,  isNew:false, cat:'match'},
+  {id:'week_streak',  icon:'🔥',name:'On Fire',        desc:'Logged in 7 days in a row',              xp:250,  earned:true,  isNew:true,  cat:'streak'},
+  {id:'top_match',    icon:'🏆',name:'Top Applicant',  desc:'Ranked in top 5% this week',             xp:400,  earned:false, isNew:false, cat:'match'},
+  {id:'networker',    icon:'🌐',name:'Networker',      desc:'Connected with 10 mentors',              xp:300,  earned:false, isNew:false, cat:'network'},
+  {id:'resume_ace',   icon:'📄',name:'Resume Ace',     desc:'Resume scored 90+ by AI',                xp:175,  earned:false, isNew:false, cat:'profile'},
+  {id:'early_bird',   icon:'🌅',name:'Early Bird',     desc:'Applied within 1 hr of a new posting',  xp:125,  earned:false, isNew:false, cat:'apply'},
+  {id:'skill_champ',  icon:'📊',name:'Skill Champion', desc:'Closed all skill gaps in a role',        xp:350,  earned:false, isNew:false, cat:'skills'},
+  {id:'roadmap_hero', icon:'🗺️',name:'Roadmap Hero',   desc:'Completed your full career roadmap',     xp:500,  earned:false, isNew:false, cat:'roadmap'},
+  {id:'referral_star',icon:'⭐',name:'Referral Star',  desc:'Got referred by a senior for a role',    xp:275,  earned:false, isNew:false, cat:'network'},
+  {id:'voice_user',   icon:'🎙️',name:'Voice Pilot',   desc:'Used Arya voice assistant 5 times',      xp:80,   earned:false, isNew:false, cat:'explore'},
+];
+
+const REWARDS_LEVELS=[
+  {level:1,name:'Newcomer',     minXp:0,     color:'#94a3b8'},
+  {level:2,name:'Explorer',     minXp:200,   color:'#22d3ee'},
+  {level:3,name:'Climber',      minXp:500,   color:'#a78bfa'},
+  {level:4,name:'Hustler',      minXp:1000,  color:'#6366F1'},
+  {level:5,name:'Achiever',     minXp:1800,  color:'#f59e0b'},
+  {level:6,name:'Champion',     minXp:3000,  color:'#10b981'},
+  {level:7,name:'Legend',       minXp:5000,  color:'#ef4444'},
+];
+
+function rwdCurrentXp(){
+  return REWARDS_BADGES.filter(b=>b.earned).reduce((s,b)=>s+b.xp,0);
+}
+function rwdCurrentLevel(){
+  const xp=rwdCurrentXp();
+  let lv=REWARDS_LEVELS[0];
+  for(const l of REWARDS_LEVELS){if(xp>=l.minXp)lv=l;}
+  return lv;
+}
+function rwdNextLevel(){
+  const lv=rwdCurrentLevel();
+  return REWARDS_LEVELS.find(l=>l.level===lv.level+1)||null;
+}
+function rwdXpProgress(){
+  const xp=rwdCurrentXp(),lv=rwdCurrentLevel(),nx=rwdNextLevel();
+  if(!nx)return 100;
+  const base=lv.minXp,top=nx.minXp;
+  return Math.round(((xp-base)/(top-base))*100);
+}
+
+function claimReward(id){
+  const b=REWARDS_BADGES.find(x=>x.id===id);
+  if(!b||!b.isNew)return;
+  b.isNew=false;
+  notif(`+${b.xp} XP claimed! ${b.icon}`,'ok');
+  render();
+}
+
+function openRewardShare(id){
+  S.rewardsShareModal=id;
+  render();
+}
+function closeRewardShare(){
+  S.rewardsShareModal=null;
+  render();
+}
+function doRewardShare(platform){
+  const b=REWARDS_BADGES.find(x=>x.id===S.rewardsShareModal);
+  if(!b)return;
+  const text=encodeURIComponent(`I just earned the "${b.name}" badge on Nirmaan! ${b.icon} +${b.xp} XP 🎉 #Nirmaan #Internship #CareerGoals`);
+  const url=encodeURIComponent(`https://nirmaan.app/badge/${b.id}`);
+  const links={
+    linkedin:`https://www.linkedin.com/sharing/share-offsite/?url=${url}`,
+    twitter:`https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+    whatsapp:`https://wa.me/?text=${text}%20${url}`,
+    instagram:null,
+  };
+  if(links[platform])window.open(links[platform],'_blank');
+  else notif('Copy the link and post on Instagram! 📸','in');
+  closeRewardShare();
+}
+function copyRewardLink(){
+  const b=REWARDS_BADGES.find(x=>x.id===S.rewardsShareModal);
+  if(!b)return;
+  const link=`https://nirmaan.app/badge/${b.id}`;
+  navigator.clipboard.writeText(link).catch(()=>{});
+  notif('Link copied! 🔗','ok');
+  closeRewardShare();
+}
+
+// ══════════════════════ REWARDS PAGE ══════════════════════
+function buildRewards(){
+  const xp=rwdCurrentXp(),lv=rwdCurrentLevel(),nx=rwdNextLevel(),pct=rwdXpProgress();
+  const newBadge=REWARDS_BADGES.find(b=>b.isNew&&b.earned);
+  const earnedCount=REWARDS_BADGES.filter(b=>b.earned).length;
+  const totalCount=REWARDS_BADGES.length;
+  const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const todayIdx=3;
+
+  const shareModal=S.rewardsShareModal?buildRewardShareModal():'' ;
+
+  return `<div class="page dw">${sb('student')}<div class="dm">
+
+    <!-- Banner for new reward -->
+    ${newBadge?`<div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:var(--rl);padding:1rem 1.2rem;margin-bottom:1.3rem;display:flex;align-items:flex-start;gap:.9rem">
+      <div style="font-size:1.6rem;flex-shrink:0">🎉</div>
+      <div style="flex:1">
+        <div style="font-family:var(--fh);font-weight:700;font-size:.95rem;color:#92400e;margin-bottom:.25rem">New reward unlocked!</div>
+        <div style="font-size:.8rem;color:#78350f;line-height:1.55">You earned <strong>${newBadge.name}</strong> — ${newBadge.desc}. Claim your <strong>+${newBadge.xp} XP</strong> and share it!</div>
+        <div style="display:flex;gap:.55rem;margin-top:.75rem;flex-wrap:wrap">
+          <button onclick="claimReward('${newBadge.id}')" style="background:#f59e0b;color:#fff;border:none;border-radius:99px;padding:.42rem 1.1rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Claim +${newBadge.xp} XP</button>
+          <button onclick="openRewardShare('${newBadge.id}')" style="background:transparent;color:#92400e;border:1.5px solid #fde68a;border-radius:99px;padding:.4rem 1rem;font-size:.78rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:flex;align-items:center;gap:.35rem">📤 Share</button>
+        </div>
+      </div>
+    </div>`:''}
+
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem;flex-wrap:wrap;gap:.7rem">
+      <div>
+        <h1 style="font-family:var(--fh);font-size:clamp(1.15rem,3.5vw,1.4rem);font-weight:700;color:var(--t);letter-spacing:-.03em">🏅 Your Rewards</h1>
+        <p style="font-size:.78rem;color:var(--t3);margin-top:.15rem">${earnedCount} of ${totalCount} badges earned</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:.55rem;background:var(--bg2);border:1px solid var(--b);border-radius:99px;padding:.45rem .95rem">
+        <span style="font-size:1rem">⭐</span>
+        <span style="font-family:var(--fh);font-size:1.15rem;font-weight:700;color:var(--t)">${xp.toLocaleString()}</span>
+        <span style="font-size:.74rem;color:var(--t3);font-weight:600">XP</span>
+      </div>
+    </div>
+
+    <!-- Level + Progress -->
+    <div class="card" style="margin-bottom:1.2rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+        <div>
+          <span style="font-family:var(--fh);font-size:1rem;font-weight:700;color:var(--t)">${lv.name}</span>
+          <span style="background:var(--pl);color:var(--p);border-radius:99px;font-size:.7rem;font-weight:700;padding:.15rem .65rem;margin-left:.5rem">Level ${lv.level}</span>
+        </div>
+        ${nx?`<span style="font-size:.74rem;color:var(--t3)">Next: ${nx.name} (${(nx.minXp-xp).toLocaleString()} XP away)</span>`:'<span style="font-size:.74rem;color:var(--green);font-weight:700">🏆 Max Level!</span>'}
+      </div>
+      <div style="height:8px;background:var(--bg3);border-radius:99px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:var(--g1);border-radius:99px;transition:width .7s cubic-bezier(.4,0,.2,1)"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:.45rem;font-size:.69rem;color:var(--t3)">
+        <span>${xp.toLocaleString()} XP</span>
+        <span>${nx?(nx.minXp.toLocaleString()+' XP'):'Max'}</span>
+      </div>
+    </div>
+
+    <!-- Weekly Streak -->
+    <div class="card" style="margin-bottom:1.2rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem">
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">🔥 Weekly Streak</h3>
+        <span style="font-size:.73rem;color:var(--t3)">3/7 days</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
+        ${DAYS.map((d,i)=>`<div style="background:${i<todayIdx?'var(--pl)':i===todayIdx?'var(--bg2)':'var(--bg3)'};border:${i===todayIdx?'1.5px solid var(--p)':'1px solid var(--b)'};border-radius:8px;padding:7px 4px;text-align:center">
+          <div style="font-size:.64rem;color:var(--t3);margin-bottom:3px">${d}</div>
+          <div style="font-size:.95rem">${i<todayIdx?'✅':i===todayIdx?'⚡':'○'}</div>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1.2rem">
+      ${[[`${earnedCount}/${totalCount}`,'Badges','🏅','var(--p)'],[`${REWARDS_BADGES.filter(b=>b.earned).reduce((s,b)=>s+b.xp,0).toLocaleString()}`,'Total XP','⭐','var(--amber)'],[`Lv.${lv.level}`,'Level','🎖️','var(--green)']].map(([v,l,ico,c])=>`
+      <div style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:.85rem .75rem;text-align:center">
+        <div style="font-size:1.1rem;margin-bottom:.3rem">${ico}</div>
+        <div style="font-family:var(--fh);font-size:1.1rem;font-weight:700;color:${c}">${v}</div>
+        <div style="font-size:.67rem;color:var(--t3);margin-top:.1rem">${l}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- Badge Grid -->
+    <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.07em;font-size:.72rem;color:var(--t3)">All Badges</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:.7rem;margin-bottom:1.5rem">
+      ${REWARDS_BADGES.map(b=>`
+      <div style="background:var(--bg2);border:${b.isNew&&b.earned?'1.5px solid #f59e0b':b.earned?'1px solid var(--green)':'1px solid var(--b)'};border-radius:var(--rl);padding:.95rem;position:relative;cursor:${b.earned?'pointer':'default'};opacity:${b.earned?1:.5};transition:all .15s" ${b.earned?`onclick="openRewardShare('${b.id}')" onmouseover="if(${b.earned})this.style.borderColor='var(--p)'" onmouseout="this.style.borderColor='${b.isNew&&b.earned?'#f59e0b':b.earned?'var(--green)':'var(--b)'}'"`:''}>
+        ${b.isNew&&b.earned?`<span style="position:absolute;top:7px;right:7px;background:#f59e0b;color:#fff;font-size:.58rem;font-weight:800;border-radius:99px;padding:.1rem .45rem;letter-spacing:.04em;animation:rw-pulse 2s ease-in-out infinite">NEW</span>`:''}
+        <div style="font-size:1.65rem;margin-bottom:.55rem">${b.icon}</div>
+        <div style="font-size:.79rem;font-weight:700;color:var(--t);margin-bottom:.25rem">${b.name}</div>
+        <div style="font-size:.69rem;color:var(--t3);line-height:1.45;margin-bottom:.55rem">${b.desc}</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:.69rem;font-weight:700;color:${b.earned?'var(--green)':'var(--t3)'}">${b.earned?'✓ +'+b.xp+' XP':'🔒 Locked'}</span>
+          ${b.earned?`<button onclick="event.stopPropagation();openRewardShare('${b.id}')" style="background:var(--pl);color:var(--p);border:none;border-radius:99px;padding:.18rem .65rem;font-size:.65rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Share</button>`:''}
+        </div>
+      </div>`).join('')}
+    </div>
+
+  </div>${shareModal}</div>
+  <style>
+    @keyframes rw-pulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+  </style>`;
+}
+
+function buildRewardShareModal(){
+  const b=REWARDS_BADGES.find(x=>x.id===S.rewardsShareModal);
+  if(!b)return '';
+  return `<div onclick="closeRewardShare()" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:1.25rem">
+    <div onclick="event.stopPropagation()" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--rl);padding:1.5rem;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+      <h3 style="font-family:var(--fh);font-weight:700;font-size:1rem;color:var(--t);margin-bottom:.35rem">Share your achievement 📤</h3>
+      <p style="font-size:.78rem;color:var(--t3);margin-bottom:1.1rem">Let your network know you earned this badge!</p>
+
+      <!-- Preview card -->
+      <div style="background:var(--bg3);border:1px solid var(--b);border-radius:var(--r);padding:1rem;text-align:center;margin-bottom:1.1rem">
+        <div style="font-size:2.2rem;margin-bottom:.45rem">${b.icon}</div>
+        <div style="font-family:var(--fh);font-size:.9rem;font-weight:700;color:var(--t)">${b.name}</div>
+        <div style="font-size:.73rem;color:var(--t3);margin:.2rem 0 .55rem">${b.desc}</div>
+        <div style="font-size:.68rem;color:var(--p);font-weight:600">#Nirmaan · +${b.xp} XP · nirmaan.app</div>
+      </div>
+
+      <!-- Share buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.55rem;margin-bottom:.9rem">
+        <button onclick="doRewardShare('linkedin')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">💼 LinkedIn</button>
+        <button onclick="doRewardShare('twitter')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">🐦 X / Twitter</button>
+        <button onclick="doRewardShare('whatsapp')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">💬 WhatsApp</button>
+        <button onclick="doRewardShare('instagram')" style="background:var(--bg2);border:1px solid var(--b);border-radius:var(--r);padding:.65rem .5rem;font-size:.75rem;font-weight:600;color:var(--t);cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.4rem;transition:background .15s" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='var(--bg2)'">📸 Instagram</button>
+      </div>
+
+      <!-- Copy link -->
+      <div style="display:flex;gap:.5rem;margin-bottom:.85rem">
+        <div style="flex:1;background:var(--bg3);border:1px solid var(--b);border-radius:var(--r);padding:.5rem .75rem;font-size:.71rem;color:var(--t3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">nirmaan.app/badge/${b.id}</div>
+        <button onclick="copyRewardLink()" style="background:var(--p);color:#fff;border:none;border-radius:var(--r);padding:.5rem .9rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb);white-space:nowrap">Copy</button>
+      </div>
+
+      <button onclick="closeRewardShare()" style="width:100%;background:transparent;border:1px solid var(--b);border-radius:var(--r);padding:.6rem;font-size:.8rem;color:var(--t2);cursor:pointer;font-family:var(--fb)">Close</button>
+    </div>
+  </div>`;
+}
+
 // ══════════════════════ INIT ══════════════════════
 window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
 window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
 window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissPushBanner=dismissPushBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;window.showIOSInstallTip=showIOSInstallTip;
+window.claimReward=claimReward;window.openRewardShare=openRewardShare;window.closeRewardShare=closeRewardShare;window.doRewardShare=doRewardShare;window.copyRewardLink=copyRewardLink;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
