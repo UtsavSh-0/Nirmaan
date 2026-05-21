@@ -6,6 +6,17 @@ const S={
   notifs:[],notifId:0,
   savedIds:[],appliedIds:[],
   adminTab:'users',coTab:'post',
+  // ── PWA / Push ───────────────────────────────────
+  pwaInstallPrompt:null,   // deferred BeforeInstallPromptEvent
+  pwaInstalled: localStorage.getItem('nirmaan_pwa_installed')==='1',
+  pushPermission: (typeof Notification!=='undefined')?Notification.permission:'default',
+  pushSubscription:null,
+  pushBannerDismissed: localStorage.getItem('nirmaan_push_dismissed')==='1',
+  installBannerDismissed: localStorage.getItem('nirmaan_install_dismissed')==='1',
+  // Admin push composer
+  adminPushTab:'compose',
+  adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
+  adminPushTitle:'',adminPushBody:'',adminPushUrl:'',adminPushTarget:'all',adminPushIcon:'🔔',
   fType:'all',srchQ:'',
   skills:['JavaScript','React','Python'],
   interests:['Frontend','AI/ML'],
@@ -1752,7 +1763,13 @@ function updatePwStrength(pw){
     if(el){el.textContent=(criteria[k]?'✓ ':'○ ')+lblMap[k];el.style.color=criteria[k]?'var(--green)':'var(--t3)';}
   });
 }
-function toggleBell(){S.bellOpen=!S.bellOpen;render();}
+function navVoiceToChat(){
+  S.chatOpen=true;
+  S.chatHintDismissed=true;
+  render();
+  // Small delay so chat input is in DOM before starting voice
+  setTimeout(()=>chatVoice(),120);
+}
 function markAllRead(){S.appNotifs.forEach(n=>n.read=true);notif('All notifications marked read','in');render();}
 function dismissAppNotif(id){S.appNotifs=S.appNotifs.filter(n=>n.id!==id);render();}
 
@@ -1771,11 +1788,56 @@ function addProject(){
 }
 function rmProject(i){S.projects.splice(i,1);notif('Removed','in');render();}
 function saveProfile(){
-  const loc=document.getElementById('ploc')?.value;const edu=document.getElementById('pedu')?.value;
-  if(loc)S.loc=loc;if(edu)S.edu=edu;notif('Profile saved! AI matching updated 🤖');
+  const name=document.getElementById('pname')?.value?.trim();
+  const loc=document.getElementById('ploc')?.value?.trim();
+  const edu=document.getElementById('pedu')?.value?.trim();
+  const col=document.getElementById('pcol')?.value?.trim();
+  const li=document.getElementById('pli')?.value?.trim();
+  const gh=document.getElementById('pgh')?.value?.trim();
+  const pf=document.getElementById('ppf')?.value?.trim();
+  if(name&&S.user)S.user.name=name;
+  if(loc)S.loc=loc;
+  if(edu)S.edu=edu;
+  if(col)S.college=col;
+  if(li!==undefined)S.linkedin=li;
+  if(gh!==undefined)S.github=gh;
+  if(pf!==undefined)S.portfolio=pf;
+  notif('Profile saved! AI matching updated 🤖');
+  render();
 }
-function exportResume(){notif('Downloading resume as PDF... 📄','in');}
-function copyResume(){notif('Resume content copied to clipboard! 📋','in');}
+function exportResume(){
+  // Generate a plain-text resume and trigger a download
+  const rb=S.rbData;
+  const lines=[
+    rb.name.toUpperCase(),
+    rb.title,
+    rb.email+' | '+rb.phone+(S.linkedin?' | '+S.linkedin:''),
+    '',
+    'SUMMARY',
+    rb.summary,
+    '',
+    'SKILLS',
+    rb.skills.join(', '),
+    '',
+    'EXPERIENCE',
+    ...rb.exp.map(e=>`${e.role} @ ${e.co}  (${e.period})\n${e.desc}`),
+    '',
+    'EDUCATION',
+    rb.edu,
+    '',
+    'PROJECTS',
+    ...S.projects.map(p=>`${p.n} — ${p.t}${p.l?' | '+p.l:''}`),
+  ];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='resume_nirmaan.txt';a.click();
+  notif('Resume downloaded as .txt (PDF coming soon) 📄','ok');
+}
+function copyResume(){
+  const rb=S.rbData;
+  const text=[rb.name,rb.title,rb.email,rb.phone,rb.summary,'Skills: '+rb.skills.join(', ')].join('\n');
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>notif('Resume copied to clipboard! 📋','ok')).catch(()=>notif('Copy failed — try manually','wn'));}
+  else notif('Copy not supported in this browser','wn');
+}
 
 // ══════════════════════ RENDER ══════════════════════
 function render(){
@@ -1829,6 +1891,16 @@ function render(){
       if(savedStart!=null){try{el.setSelectionRange(savedStart,savedEnd);}catch(e){}}
     }
   }
+
+  // ── Inject PWA banners into body (outside root) ──
+  ['push-banner','install-banner'].forEach(id => {
+    const old = document.getElementById(id);
+    if (old) old.remove();
+  });
+  const pushHtml = buildPushBanner();
+  const installHtml = buildInstallBanner();
+  if (pushHtml) { const d=document.createElement('div'); d.innerHTML=pushHtml; document.body.appendChild(d.firstElementChild); }
+  if (installHtml) { const d=document.createElement('div'); d.innerHTML=installHtml; document.body.appendChild(d.firstElementChild); }
 }
 function wireTourSpotlight(){
   // Run positioning after paint so tooltip has layout
@@ -1923,6 +1995,7 @@ function buildMobNav(){
       <button class="sb-item ${S.page==='network'?'on':''}" onclick="closeMobMenu();go('network')"><span class="sb-ic">🤝</span>${t('sbNetwork')}</button>
       <button class="sb-item ${S.page==='saved'?'on':''}" onclick="closeMobMenu();go('saved')"><span class="sb-ic">🔖</span>${t('sbSaved')}</button>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="closeMobMenu();go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      ${!S.pwaInstalled ? `<button class="sb-item" onclick="closeMobMenu();go('install')"><span class="sb-ic">📲</span>Install App</button>` : `<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>`}
       <div style="height:1px;background:var(--b);margin:.6rem 0"></div>
       <button class="sb-item" onclick="closeMobMenu();S.langChosen=false;render()"><span class="sb-ic">🌐</span>${S.lang==='hi'?'English में बदलें':'हिन्दी में बदलें'}</button>
       <button class="sb-item" onclick="closeMobMenu();toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
@@ -1980,6 +2053,7 @@ function buildNav(){
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
+      ${!S.pwaInstalled ? `<button class="btn btn-p btn-sm" onclick="go('install')" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : ''}
       ${S.user?`<div style="position:relative">
         <button class="btn-ic" onclick="toggleBell();event.stopPropagation()" id="tour-bell" title="Notifications" style="${S.bellOpen?'background:var(--p);color:#fff;border-color:var(--p)':''}">
           🔔
@@ -2016,7 +2090,7 @@ function buildNav(){
 }
 
 function buildBody(){
-  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact};
+  const map={home:buildHome,login:buildLogin,signup:buildSignup,dash:buildDash,recs:buildRecs,skillgap:buildSkillGap,saved:buildSaved,profile:buildProfile,roadmap:buildRoadmap,resume:buildResume,network:buildNetwork,codash:buildCoDash,admin:buildAdmin,about:buildAbout,contact:buildContact,install:buildInstallPage};
   return (map[S.page]||buildHome)();
 }
 
@@ -2041,6 +2115,7 @@ function sb(role){
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item ${S.page==='profile'?'on':''}" onclick="go('profile')"><span class="sb-ic">👤</span>${t('sbProfile')}</button>
+      ${!S.pwaInstalled ? `<button class="sb-item" onclick="go('install')"><span class="sb-ic">📲</span>Install App</button>` : '<button class="sb-item" style="color:var(--green)"><span class="sb-ic">✅</span>App Installed</button>'}
       <button class="sb-item" onclick="toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>${S.dark?t('mobLight'):t('mobDark')} ${t('mobMode')}</button>
       <button class="sb-item" onclick="doLogout()"><span class="sb-ic">🚪</span>${t('sbLogout')}</button>
     </div>
@@ -2061,7 +2136,7 @@ function sb(role){
   if(role==='admin') return `<div class="sb">
     <div class="sb-user"><div class="av" style="width:36px;height:36px;font-size:.72rem;background:var(--red);color:#fff">AD</div><div><div style="font-size:.84rem;font-weight:700;color:var(--t)">Admin Panel</div><div style="font-size:.7rem;color:var(--t3)">Super Admin</div></div></div>
     <div class="sb-sec"><div class="sb-lbl">Manage</div>
-      ${['users','internships','analytics','ai'].map(t=>`<button class="sb-item ${S.adminTab===t?'on':''}" onclick="S.adminTab='${t}';render()"><span class="sb-ic">${{users:'👥',internships:'💼',analytics:'📈',ai:'🤖'}[t]}</span>${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}
+      ${['users','internships','analytics','ai','push'].map(tab=>`<button class="sb-item ${S.adminTab===tab?'on':''}" onclick="S.adminTab='${tab}';render()"><span class="sb-ic">${{users:'👥',internships:'💼',analytics:'📈',ai:'🤖',push:'📢'}[tab]}</span>${tab==='push'?'Push Notifs':tab.charAt(0).toUpperCase()+tab.slice(1)}</button>`).join('')}
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item" onclick="toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>Theme</button>
@@ -2094,7 +2169,7 @@ function buildHome(){
   </section>
   <section class="sec alt"><h2 class="st">${t('whyTitle')}</h2><p class="ss">${t('whySub')}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.1rem;max-width:1000px;margin:0 auto">
-      ${[['🤖','Semantic AI','Sentence Transformers match your profile to internships via cosine similarity — 40+ dimensions.'],['📊','Skill Gap Analyzer','Compare your skills vs role requirements with curated courses to close every gap.'],['🗺️','Career Roadmap','Personalized week-by-week plan from profile building to landing your first offer.'],['📄','Resume Builder','AI-assisted resume editor with live preview and one-click PDF export.'],['🤝','Networking Hub','Connect with seniors, alumni, and professionals for referrals and advice.'],['🎙️','Voice Assistant','Navigate the entire platform with voice commands in English or Hindi.']].map(([ico,t,d])=>`<div class="card card-h" style="padding:1.6rem"><div style="font-size:1.4rem;margin-bottom:.75rem;width:42px;height:42px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center">${ico}</div><h3 style="font-family:var(--fh);font-weight:700;font-size:.92rem;color:var(--t);margin-bottom:.45rem">${t}</h3><p style="font-size:.8rem;color:var(--t2);line-height:1.6">${d}</p></div>`).join('')}
+      ${[['🤖','Semantic AI','Sentence Transformers match your profile to internships via cosine similarity — 40+ dimensions.'],['📊','Skill Gap Analyzer','Compare your skills vs role requirements with curated courses to close every gap.'],['🗺️','Career Roadmap','Personalized week-by-week plan from profile building to landing your first offer.'],['📄','Resume Builder','AI-assisted resume editor with live preview and one-click PDF export.'],['🤝','Networking Hub','Connect with seniors, alumni, and professionals for referrals and advice.'],['🎙️','Voice Assistant','Navigate the entire platform with voice commands in English or Hindi.']].map(([ico,ttl,d])=>`<div class="card card-h" style="padding:1.6rem"><div style="font-size:1.4rem;margin-bottom:.75rem;width:42px;height:42px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center">${ico}</div><h3 style="font-family:var(--fh);font-weight:700;font-size:.92rem;color:var(--t);margin-bottom:.45rem">${ttl}</h3><p style="font-size:.8rem;color:var(--t2);line-height:1.6">${d}</p></div>`).join('')}
     </div>
   </section>
   <section style="background:var(--g1);padding:4rem 2rem;text-align:center">
@@ -2139,7 +2214,7 @@ function buildLogin(){
         <div class="fg"><label class="fl">${t('passwordLabel')}</label><input class="fi" id="lpw" type="password" placeholder="••••••••" value="${rd.pw}"/></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
           <label style="display:flex;align-items:center;gap:.4rem;font-size:.79rem;color:var(--t2);cursor:pointer"><input type="checkbox" style="accent-color:var(--p)" checked/> ${t('rememberMe')}</label>
-          <span style="font-size:.79rem;color:var(--p);cursor:pointer;font-weight:600" onclick="notif('Password reset email sent! 📧','in')">${t('forgotPw')}</span>
+          <span style="font-size:.79rem;color:var(--p);cursor:pointer;font-weight:600" onclick="const em=document.getElementById('lem')?.value?.trim();if(!em){notif('Enter your email first','wn');}else{notif('Password reset email sent to '+em+' 📧','ok');}">${t('forgotPw')}</span>
         </div>
         <button class="btn btn-p btn-full" style="padding:.72rem;font-size:.88rem" onclick="doLogin()">${t('signInBtn')}</button>
         <div style="display:flex;align-items:center;gap:.7rem;margin:1.1rem 0"><div style="flex:1;height:1px;background:var(--b)"></div><span style="font-size:.71rem;color:var(--t3)">${t('orWith')}</span><div style="flex:1;height:1px;background:var(--b)"></div></div>
@@ -2633,7 +2708,7 @@ function buildSkillGap(){
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem"><h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t)">${t('sgCourses')}</h3><span class="bdg bp">${t('sgAiSelected')}</span></div>
-      ${COURSES.map(c=>`<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem .9rem;border:1px solid var(--b);border-radius:var(--r);margin-bottom:.55rem;background:var(--bg3);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--bg2)'" onmouseout="this.style.borderColor='var(--b)';this.style.background='var(--bg3)'" onclick="notif('Opening ${c.skill} course…','in')"><div style="width:36px;height:36px;border-radius:8px;background:${c.col}22;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">${c.ico}</div><div style="flex:1"><div style="font-size:.83rem;font-weight:700;color:var(--t)">${c.skill}</div><div style="font-size:.71rem;color:var(--t3)">${c.platform} · ${c.hrs} · ⭐ ${c.rt}</div></div><button class="btn btn-o btn-sm" onclick="event.stopPropagation();notif('Enrolled! 🎓','ok')">${t('sgEnroll')}</button></div>`).join('')}
+      ${COURSES.map(c=>`<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem .9rem;border:1px solid var(--b);border-radius:var(--r);margin-bottom:.55rem;background:var(--bg3);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--bg2)'" onmouseout="this.style.borderColor='var(--b)';this.style.background='var(--bg3)'" onclick="notif('Opening ${c.skill} on ${c.platform}…','in')"><div style="width:36px;height:36px;border-radius:8px;background:${c.col}22;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">${c.ico}</div><div style="flex:1"><div style="font-size:.83rem;font-weight:700;color:var(--t)">${c.skill}</div><div style="font-size:.71rem;color:var(--t3)">${c.platform} · ${c.hrs} · ⭐ ${c.rt}</div></div><button class="btn btn-o btn-sm" onclick="event.stopPropagation();if(!S.enrolledCourses)S.enrolledCourses=[];if(S.enrolledCourses.includes('${c.skill}')){notif('Already enrolled in ${c.skill}!','in');}else{S.enrolledCourses.push('${c.skill}');notif('Enrolled in ${c.skill}! 🎓','ok');}">${t('sgEnroll')}</button></div>`).join('')}
     </div>
   </div></div>`;
 }
@@ -2688,21 +2763,24 @@ function buildProfile(){
           <div style="font-size:.77rem;color:var(--t3);margin:.18rem 0">${S.user?.email||''}</div>
           <span class="bdg bi" style="margin-top:.3rem">${t('profStudent')}</span>
           <div style="margin-top:.9rem"><div class="pb"><div class="pf" style="width:74%"></div></div><div style="font-size:.71rem;color:var(--t3);margin-top:.28rem">74${t('profComplete')}</div></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:.8rem;width:100%" onclick="notif('Photo upload coming soon!','in')">${t('profChangePhoto')}</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:.8rem;width:100%" onclick="const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=e=>{const f=e.target.files[0];if(f)notif('Photo updated! 📷','ok');};inp.click()">${t('profChangePhoto')}</button>
         </div>
         <div class="card">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem">${t('profSocialLinks')}</h3>
-          ${[[t('profLinkedin'),S.linkedin||t('profNotLinked'),'🔗'],[t('profGithub'),S.github||t('profNotLinked'),'🐙'],[t('profPortfolio'),S.portfolio||t('profNotSet'),'🌐']].map(([l,v,ico])=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--b)"><span style="font-size:.9rem">${ico}</span><div style="flex:1"><div style="font-size:.68rem;color:var(--t3);text-transform:uppercase;font-weight:700;letter-spacing:.06em">${l}</div><div style="font-size:.78rem;color:var(--t);font-weight:600">${v}</div></div><button class="btn btn-ghost btn-xs" onclick="notif('Edit…','in')">${t('profEdit')}</button></div>`).join('')}
+          ${[[t('profLinkedin'),S.linkedin||t('profNotLinked'),'🔗','pli'],[t('profGithub'),S.github||t('profNotLinked'),'🐙','pgh'],[t('profPortfolio'),S.portfolio||t('profNotSet'),'🌐','ppf']].map(([l,v,ico,fid])=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--b)"><span style="font-size:.9rem">${ico}</span><div style="flex:1"><div style="font-size:.68rem;color:var(--t3);text-transform:uppercase;font-weight:700;letter-spacing:.06em">${l}</div><div style="font-size:.78rem;color:var(--t);font-weight:600">${v}</div></div><button class="btn btn-ghost btn-xs" onclick="const el=document.getElementById('${fid}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),300);}">${t('profEdit')}</button></div>`).join('')}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:1rem">
         <div class="card">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.1rem">${t('profBasicInfo')}</h3>
           <div class="fr2">
-            <div class="fg"><label class="fl">${t('profFullName')}</label><input class="fi" value="${S.user?.name||''}"/></div>
+            <div class="fg"><label class="fl">${t('profFullName')}</label><input class="fi" id="pname" value="${S.user?.name||''}"/></div>
             <div class="fg"><label class="fl">${t('profLocation')}</label><input class="fi" id="ploc" value="${S.loc}"/></div>
             <div class="fg"><label class="fl">${t('profEducation')}</label><input class="fi" id="pedu" value="${S.edu}"/></div>
-            <div class="fg"><label class="fl">${t('profCollege')}</label><input class="fi" value="${S.college}"/></div>
+            <div class="fg"><label class="fl">${t('profCollege')}</label><input class="fi" id="pcol" value="${S.college}"/></div>
+            <div class="fg"><label class="fl">LinkedIn</label><input class="fi" id="pli" value="${S.linkedin}" placeholder="linkedin.com/in/yourname"/></div>
+            <div class="fg"><label class="fl">GitHub</label><input class="fi" id="pgh" value="${S.github}" placeholder="github.com/yourname"/></div>
+            <div class="fg"><label class="fl">Portfolio</label><input class="fi" id="ppf" value="${S.portfolio}" placeholder="yourportfolio.dev"/></div>
             <div class="fg ff"><label class="fl">${t('profSkills')}</label><div class="tw">${S.skills.map(s=>`<span class="tg">${s}<span class="tgx" onclick="rmSkill('${s}')">×</span></span>`).join('')}<input class="ti" placeholder="${t('profAddSkill')}" onkeydown="addSkillKey(event)"/></div></div>
           </div>
         </div>
@@ -2713,7 +2791,7 @@ function buildProfile(){
         </div>
         <div class="card">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.1rem">${t('profResume')}</h3>
-          <div class="uzn" onclick="notif('Resume uploaded! AI analysis complete 🤖','ok')"><div class="uzi">📄</div><div style="font-size:.86rem;font-weight:600;color:var(--t)">${t('profUploadResume')}</div><div style="font-size:.73rem;color:var(--t3);margin-top:.22rem">${t('profUploadSub')}</div></div>
+          <div class="uzn" onclick="const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.docx';inp.onchange=e=>{const f=e.target.files[0];if(f)notif('Resume uploaded! AI analysis complete 🤖','ok');};inp.click()"><div class="uzi">📄</div><div style="font-size:.86rem;font-weight:600;color:var(--t)">${t('profUploadResume')}</div><div style="font-size:.73rem;color:var(--t3);margin-top:.22rem">${t('profUploadSub')}</div></div>
         </div>
         <button class="btn btn-p" style="justify-content:center" onclick="saveProfile()">${t('profSaveBtn')}</button>
       </div>
@@ -2781,7 +2859,7 @@ function buildRoadmap(){
               <span style="font-size:.7rem;color:var(--t3);font-weight:600">${node.time}</span>
             </div>
             <div style="flex-shrink:0">
-              ${node.status==='active'?`<button class="btn btn-p btn-sm" onclick="notif('Marked complete! 🎉','ok')">${t('rmMarkDone')}</button>`:''}
+              ${node.status==='active'?`<button class="btn btn-p btn-sm" onclick="const n=ROADMAP.find(x=>x.id===${node.id});if(n){n.status='done';notif('Marked complete! 🎉','ok');render();}">${t('rmMarkDone')}</button>`:''}
               ${node.status==='locked'?`<button class="btn btn-ghost btn-sm" onclick="notif('Complete previous steps first','wn')">${t('rmLockedBtn')}</button>`:''}
               ${node.status==='done'?`<button class="btn btn-success btn-sm" onclick="notif('Reviewing…','in')">${t('rmReview')}</button>`:''}
             </div>
@@ -2895,7 +2973,7 @@ function buildNetwork(){
     <div class="aic nh-ai-banner">
       <div class="aih">${t('nhAiSuggestions')}</div>
       <div style="font-size:.8rem;color:var(--t2);line-height:1.6">${t('nhAiText')}
-        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')"> ${t('nhAutoConnect')}</span>
+        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="NETWORK.forEach(p=>p.conn=true);notif('Connected with all ${NETWORK.length} professionals! 🤝','ok');render()"> ${t('nhAutoConnect')}</span>
       </div>
     </div>
 
@@ -2976,7 +3054,7 @@ function buildCoDash(){
     <div class="mg">${[['💼','3','Active Postings'],['👥',CANDS.length,'Matches'],['✅','2','Shortlisted'],['📊','89%','Avg Match']].map(([ico,v,l])=>`<div class="mc"><div class="mi">${ico}</div><div class="mv">${v}</div><div class="ml">${l}</div></div>`).join('')}</div>
     <div class="tabs"><div class="tab ${S.coTab==='post'?'on':''}" onclick="S.coTab='post';render()">Post Internship</div><div class="tab ${S.coTab==='cands'?'on':''}" onclick="S.coTab='cands';render()">AI Candidates</div><div class="tab" onclick="notif('Analytics PDF generated!','ok')">Analytics</div></div>
     ${S.coTab==='cands'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap.65rem;gap:.65rem"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">AI-Ranked Candidates</h3><div style="display:flex;gap.4rem;gap:.4rem"><select class="fs" style="width:auto;padding:.38rem .7rem;font-size:.79rem"><option>All Roles</option><option>Frontend Dev</option><option>ML Intern</option></select><button class="btn btn-ghost btn-sm" onclick="notif('Exported to CSV!','ok')">↓ Export</button></div></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Candidate</th><th>College</th><th>Skills</th><th>AI Match</th><th>Applied</th><th>Status</th><th>Action</th></tr></thead><tbody>${CANDS.map(c=>`<tr><td><div style="display:flex;align-items:center;gap.6rem;gap:.6rem"><div class="av" style="width:30px;height:30px;font-size:.63rem;background:var(--g1);color:#fff">${c.name.split(' ').map(x=>x[0]).join('')}</div><span style="font-weight:700">${c.name}</span></div></td><td style="color:var(--t3)">${c.college}</td><td>${c.skills.map(s=>`<span class="bdg bi" style="margin:.08rem">${s}</span>`).join('')}</td><td><span style="font-weight:800;color:${c.match>=85?'var(--green)':'var(--amber)'}">${c.match}%</span></td><td style="color:var(--t3);font-size:.8rem">${c.ago}</td><td><span class="bdg ${c.status==='Shortlisted'?'bg':c.status==='Applied'?'bi':'ba'}">${c.status}</span></td><td><div style="display:flex;gap.32rem;gap:.32rem"><button class="btn btn-o btn-xs" onclick="notif('Viewing ${c.name} profile…','in')">View</button><button class="btn btn-success btn-xs" onclick="notif('${c.name} shortlisted! ✅','ok')">✓ Short</button><button class="btn btn-danger btn-xs" onclick="notif('${c.name} rejected','in')">✗</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
-    `<div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.35rem">Post New Internship</h3><div class="fr2"><div class="fg"><label class="fl">Role Title</label><input class="fi" placeholder="Frontend Developer Intern"/></div><div class="fg"><label class="fl">Department</label><select class="fs"><option>Engineering</option><option>Design</option><option>Data</option><option>Marketing</option><option>Product</option></select></div><div class="fg"><label class="fl">Location</label><input class="fi" placeholder="Bangalore or Remote"/></div><div class="fg"><label class="fl">Work Mode</label><select class="fs"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></div><div class="fg"><label class="fl">Duration</label><select class="fs"><option>2 months</option><option>3 months</option><option>4 months</option><option>6 months</option></select></div><div class="fg"><label class="fl">Stipend (₹/mo)</label><input class="fi" type="number" placeholder="25000"/></div><div class="fg"><label class="fl">Openings</label><input class="fi" type="number" placeholder="5"/></div><div class="fg"><label class="fl">Deadline</label><input class="fi" type="date"/></div><div class="fg ff"><label class="fl">Required Skills</label><input class="fi" placeholder="React, Node.js, MongoDB, TypeScript"/></div><div class="fg ff"><label class="fl">Job Description</label><textarea class="fta" rows="4" placeholder="Describe the role, responsibilities, and what you're looking for…"></textarea></div><div class="fg ff"><label class="fl">Perks & Benefits</label><div style="display:flex;flex-wrap:wrap;gap.4rem;gap:.4rem;margin-top:.3rem">${['Certificate','Recommendation Letter','PPO Opportunity','Flexible Hours','Work from Anywhere'].map(p=>`<div onclick="this.classList.toggle('sel');this.style.borderColor=this.classList.contains('sel')?'var(--p)':'var(--b)';this.style.background=this.classList.contains('sel')?'var(--pl)':'var(--bg3)';this.style.color=this.classList.contains('sel')?'var(--p)':'var(--t2)';" style="border:1.5px solid var(--b);border-radius:99px;padding:.3rem .78rem;font-size:.75rem;font-weight:600;color:var(--t2);background:var(--bg3);cursor:pointer;transition:all .15s">${p}</div>`).join('')}</div></div></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="notif('Internship posted! AI matching running 🤖','ok')">Publish →</button><button class="btn btn-ghost" onclick="notif('Saved as draft','in')">Save Draft</button><button class="btn btn-ghost" onclick="notif('Previewing posting…','in')">Preview</button></div></div>`}
+    `<div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.35rem">Post New Internship</h3><div class="fr2"><div class="fg"><label class="fl">Role Title</label><input class="fi" placeholder="Frontend Developer Intern"/></div><div class="fg"><label class="fl">Department</label><select class="fs"><option>Engineering</option><option>Design</option><option>Data</option><option>Marketing</option><option>Product</option></select></div><div class="fg"><label class="fl">Location</label><input class="fi" placeholder="Bangalore or Remote"/></div><div class="fg"><label class="fl">Work Mode</label><select class="fs"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></div><div class="fg"><label class="fl">Duration</label><select class="fs"><option>2 months</option><option>3 months</option><option>4 months</option><option>6 months</option></select></div><div class="fg"><label class="fl">Stipend (₹/mo)</label><input class="fi" type="number" placeholder="25000"/></div><div class="fg"><label class="fl">Openings</label><input class="fi" type="number" placeholder="5"/></div><div class="fg"><label class="fl">Deadline</label><input class="fi" type="date"/></div><div class="fg ff"><label class="fl">Required Skills</label><input class="fi" placeholder="React, Node.js, MongoDB, TypeScript"/></div><div class="fg ff"><label class="fl">Job Description</label><textarea class="fta" rows="4" placeholder="Describe the role, responsibilities, and what you're looking for…"></textarea></div><div class="fg ff"><label class="fl">Perks & Benefits</label><div style="display:flex;flex-wrap:wrap;gap.4rem;gap:.4rem;margin-top:.3rem">${['Certificate','Recommendation Letter','PPO Opportunity','Flexible Hours','Work from Anywhere'].map(p=>`<div onclick="this.classList.toggle('sel');this.style.borderColor=this.classList.contains('sel')?'var(--p)':'var(--b)';this.style.background=this.classList.contains('sel')?'var(--pl)':'var(--bg3)';this.style.color=this.classList.contains('sel')?'var(--p)':'var(--t2)';" style="border:1.5px solid var(--b);border-radius:99px;padding:.3rem .78rem;font-size:.75rem;font-weight:600;color:var(--t2);background:var(--bg3);cursor:pointer;transition:all .15s">${p}</div>`).join('')}</div></div></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="const role=this.closest('.card').querySelector('input')?.value?.trim();if(!role){notif('Enter a role title first','wn');return;}notif('Internship published! AI matching running 🤖','ok')">Publish →</button><button class="btn btn-ghost" onclick="notif('Saved as draft','in')">Save Draft</button><button class="btn btn-ghost" onclick="notif('Previewing posting…','in')">Preview</button></div></div>`}
   </div></div>`;
 }
 
@@ -2985,10 +3063,11 @@ function buildAdmin(){
   return `<div class="page dw">${sb('admin')}<div class="dm">
     <div style="margin-bottom:1.65rem"><h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">🛡️ Admin Panel</h1><p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">Nirmaan v3.0 · <span style="color:var(--green)">● All systems operational</span></p></div>
     <div class="mg">${[['👥','6,241','Users','↑ 12%'],['💼','15k+','Internships','↑ 8%'],['🏢','1,100','Companies','↑ 5 new'],['🤖','97%','AI Accuracy','↑ 2%'],['💰','₹2.4Cr','MRR','↑ 34%']].map(([ico,v,l,c])=>`<div class="mc"><div class="mi">${ico}</div><div class="mv">${v}</div><div class="ml">${l}</div><div class="mch up">${c}</div></div>`).join('')}</div>
-    <div class="tabs">${['users','internships','analytics','ai'].map(t=>`<div class="tab ${S.adminTab===t?'on':''}" onclick="S.adminTab='${t}';render()">${{users:'👥 Users',internships:'💼 Internships',analytics:'📈 Analytics',ai:'🤖 AI Engine'}[t]}</div>`).join('')}</div>
+    <div class="tabs">${['users','internships','analytics','ai','push'].map(tab=>`<div class="tab ${S.adminTab===tab?'on':''}" onclick="S.adminTab='${tab}';render()">${{users:'👥 Users',internships:'💼 Internships',analytics:'📈 Analytics',ai:'🤖 AI Engine',push:'📢 Push'}[tab]}</div>`).join('')}</div>
     ${S.adminTab==='users'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">User Management</h3><div style="display:flex;gap.4rem;gap:.4rem"><input class="fi" style="width:175px" placeholder="Search users…"/><button class="btn btn-ghost btn-sm" onclick="notif('Users exported!','ok')">↓ Export</button><button class="btn btn-p btn-sm" onclick="notif('Invite sent!','ok')">+ Invite</button></div></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>User</th><th>Role</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody>${AUSERS.map(u=>`<tr><td><div style="display:flex;align-items:center;gap.6rem;gap:.6rem"><div class="av" style="width:29px;height:29px;font-size:.63rem;background:var(--g1);color:#fff">${u.name.split(' ').map(x=>x[0]).join('').slice(0,2)}</div><div><div style="font-weight:700;font-size:.84rem">${u.name}</div><div style="font-size:.7rem;color:var(--t3)">${u.email}</div></div></div></td><td><span class="bdg ${u.role==='Admin'?'bp':u.role==='Company'?'bc':'bi'}">${u.role}</span></td><td style="color:var(--t3);font-size:.8rem">${u.joined}</td><td><span class="bdg ${u.status==='Active'?'bg':'ba'}">${u.status}</span></td><td><div style="display:flex;gap.3rem;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="notif('Editing ${u.name}…','in')">Edit</button><button class="btn btn-danger btn-xs" onclick="notif('${u.name} suspended','in')">Suspend</button><button class="btn btn-ghost btn-xs" onclick="notif('Logged in as ${u.name}','in')">Login As</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
     S.adminTab==='internships'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b)"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">Internship Management</h3></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Title</th><th>Company</th><th>Type</th><th>Match</th><th>Status</th><th>Actions</th></tr></thead><tbody>${INTERNS.map(i=>`<tr><td style="font-weight:700">${i.title}</td><td>${i.co}</td><td><span class="bdg bgr">${i.type}</span></td><td style="font-weight:800;color:${i.match>=85?'var(--green)':'var(--amber)'}">${i.match}%</td><td><span class="bdg bg">Active</span></td><td><div style="display:flex;gap.3rem;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="notif('Editing internship…','in')">Edit</button><button class="btn btn-danger btn-xs" onclick="notif('Internship removed','in')">Remove</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
     S.adminTab==='ai'?`<div class="aic"><div class="aih">🤖 AI Engine Status</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.85rem;margin-top:.65rem">${[['Embedding Model','Sentence-BERT v3','✅'],['Algorithm','Cosine + BM25','✅'],['Vector DB','Pinecone 16M','✅'],['Latency','<120ms avg','✅'],['Daily Queries','48,320','✅'],['Accuracy','97.2%','↑ +2.1%']].map(([l,v,s])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.75rem .9rem;border:1px solid var(--b)"><div style="font-size:.67rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing.07em;letter-spacing:.07em">${l}</div><div style="font-family:var(--fh);font-size:.93rem;font-weight:700;color:var(--t);margin:.22rem 0">${v}</div><div style="font-size:.7rem;color:var(--green);font-weight:700">${s}</div></div>`).join('')}</div></div>`:
+    S.adminTab==='push'?buildAdminPushPanel():
     `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem"><div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:1.25rem">Weekly Signups</h3><div class="bch">${[{l:'M',v:45,h:38},{l:'T',v:82,h:68},{l:'W',v:60,h:50},{l:'T',v:95,h:79},{l:'F',v:75,h:62},{l:'S',v:110,h:91},{l:'S',v:88,h:73}].map(d=>`<div class="bc"><div class="bv">${d.v}</div><div class="bb" style="height:${d.h}px"></div><div class="bl">${d.l}</div></div>`).join('')}</div></div><div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t);margin-bottom:.9rem">Platform KPIs</h3>${[['Applications','24,832'],['Placements','6,241'],['Avg Match','89%'],['Courses Enrolled','16,400'],['MAU','18,200'],['API / day','2.3M']].map(([l,v])=>`<div style="display:flex;justify-content:space-between;padding:.52rem 0;border-bottom:1px solid var(--b);font-size:.82rem"><span style="color:var(--t2)">${l}</span><span style="font-weight:800;color:var(--t)">${v}</span></div>`).join('')}</div></div>`}
   </div></div>`;
 }
@@ -3025,27 +3104,43 @@ function buildChat(){
   const ph=t('chatPlaceholder')||'Ask me anything…';
   const quickBtns=(t('chatQuickBtns')||['Show matches','Resume tips','Skill gap','Interview prep','Salary info','Hackathon tips','LinkedIn tips','DSA prep','Roadmap','Help']);
   return `
-    ${!S.chatOpen&&!S.chatHintDismissed?`<div id="chat-hint-bubble" class="chat-hint"><span>${hint}</span><span id="chat-hint-close" style="cursor:pointer;opacity:.6;margin-left:.4rem;font-size:.9rem">×</span></div>`:''}
+    ${!S.chatOpen&&!S.chatHintDismissed?`
+    <div id="chat-hint-bubble" class="chat-hint" style="cursor:pointer">
+      <span style="flex:1">${hint}</span>
+      <span id="chat-hint-close" style="
+        display:inline-flex;align-items:center;justify-content:center;
+        width:24px;height:24px;border-radius:50%;
+        background:rgba(0,0,0,.08);font-size:1rem;font-weight:700;
+        margin-left:.35rem;flex-shrink:0;color:var(--t2)
+      ">×</span>
+    </div>`:''}
     <button id="chat-fab-btn" style="display:none"></button>
     ${S.chatOpen?`<div class="cw">
       <!-- Header -->
-      <div class="ch">
+      <div class="ch" style="display:flex;align-items:center;gap:.55rem;background:var(--g1);padding:.8rem 1rem;flex-shrink:0">
         <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0">🤖</div>
         <div style="flex:1;min-width:0">
-          <div style="color:#fff;font-weight:700;font-size:.88rem;font-family:var(--fh)">Arya AI</div>
+          <div style="color:#fff;font-weight:700;font-size:.9rem;font-family:var(--fh)">Arya AI</div>
           <div style="color:rgba(255,255,255,.65);font-size:.65rem">● Online · 50+ topics</div>
         </div>
         <button id="chat-clear-btn" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);border-radius:6px;padding:.16rem .45rem;font-size:.62rem;cursor:pointer;font-family:var(--fb);flex-shrink:0">🗑</button>
-        <button id="chat-close-btn" style="background:rgba(255,255,255,.15);border:none;color:#fff;border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:.95rem;margin-left:.35rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">×</button>
+        <!-- Close button — large, always visible, works on all screens -->
+        <button id="chat-close-btn" class="ch-close-btn" aria-label="Close chat" style="
+          background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.35);
+          color:#fff;border-radius:50%;width:34px;height:34px;
+          cursor:pointer;font-size:1.15rem;margin-left:.3rem;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+          font-weight:700;line-height:1;transition:background .15s
+        ">×</button>
       </div>
 
       <!-- Messages -->
-      <div class="cms" id="chatmsgs">
+      <div class="cms" id="chatmsgs" style="flex:1;overflow-y:auto;padding:.65rem">
         ${msgs.map(m=>`<div class="msg ${m.r==='b'?'bot':'usr'}">${m.t.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`).join('')}
         ${S.chatTyping?`<div class="msg bot"><div class="td"><div class="tdb"></div><div class="tdb"></div><div class="tdb"></div></div></div>`:''}
       </div>
 
-      <!-- Quick buttons: horizontal scroll, no wrap -->
+      <!-- Quick buttons -->
       <div class="cqb">
         ${quickBtns.map(q=>`<div class="cq" data-chatq="${q}">${q}</div>`).join('')}
       </div>
@@ -3241,6 +3336,19 @@ function tourSkip(){S.tourActive=false;render();}
 
 function buildModal(){
   if(S.modal==='cookiePolicy')return buildCookiePolicyModal();
+  if(S.modal==='iosInstall') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal" style="max-width:360px">
+    <button class="mcl" onclick="S.modal=null;render()">×</button>
+    <div class="mh" style="display:flex;align-items:center;gap:.6rem">📲 Install Nirmaan on iOS</div>
+    <p style="font-size:.83rem;color:var(--t2);margin-bottom:1.35rem;line-height:1.65">Add Nirmaan to your iPhone or iPad home screen for a full app experience — no App Store needed.</p>
+    ${[['1','Open in <strong>Safari</strong>','If you\'re in another browser, copy the URL and open it in Safari.','🧭'],['2','Tap the <strong>Share</strong> button','The box-with-arrow icon at the bottom of the screen.','⬆️'],['3','Tap <strong>"Add to Home Screen"</strong>','Scroll down in the share sheet and tap this option.','➕'],['4','Tap <strong>Add</strong>','Nirmaan will appear on your home screen like a native app!','✅']].map(([n,title,desc,ico])=>`<div style="display:flex;gap:.85rem;align-items:flex-start;margin-bottom:1rem">
+      <div style="width:32px;height:32px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;font-weight:800;flex-shrink:0">${n}</div>
+      <div>
+        <div style="font-size:.84rem;font-weight:700;color:var(--t)">${ico} <span>${title}</span></div>
+        <div style="font-size:.76rem;color:var(--t3);margin-top:.15rem">${desc}</div>
+      </div>
+    </div>`).join('')}
+    <button onclick="S.modal=null;render()" style="width:100%;background:var(--p);color:#fff;border:none;border-radius:99px;padding:.65rem 1rem;font-size:.84rem;font-weight:700;cursor:pointer;font-family:var(--fb);margin-top:.5rem">Got it ✓</button>
+  </div></div>`;
   if(S.modal==='project') return `<div class="mbg" onclick="if(event.target===this){S.modal=null;render()}"><div class="modal"><button class="mcl" onclick="S.modal=null;render()">×</button><div class="mh">Add Project</div><p style="font-size:.82rem;color:var(--t3);margin-bottom:1.35rem">Showcase your work to boost AI match score</p><div class="fg"><label class="fl">Project Name</label><input class="fi" id="mpn" placeholder="AI Chat App"/></div><div class="fg"><label class="fl">Technologies Used</label><input class="fi" id="mpt" placeholder="React, Node.js, OpenAI"/></div><div class="fg"><label class="fl">Project Link</label><input class="fi" id="mpl" placeholder="github.com/you/project"/></div><div class="fg"><label class="fl">Description</label><textarea class="fta" rows="3" placeholder="What does it do? What did you build?"></textarea></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="addProject()">Add Project ✓</button><button class="btn btn-ghost" onclick="S.modal=null;render()">Cancel</button></div></div></div>`;
   if(S.modal&&S.modal.startsWith('msg_')){
     const id=parseInt(S.modal.split('_')[1]);const p=NETWORK.find(x=>x.id===id);
@@ -3249,17 +3357,476 @@ function buildModal(){
   return '';
 }
 
+// ══════════════════════ INSTALL PAGE ══════════════════════
+function buildInstallPage(){
+  const isIOS     = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const hasPWA    = !!S.pwaInstallPrompt;
+  const installed = S.pwaInstalled;
+
+  // Auto-fire install prompt if available and user lands here
+  if(hasPWA && !installed && !S._installPagePromptFired){
+    S._installPagePromptFired = true;
+    setTimeout(()=>triggerInstall(), 400);
+  }
+
+  return `<div class="page" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1.25rem;background:var(--bg2);text-align:center">
+
+    <!-- animated bg rings -->
+    <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0">
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:600px;height:600px;border-radius:50%;border:1px solid rgba(99,102,241,.1);animation:spin 18s linear infinite"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:420px;height:420px;border-radius:50%;border:1px solid rgba(99,102,241,.13);animation:spin 11s linear reverse infinite"></div>
+      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:260px;height:260px;border-radius:50%;border:1px solid rgba(99,102,241,.16);animation:spin 7s linear infinite"></div>
+      <div style="position:absolute;inset:0;background-image:radial-gradient(rgba(99,102,241,.06) 1px,transparent 1px);background-size:28px 28px"></div>
+    </div>
+
+    <div style="position:relative;z-index:1;max-width:420px;width:100%">
+
+      <!-- icon -->
+      <div style="width:88px;height:88px;border-radius:26px;background:var(--g1);display:inline-flex;align-items:center;justify-content:center;font-size:2.4rem;margin-bottom:1.5rem;box-shadow:0 10px 40px rgba(99,102,241,.35);position:relative">
+        ✦
+        <div style="position:absolute;inset:-6px;border-radius:32px;border:1.5px solid rgba(99,102,241,.25);animation:ring2 2.2s ease-in-out infinite"></div>
+      </div>
+
+      ${installed ? `
+        <!-- Already installed -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Already Installed! 🎉</h1>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:2rem">Nirmaan is on your device. Open it from your home screen or app drawer anytime.</p>
+        <div style="display:inline-flex;align-items:center;gap:.55rem;background:rgba(34,197,94,.1);border:1.5px solid var(--green);border-radius:99px;padding:.6rem 1.4rem;font-size:.9rem;font-weight:700;color:var(--green);margin-bottom:1.5rem">✅ App installed on this device</div>
+        <div><button onclick="go('home')" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.75rem 2rem;font-size:.95rem;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back to Home</button></div>
+
+      ` : hasPWA ? `
+        <!-- Chrome / Edge / Android — direct one-click install -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Install Nirmaan</h1>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:.75rem">Your browser is asking for permission right now. Just click <strong>Install</strong> in the dialog above ↑</p>
+        <p style="font-size:.8rem;color:var(--t3);margin-bottom:2rem">If the dialog didn't appear, tap the button below.</p>
+
+        <button onclick="triggerInstall()" style="
+          background:var(--g1);color:#fff;border:none;border-radius:99px;
+          padding:.85rem 2.4rem;font-size:1.05rem;font-weight:800;cursor:pointer;
+          font-family:var(--fb);display:inline-flex;align-items:center;gap:.6rem;
+          box-shadow:0 8px 28px rgba(99,102,241,.38);transition:transform .15s,box-shadow .15s;
+          margin-bottom:1.75rem
+        " onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 36px rgba(99,102,241,.45)'" onmouseout="this.style.transform='';this.style.boxShadow='0 8px 28px rgba(99,102,241,.38)'">
+          📲 Install App — One Tap
+        </button>
+
+        <!-- what you get -->
+        <div class="card" style="text-align:left;margin-bottom:1.5rem">
+          <div style="font-family:var(--fh);font-weight:700;font-size:.85rem;color:var(--t);margin-bottom:.85rem">What you get</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem">
+            ${[['⚡','Loads instantly'],['📴','Works offline'],['🔔','Push alerts'],['🏠','Home screen icon'],['🖥️','Dedicated window'],['🔒','Auto-updates']].map(([ic,lbl])=>`
+            <div style="display:flex;align-items:center;gap:.5rem;font-size:.8rem;color:var(--t2)">
+              <span style="font-size:1rem">${ic}</span>${lbl}
+            </div>`).join('')}
+          </div>
+        </div>
+
+        <button onclick="go('home')" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:.83rem;text-decoration:underline">Not now</button>
+
+      ` : isIOS ? `
+        <!-- iOS Safari — browser API blocked by Apple, show 3-step inline -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Install on iPhone</h1>
+        <p style="font-size:.9rem;color:var(--t2);line-height:1.7;margin-bottom:1.75rem">Apple requires a quick 3-tap process through Safari to add apps to your home screen.</p>
+
+        <div style="text-align:left;margin-bottom:2rem">
+          ${[
+            ['⬆️','Tap the Share button','The box-with-arrow icon at the <strong>bottom</strong> of Safari.'],
+            ['➕','Tap "Add to Home Screen"','Scroll the share sheet and tap <strong>Add to Home Screen</strong>.'],
+            ['✅','Tap "Add"','Nirmaan appears on your home screen — tap it anytime to launch!'],
+          ].map(([ico,title,desc],i)=>`
+          <div style="display:flex;gap:.9rem;align-items:flex-start;margin-bottom:${i<2?'1.1rem':'0'}">
+            <div style="width:38px;height:38px;border-radius:50%;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1rem;font-weight:800;flex-shrink:0">${i+1}</div>
+            <div>
+              <div style="font-size:.88rem;font-weight:700;color:var(--t)">${ico} ${title}</div>
+              <div style="font-size:.78rem;color:var(--t2);margin-top:.18rem;line-height:1.6">${desc}</div>
+            </div>
+          </div>`).join('')}
+        </div>
+
+        <div style="background:var(--pl);border:1.5px solid var(--p);border-radius:14px;padding:.75rem 1rem;font-size:.8rem;color:var(--p);font-weight:600;margin-bottom:1.5rem">
+          💡 Make sure you're using <strong>Safari</strong> — this doesn't work in Chrome on iOS.
+        </div>
+        <button onclick="go('home')" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.7rem 2rem;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back to Home</button>
+
+      ` : `
+        <!-- Firefox or unsupported browser -->
+        <h1 style="font-family:var(--fh);font-size:2rem;font-weight:700;color:var(--t);letter-spacing:-.04em;margin-bottom:.6rem">Install Nirmaan</h1>
+        <p style="font-size:.95rem;color:var(--t2);line-height:1.7;margin-bottom:1.5rem">For the best one-click install experience, open Nirmaan in <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.</p>
+        <div style="background:var(--bg3);border:1px solid var(--b);border-radius:14px;padding:1rem;margin-bottom:1.5rem;text-align:left">
+          <div style="font-size:.82rem;font-weight:700;color:var(--t);margin-bottom:.6rem">Supported browsers</div>
+          ${[['🟡','Google Chrome','Windows, Mac, Android — best support'],['🔵','Microsoft Edge','Windows, Mac'],['🤖','Android Chrome','Tap menu → Add to Home Screen'],].map(([ic,br,note])=>`
+          <div style="display:flex;gap:.6rem;align-items:center;padding:.35rem 0;border-bottom:1px solid var(--b);font-size:.8rem">
+            <span>${ic}</span><div><strong>${br}</strong> <span style="color:var(--t3)">${note}</span></div>
+          </div>`).join('')}
+        </div>
+        <button onclick="go('home')" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.7rem 2rem;font-size:.9rem;font-weight:700;cursor:pointer;font-family:var(--fb)">← Back</button>
+      `}
+
+    </div>
+  </div>`;
+}
+
 // ══════════════════════ FOOTER ══════════════════════
 function buildFooter(){
-  return `<footer class="footer"><div class="fg3"><div><div class="fbr">✦ Nirmaan</div><div style="font-size:.81rem;color:var(--t3);line-height:1.65;max-width:260px">AI-powered internship matching for every student in India.</div><div style="display:flex;gap.6rem;gap:.6rem;margin-top:.9rem">${['🐦','💼','🐙','💬'].map(ic=>`<span onclick="notif('Follow us!','in')" style="cursor:pointer;font-size:1.05rem">${ic}</span>`).join('')}</div></div><div class="fco"><h4>Platform</h4><a onclick="go('recs')">AI Matching</a><a onclick="go('skillgap')">Skill Gap</a><a onclick="go('roadmap')">Roadmap</a><a onclick="go('resume')">Resume Builder</a><a onclick="go('network')">Networking</a></div><div class="fco"><h4>Company</h4><a onclick="go('about')">About</a><a onclick="notif('Blog coming soon!','in')">Blog</a><a onclick="go('contact')">Contact</a><a onclick="notif('Careers page!','in')">Careers</a></div><div class="fco"><h4>Support</h4><a onclick="notif('Help center!','in')">Help Center</a><a onclick="notif('Privacy Policy','in')">Privacy</a><a onclick="notif('Terms of Service','in')">Terms</a><a onclick="notif('API docs!','in')">API Docs</a></div></div><div class="fbot"><div>© 2025 Nirmaan Technologies Pvt. Ltd. · Made with ❤️ in India 🇮🇳</div><div style="font-size:.73rem">v3.0 · All systems ✅</div></div></footer>`;
+  return `<footer class="footer"><div class="fg3"><div><div class="fbr">✦ Nirmaan</div><div style="font-size:.81rem;color:var(--t3);line-height:1.65;max-width:260px">AI-powered internship matching for every student in India.</div><div style="display:flex;gap:.6rem;margin-top:.9rem">${['🐦','💼','🐙','💬'].map(ic=>`<span onclick="notif('Follow us on social media!','in')" style="cursor:pointer;font-size:1.05rem">${ic}</span>`).join('')}</div></div><div class="fco"><h4>Platform</h4><a onclick="go('recs')">AI Matches</a><a onclick="go('skillgap')">Skill Gap</a><a onclick="go('roadmap')">Roadmap</a><a onclick="go('resume')">Resume Builder</a><a onclick="go('network')">Networking</a><a onclick="go('install')">📲 Install App</a></div><div class="fco"><h4>Company</h4><a onclick="go('about')">About Us</a><a onclick="notif('Blog coming soon!','in')">Blog</a><a onclick="go('contact')">Contact</a><a onclick="notif('Careers page coming soon!','in')">Careers</a><a onclick="notif('Press kit downloading…','in')">Press Kit</a></div><div class="fco"><h4>Legal</h4><a onclick="notif('Help center coming soon!','in')">Help Center</a><a onclick="notif('Privacy Policy','in')">Privacy Policy</a><a onclick="notif('Terms of Service','in')">Terms</a><a onclick="S.modal='cookiePolicy';render()">Cookie Policy</a><a onclick="notif('Refund Policy','in')">Refund Policy</a></div></div><div class="fbot"><div>© 2025 Nirmaan Technologies Pvt. Ltd. · Made with ❤️ in India 🇮🇳</div><div style="font-size:.73rem">v3.0 · All systems ✅</div></div></footer>`;
+}
+
+// ══════════════════════ PWA INSTALL ══════════════════════
+/* Detect iOS (no beforeinstallprompt — must use Share → Add to Home Screen) */
+window._isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+window._isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+if (window._isInStandaloneMode) {
+  S.pwaInstalled = true;
+  localStorage.setItem('nirmaan_pwa_installed', '1');
+}
+
+/* Capture the browser's install prompt (Chrome/Edge/Android) */
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  S.pwaInstallPrompt = e;
+  render();
+});
+
+window.addEventListener('appinstalled', () => {
+  S.pwaInstalled = true;
+  S.pwaInstallPrompt = null;
+  localStorage.setItem('nirmaan_pwa_installed', '1');
+  notif('Nirmaan installed! 🎉 Open it from your home screen.', 'ok');
+  render();
+});
+
+async function triggerInstall() {
+  if (!S.pwaInstallPrompt) {
+    // prompt already consumed or not available — go to install page
+    if (S.page !== 'install') go('install');
+    return;
+  }
+  S.pwaInstallPrompt.prompt();
+  const { outcome } = await S.pwaInstallPrompt.userChoice;
+  if (outcome === 'accepted') {
+    S.pwaInstalled = true;
+    localStorage.setItem('nirmaan_pwa_installed', '1');
+  }
+  S.pwaInstallPrompt = null;
+  S._installPagePromptFired = false;
+  render();
+}
+
+function dismissInstallBanner() {
+  // Only dismiss the install banner, not the push banner
+  S.installBannerDismissed = true;
+  localStorage.setItem('nirmaan_install_dismissed', '1');
+  render();
+}
+
+function dismissPushBanner() {
+  S.pushBannerDismissed = true;
+  localStorage.setItem('nirmaan_push_dismissed', '1');
+  render();
+}
+
+function showIOSInstallTip() {
+  // Show an in-app modal explaining iOS install steps
+  S.modal = 'iosInstall';
+  render();
+}
+
+// ══════════════════════ PUSH NOTIFICATIONS ══════════════════════
+let _swReg = null; // cached SW registration
+
+async function initSW() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    _swReg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
+    return _swReg;
+  } catch (err) { console.warn('SW reg failed:', err); return null; }
+}
+
+async function requestPushPermission() {
+  if (!('Notification' in window)) {
+    notif('Push notifications are not supported in this browser.', 'in'); return;
+  }
+  const perm = await Notification.requestPermission();
+  S.pushPermission = perm;
+  if (perm === 'granted') {
+    await subscribePush();
+    notif('Push notifications enabled! ✅', 'ok');
+  } else {
+    notif('Notification permission denied. You can enable it in browser settings.', 'in');
+  }
+  render();
+}
+
+async function subscribePush() {
+  const reg = _swReg || await initSW();
+  if (!reg) return;
+  try {
+    // VAPID public key placeholder — replace with your real key in production
+    const VAPID_PUBLIC = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3GOFGZGFJsQ2-pW7AMSJQ';
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC)
+    });
+    S.pushSubscription = sub;
+    console.log('Push subscription:', JSON.stringify(sub));
+    // In production: send sub to your server here
+  } catch (err) {
+    console.warn('Push subscribe error:', err);
+    // Still proceed — we can use SW message-based local push
+  }
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+}
+
+// ── Admin sends a push to ALL clients/devices ────────
+async function adminSendPush() {
+  const title  = S.adminPushTitle.trim() || 'Nirmaan';
+  const body   = S.adminPushBody.trim();
+  if (!body) { notif('Please enter a notification message.', 'in'); return; }
+  const icon   = S.adminPushIcon || '🔔';
+  const url    = S.adminPushUrl.trim() || './nirmaan.html';
+  const target = S.adminPushTarget || 'all';
+  const tag    = 'admin-' + Date.now();
+
+  // ── 1. Save to admin push history ─────────────────
+  const histEntry = { id: Date.now(), title, body, icon, url, target, sentAt: new Date().toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) };
+  S.adminPushHistory.unshift(histEntry);
+  if (S.adminPushHistory.length > 50) S.adminPushHistory.pop();
+  localStorage.setItem('nirmaan_push_history', JSON.stringify(S.adminPushHistory));
+
+  // ── 2. Store notification in shared localStorage so EVERY tab/device picks it up ──
+  //    Any tab that loads (or is already open) will call _pollAdminNotifs() and see it
+  const pending = JSON.parse(localStorage.getItem('nirmaan_pending_notifs') || '[]');
+  const notifEntry = { id: histEntry.id, title, body, icon, url, target, tag, time: 'Just now', read: false };
+  pending.unshift(notifEntry);
+  if (pending.length > 100) pending.pop();
+  localStorage.setItem('nirmaan_pending_notifs', JSON.stringify(pending));
+
+  // ── 3. Inject into the current tab's in-app bell feed immediately ──
+  S.appNotifs.unshift({ id: histEntry.id, icon, title, body, time: 'Just now', read: false });
+  if (S.appNotifs.length > 30) S.appNotifs.pop();
+
+  // ── 4. OS notification via Service Worker (shows on ALL open tabs because
+  //       sw.js uses clients.matchAll + showNotification in response to ADMIN_PUSH)
+  const reg = _swReg || await initSW();
+  let sent = false;
+  if (reg) {
+    // Wait for SW to be active (handles first-load case)
+    const activeSW = reg.active || reg.installing || reg.waiting;
+    if (activeSW) {
+      activeSW.postMessage({ type: 'ADMIN_PUSH', title, body, url, tag });
+      sent = true;
+    }
+  }
+  // Fallback: direct Notification API for current tab
+  if (!sent && Notification.permission === 'granted') {
+    new Notification(title, { body, tag });
+    sent = true;
+  }
+  if (!sent && Notification.permission !== 'granted') {
+    notif('⚠️ Notifications not enabled — users must allow notifications to receive pushes.', 'in');
+  }
+
+  notif(`📢 Push broadcast to ${target === 'all' ? 'all users' : target + ' users'} ✅`, 'ok');
+
+  // ── 5. Clear form ──────────────────────────────────
+  S.adminPushTitle = ''; S.adminPushBody = ''; S.adminPushUrl = '';
+  render();
+}
+
+// ── Poll localStorage for admin-sent notifications ───
+// Called on init and via storage event — ensures every open tab/device
+// picks up notifications sent by admin from any other tab
+function _pollAdminNotifs() {
+  try {
+    const pending = JSON.parse(localStorage.getItem('nirmaan_pending_notifs') || '[]');
+    if (!pending.length) return;
+    const seen = new Set(S.appNotifs.map(n => n.id));
+    let added = false;
+    pending.forEach(n => {
+      if (!seen.has(n.id)) {
+        S.appNotifs.unshift({ id: n.id, icon: n.icon || '🔔', title: n.title, body: n.body, time: n.time || 'Just now', read: false });
+        added = true;
+      }
+    });
+    if (added) { if (S.appNotifs.length > 30) S.appNotifs.length = 30; render(); }
+  } catch (_) {}
+}
+
+function buildPushBanner() {
+  if (S.pushBannerDismissed) return '';
+  if (S.pushPermission === 'granted') return '';
+  if (!S.user) return '';
+  const mob = window.innerWidth <= 768;
+  return `<div id="push-banner" style="position:fixed;bottom:${mob?'72px':'1.2rem'};right:1rem;z-index:900;max-width:320px;background:var(--bg2);border:1.5px solid var(--p);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.18);display:flex;gap:.8rem;align-items:flex-start;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+    <div style="font-size:1.5rem;flex-shrink:0">🔔</div>
+    <div style="flex:1">
+      <div style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t)">Enable Job Alerts</div>
+      <div style="font-size:.76rem;color:var(--t3);margin:.22rem 0 .65rem">Get instant alerts for new matches, application updates & company views.</div>
+      <div style="display:flex;gap:.5rem">
+        <button onclick="requestPushPermission()" style="background:var(--p);color:#fff;border:none;border-radius:99px;padding:.38rem .9rem;font-size:.76rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Allow Notifications</button>
+        <button onclick="dismissPushBanner()" style="background:var(--bg3);color:var(--t2);border:1px solid var(--b);border-radius:99px;padding:.38rem .7rem;font-size:.76rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Not now</button>
+      </div>
+    </div>
+    <button onclick="dismissPushBanner()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:1rem;padding:0;line-height:1;align-self:flex-start">×</button>
+  </div>`;
+}
+
+function buildInstallBanner() {
+  if (S.pwaInstalled || S.installBannerDismissed) return '';
+  // Show on: (a) Chrome/Edge with prompt, (b) iOS Safari without prompt
+  const hasPrompt = !!S.pwaInstallPrompt;
+  const isIOS = window._isIOS;
+  if (!hasPrompt && !isIOS) return ''; // Firefox/desktop-only browsers — skip
+  const mob = window.innerWidth <= 768;
+  return `<div id="install-banner" style="position:fixed;bottom:${mob?'72px':'1.2rem'};left:1rem;z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
+    <div style="font-size:1.8rem;flex-shrink:0">📲</div>
+    <div style="flex:1">
+      <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
+      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">${isIOS ? 'Tap Share then "Add to Home Screen"' : 'Add to home screen for instant access'}</div>
+      <div style="display:flex;gap:.45rem">
+        <button onclick="${hasPrompt ? 'go(\'install\')' : 'go(\'install\')'}" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${isIOS ? 'Install' : 'Install App'}</button>
+        <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ══════════════════════ ADMIN PUSH TAB ══════════════════════
+function buildAdminPushPanel() {
+  const ICONS = ['🔔','📢','🎉','💼','⚡','🤖','📊','🗺️','🏆','💡'];
+  const hist  = S.adminPushHistory;
+  const targetOpts = [['all','👥 All Users'],['student','🎓 Students Only'],['company','🏢 Companies Only']];
+
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem">
+    <!-- Compose Panel -->
+    <div class="card">
+      <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.1rem;display:flex;align-items:center;gap:.5rem">
+        📢 Send Push Notification
+        <span class="bdg ${S.pushPermission==='granted'?'bg':'ba'}" style="font-size:.65rem;margin-left:auto">${S.pushPermission==='granted'?'● Live':'○ Permission needed'}</span>
+      </h3>
+
+      ${S.pushPermission !== 'granted' ? `<div style="background:var(--bg3);border:1.5px dashed var(--amber);border-radius:var(--r);padding:.85rem;margin-bottom:1rem;display:flex;align-items:center;gap:.75rem">
+        <span style="font-size:1.4rem">⚠️</span>
+        <div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--amber)">Notification permission required</div>
+          <div style="font-size:.74rem;color:var(--t3);margin:.18rem 0 .55rem">You need to grant permission before sending pushes from admin.</div>
+          <button onclick="requestPushPermission()" style="background:var(--amber);color:#fff;border:none;border-radius:99px;padding:.35rem .85rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">Grant Permission</button>
+        </div>
+      </div>` : ''}
+
+      <div class="fg" style="margin-bottom:.75rem">
+        <label class="fl">Notification Icon</label>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.28rem">
+          ${ICONS.map(ic => `<div onclick="S.adminPushIcon='${ic}';render()" style="width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;border:2px solid ${S.adminPushIcon===ic?'var(--p)':'var(--b)'};background:${S.adminPushIcon===ic?'var(--pl)':'var(--bg3)'};transition:all .12s">${ic}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="fg"><label class="fl">Title</label>
+        <input class="fi" id="push-title" placeholder="e.g. New Internship Match!" value="${S.adminPushTitle||''}" oninput="S.adminPushTitle=this.value"/>
+      </div>
+
+      <div class="fg"><label class="fl">Message Body <span style="color:var(--t3);font-weight:400">(required)</span></label>
+        <textarea class="fta" id="push-body" rows="3" placeholder="e.g. 3 new AI matches from Google, Razorpay & Flipkart are waiting for you." oninput="S.adminPushBody=this.value">${S.adminPushBody||''}</textarea>
+        <div style="text-align:right;font-size:.7rem;color:var(--t3);margin-top:.2rem">${(S.adminPushBody||'').length}/150</div>
+      </div>
+
+      <div class="fg"><label class="fl">Target Audience</label>
+        <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.28rem">
+          ${targetOpts.map(([v,l])=>`<div onclick="S.adminPushTarget='${v}';render()" style="padding:.35rem .85rem;border-radius:99px;font-size:.78rem;font-weight:600;cursor:pointer;border:1.5px solid ${S.adminPushTarget===v?'var(--p)':'var(--b)'};background:${S.adminPushTarget===v?'var(--pl)':'var(--bg3)'};color:${S.adminPushTarget===v?'var(--p)':'var(--t2)'};transition:all .12s">${l}</div>`).join('')}
+        </div>
+      </div>
+
+      <div class="fg"><label class="fl">Deep Link URL <span style="color:var(--t3);font-weight:400">(optional)</span></label>
+        <input class="fi" id="push-url" placeholder="./nirmaan.html#recs" value="${S.adminPushUrl||''}" oninput="S.adminPushUrl=this.value"/>
+      </div>
+
+      <!-- Preview -->
+      ${S.adminPushBody ? `<div style="background:var(--bg3);border:1px solid var(--b);border-radius:12px;padding:.8rem 1rem;margin:.55rem 0 1rem;display:flex;gap:.7rem;align-items:flex-start">
+        <div style="font-size:1.5rem;flex-shrink:0">${S.adminPushIcon||'🔔'}</div>
+        <div>
+          <div style="font-size:.78rem;font-weight:700;color:var(--t)">${S.adminPushTitle||'Nirmaan'}</div>
+          <div style="font-size:.73rem;color:var(--t3);margin-top:.12rem">${S.adminPushBody}</div>
+        </div>
+        <div style="font-size:.65rem;color:var(--t3);margin-left:auto;white-space:nowrap">now</div>
+      </div>` : ''}
+
+      <div style="display:flex;gap:.65rem;margin-top:.5rem">
+        <button onclick="adminSendPush()" style="flex:1;background:var(--p);color:#fff;border:none;border-radius:99px;padding:.6rem 1.2rem;font-size:.84rem;font-weight:700;cursor:pointer;font-family:var(--fb);display:flex;align-items:center;justify-content:center;gap:.45rem">
+          📢 Send Push Now
+        </button>
+        <button onclick="S.adminPushTitle='';S.adminPushBody='';S.adminPushUrl='';S.adminPushIcon='🔔';render()" style="background:var(--bg3);color:var(--t2);border:1px solid var(--b);border-radius:99px;padding:.6rem 1rem;font-size:.82rem;font-weight:600;cursor:pointer;font-family:var(--fb)">
+          Clear
+        </button>
+      </div>
+    </div>
+
+    <!-- History Panel -->
+    <div class="card" style="padding:0;overflow:hidden">
+      <div style="padding:1rem 1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center">
+        <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">📋 Sent History</h3>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="bdg bi">${hist.length} sent</span>
+          ${hist.length?`<button onclick="S.adminPushHistory=[];localStorage.removeItem('nirmaan_push_history');render()" style="background:none;border:none;color:var(--t3);cursor:pointer;font-size:.76rem;font-weight:600">Clear all</button>`:''}
+        </div>
+      </div>
+      <div style="max-height:520px;overflow-y:auto">
+        ${hist.length === 0 ? `<div style="padding:2.5rem 1.5rem;text-align:center;color:var(--t3)"><div style="font-size:2rem;margin-bottom:.6rem">📭</div><div style="font-size:.83rem">No notifications sent yet</div></div>` :
+          hist.map(h => `<div style="padding:.85rem 1.1rem;border-bottom:1px solid var(--b);display:flex;gap:.65rem;align-items:flex-start">
+            <div style="font-size:1.35rem;flex-shrink:0">${h.icon||'🔔'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem">
+                <div style="font-weight:700;font-size:.82rem;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${h.title}</div>
+                <span class="bdg ${h.target==='all'?'bi':h.target==='student'?'bg':'bc'}" style="font-size:.62rem;flex-shrink:0">${h.target}</span>
+              </div>
+              <div style="font-size:.75rem;color:var(--t2);margin:.1rem 0;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${h.body}</div>
+              <div style="font-size:.68rem;color:var(--t3)">${h.sentAt}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
 }
 
 // ══════════════════════ INIT ══════════════════════
-window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
+window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;window.navVoiceToChat=navVoiceToChat;
 window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
+window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissPushBanner=dismissPushBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;window.showIOSInstallTip=showIOSInstallTip;
 if(!S.loginRole)S.loginRole='student';
 
 document.addEventListener('click',()=>{if(S.bellOpen){S.bellOpen=false;render();}});
 
+// Listen for SW messages (push nav redirect + new notif broadcast)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data && e.data.type === 'PUSH_NAV' && e.data.url) {
+      const hash = e.data.url.split('#')[1];
+      if (hash) go(hash);
+    }
+    if (e.data && e.data.type === 'NEW_NOTIF' && e.data.payload) {
+      const n = e.data.payload;
+      const seen = new Set(S.appNotifs.map(x => x.id));
+      if (!seen.has(n.id)) {
+        S.appNotifs.unshift({ id: n.id, icon: n.icon || '🔔', title: n.title, body: n.body, time: 'Just now', read: false });
+        if (S.appNotifs.length > 30) S.appNotifs.length = 30;
+        render();
+      }
+    }
+  });
+}
+
+// Poll localStorage for admin notifications sent from other tabs/devices
+window.addEventListener('storage', e => {
+  if (e.key === 'nirmaan_pending_notifs') _pollAdminNotifs();
+});
+
 synth&&synth.getVoices();
+initSW(); // register service worker on boot
+_pollAdminNotifs(); // pick up any notifs sent while this tab was closed
 render();
