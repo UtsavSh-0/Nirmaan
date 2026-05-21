@@ -1763,7 +1763,13 @@ function updatePwStrength(pw){
     if(el){el.textContent=(criteria[k]?'✓ ':'○ ')+lblMap[k];el.style.color=criteria[k]?'var(--green)':'var(--t3)';}
   });
 }
-function toggleBell(){S.bellOpen=!S.bellOpen;render();}
+function navVoiceToChat(){
+  S.chatOpen=true;
+  S.chatHintDismissed=true;
+  render();
+  // Small delay so chat input is in DOM before starting voice
+  setTimeout(()=>chatVoice(),120);
+}
 function markAllRead(){S.appNotifs.forEach(n=>n.read=true);notif('All notifications marked read','in');render();}
 function dismissAppNotif(id){S.appNotifs=S.appNotifs.filter(n=>n.id!==id);render();}
 
@@ -1782,11 +1788,56 @@ function addProject(){
 }
 function rmProject(i){S.projects.splice(i,1);notif('Removed','in');render();}
 function saveProfile(){
-  const loc=document.getElementById('ploc')?.value;const edu=document.getElementById('pedu')?.value;
-  if(loc)S.loc=loc;if(edu)S.edu=edu;notif('Profile saved! AI matching updated 🤖');
+  const name=document.getElementById('pname')?.value?.trim();
+  const loc=document.getElementById('ploc')?.value?.trim();
+  const edu=document.getElementById('pedu')?.value?.trim();
+  const col=document.getElementById('pcol')?.value?.trim();
+  const li=document.getElementById('pli')?.value?.trim();
+  const gh=document.getElementById('pgh')?.value?.trim();
+  const pf=document.getElementById('ppf')?.value?.trim();
+  if(name&&S.user)S.user.name=name;
+  if(loc)S.loc=loc;
+  if(edu)S.edu=edu;
+  if(col)S.college=col;
+  if(li!==undefined)S.linkedin=li;
+  if(gh!==undefined)S.github=gh;
+  if(pf!==undefined)S.portfolio=pf;
+  notif('Profile saved! AI matching updated 🤖');
+  render();
 }
-function exportResume(){notif('Downloading resume as PDF... 📄','in');}
-function copyResume(){notif('Resume content copied to clipboard! 📋','in');}
+function exportResume(){
+  // Generate a plain-text resume and trigger a download
+  const rb=S.rbData;
+  const lines=[
+    rb.name.toUpperCase(),
+    rb.title,
+    rb.email+' | '+rb.phone+(S.linkedin?' | '+S.linkedin:''),
+    '',
+    'SUMMARY',
+    rb.summary,
+    '',
+    'SKILLS',
+    rb.skills.join(', '),
+    '',
+    'EXPERIENCE',
+    ...rb.exp.map(e=>`${e.role} @ ${e.co}  (${e.period})\n${e.desc}`),
+    '',
+    'EDUCATION',
+    rb.edu,
+    '',
+    'PROJECTS',
+    ...S.projects.map(p=>`${p.n} — ${p.t}${p.l?' | '+p.l:''}`),
+  ];
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='resume_nirmaan.txt';a.click();
+  notif('Resume downloaded as .txt (PDF coming soon) 📄','ok');
+}
+function copyResume(){
+  const rb=S.rbData;
+  const text=[rb.name,rb.title,rb.email,rb.phone,rb.summary,'Skills: '+rb.skills.join(', ')].join('\n');
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(()=>notif('Resume copied to clipboard! 📋','ok')).catch(()=>notif('Copy failed — try manually','wn'));}
+  else notif('Copy not supported in this browser','wn');
+}
 
 // ══════════════════════ RENDER ══════════════════════
 function render(){
@@ -2085,7 +2136,7 @@ function sb(role){
   if(role==='admin') return `<div class="sb">
     <div class="sb-user"><div class="av" style="width:36px;height:36px;font-size:.72rem;background:var(--red);color:#fff">AD</div><div><div style="font-size:.84rem;font-weight:700;color:var(--t)">Admin Panel</div><div style="font-size:.7rem;color:var(--t3)">Super Admin</div></div></div>
     <div class="sb-sec"><div class="sb-lbl">Manage</div>
-      ${['users','internships','analytics','ai'].map(t=>`<button class="sb-item ${S.adminTab===t?'on':''}" onclick="S.adminTab='${t}';render()"><span class="sb-ic">${{users:'👥',internships:'💼',analytics:'📈',ai:'🤖'}[t]}</span>${t.charAt(0).toUpperCase()+t.slice(1)}</button>`).join('')}
+      ${['users','internships','analytics','ai','push'].map(tab=>`<button class="sb-item ${S.adminTab===tab?'on':''}" onclick="S.adminTab='${tab}';render()"><span class="sb-ic">${{users:'👥',internships:'💼',analytics:'📈',ai:'🤖',push:'📢'}[tab]}</span>${tab==='push'?'Push Notifs':tab.charAt(0).toUpperCase()+tab.slice(1)}</button>`).join('')}
     </div>
     <div class="sb-sec"><div class="sb-lbl">Account</div>
       <button class="sb-item" onclick="toggleDark()"><span class="sb-ic">${S.dark?'☀️':'🌙'}</span>Theme</button>
@@ -2118,7 +2169,7 @@ function buildHome(){
   </section>
   <section class="sec alt"><h2 class="st">${t('whyTitle')}</h2><p class="ss">${t('whySub')}</p>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.1rem;max-width:1000px;margin:0 auto">
-      ${[['🤖','Semantic AI','Sentence Transformers match your profile to internships via cosine similarity — 40+ dimensions.'],['📊','Skill Gap Analyzer','Compare your skills vs role requirements with curated courses to close every gap.'],['🗺️','Career Roadmap','Personalized week-by-week plan from profile building to landing your first offer.'],['📄','Resume Builder','AI-assisted resume editor with live preview and one-click PDF export.'],['🤝','Networking Hub','Connect with seniors, alumni, and professionals for referrals and advice.'],['🎙️','Voice Assistant','Navigate the entire platform with voice commands in English or Hindi.']].map(([ico,t,d])=>`<div class="card card-h" style="padding:1.6rem"><div style="font-size:1.4rem;margin-bottom:.75rem;width:42px;height:42px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center">${ico}</div><h3 style="font-family:var(--fh);font-weight:700;font-size:.92rem;color:var(--t);margin-bottom:.45rem">${t}</h3><p style="font-size:.8rem;color:var(--t2);line-height:1.6">${d}</p></div>`).join('')}
+      ${[['🤖','Semantic AI','Sentence Transformers match your profile to internships via cosine similarity — 40+ dimensions.'],['📊','Skill Gap Analyzer','Compare your skills vs role requirements with curated courses to close every gap.'],['🗺️','Career Roadmap','Personalized week-by-week plan from profile building to landing your first offer.'],['📄','Resume Builder','AI-assisted resume editor with live preview and one-click PDF export.'],['🤝','Networking Hub','Connect with seniors, alumni, and professionals for referrals and advice.'],['🎙️','Voice Assistant','Navigate the entire platform with voice commands in English or Hindi.']].map(([ico,ttl,d])=>`<div class="card card-h" style="padding:1.6rem"><div style="font-size:1.4rem;margin-bottom:.75rem;width:42px;height:42px;border-radius:9px;background:var(--pl);display:flex;align-items:center;justify-content:center">${ico}</div><h3 style="font-family:var(--fh);font-weight:700;font-size:.92rem;color:var(--t);margin-bottom:.45rem">${ttl}</h3><p style="font-size:.8rem;color:var(--t2);line-height:1.6">${d}</p></div>`).join('')}
     </div>
   </section>
   <section style="background:var(--g1);padding:4rem 2rem;text-align:center">
@@ -2163,7 +2214,7 @@ function buildLogin(){
         <div class="fg"><label class="fl">${t('passwordLabel')}</label><input class="fi" id="lpw" type="password" placeholder="••••••••" value="${rd.pw}"/></div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.2rem">
           <label style="display:flex;align-items:center;gap:.4rem;font-size:.79rem;color:var(--t2);cursor:pointer"><input type="checkbox" style="accent-color:var(--p)" checked/> ${t('rememberMe')}</label>
-          <span style="font-size:.79rem;color:var(--p);cursor:pointer;font-weight:600" onclick="notif('Password reset email sent! 📧','in')">${t('forgotPw')}</span>
+          <span style="font-size:.79rem;color:var(--p);cursor:pointer;font-weight:600" onclick="const em=document.getElementById('lem')?.value?.trim();if(!em){notif('Enter your email first','wn');}else{notif('Password reset email sent to '+em+' 📧','ok');}">${t('forgotPw')}</span>
         </div>
         <button class="btn btn-p btn-full" style="padding:.72rem;font-size:.88rem" onclick="doLogin()">${t('signInBtn')}</button>
         <div style="display:flex;align-items:center;gap:.7rem;margin:1.1rem 0"><div style="flex:1;height:1px;background:var(--b)"></div><span style="font-size:.71rem;color:var(--t3)">${t('orWith')}</span><div style="flex:1;height:1px;background:var(--b)"></div></div>
@@ -2657,7 +2708,7 @@ function buildSkillGap(){
     </div>
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem"><h3 style="font-family:var(--fh);font-weight:700;font-size:.9rem;color:var(--t)">${t('sgCourses')}</h3><span class="bdg bp">${t('sgAiSelected')}</span></div>
-      ${COURSES.map(c=>`<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem .9rem;border:1px solid var(--b);border-radius:var(--r);margin-bottom:.55rem;background:var(--bg3);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--bg2)'" onmouseout="this.style.borderColor='var(--b)';this.style.background='var(--bg3)'" onclick="notif('Opening ${c.skill} course…','in')"><div style="width:36px;height:36px;border-radius:8px;background:${c.col}22;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">${c.ico}</div><div style="flex:1"><div style="font-size:.83rem;font-weight:700;color:var(--t)">${c.skill}</div><div style="font-size:.71rem;color:var(--t3)">${c.platform} · ${c.hrs} · ⭐ ${c.rt}</div></div><button class="btn btn-o btn-sm" onclick="event.stopPropagation();notif('Enrolled! 🎓','ok')">${t('sgEnroll')}</button></div>`).join('')}
+      ${COURSES.map(c=>`<div style="display:flex;align-items:center;gap:.8rem;padding:.8rem .9rem;border:1px solid var(--b);border-radius:var(--r);margin-bottom:.55rem;background:var(--bg3);cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--p)';this.style.background='var(--bg2)'" onmouseout="this.style.borderColor='var(--b)';this.style.background='var(--bg3)'" onclick="notif('Opening ${c.skill} on ${c.platform}…','in')"><div style="width:36px;height:36px;border-radius:8px;background:${c.col}22;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0">${c.ico}</div><div style="flex:1"><div style="font-size:.83rem;font-weight:700;color:var(--t)">${c.skill}</div><div style="font-size:.71rem;color:var(--t3)">${c.platform} · ${c.hrs} · ⭐ ${c.rt}</div></div><button class="btn btn-o btn-sm" onclick="event.stopPropagation();if(!S.enrolledCourses)S.enrolledCourses=[];if(S.enrolledCourses.includes('${c.skill}')){notif('Already enrolled in ${c.skill}!','in');}else{S.enrolledCourses.push('${c.skill}');notif('Enrolled in ${c.skill}! 🎓','ok');}">${t('sgEnroll')}</button></div>`).join('')}
     </div>
   </div></div>`;
 }
@@ -2712,21 +2763,24 @@ function buildProfile(){
           <div style="font-size:.77rem;color:var(--t3);margin:.18rem 0">${S.user?.email||''}</div>
           <span class="bdg bi" style="margin-top:.3rem">${t('profStudent')}</span>
           <div style="margin-top:.9rem"><div class="pb"><div class="pf" style="width:74%"></div></div><div style="font-size:.71rem;color:var(--t3);margin-top:.28rem">74${t('profComplete')}</div></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:.8rem;width:100%" onclick="notif('Photo upload coming soon!','in')">${t('profChangePhoto')}</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:.8rem;width:100%" onclick="const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=e=>{const f=e.target.files[0];if(f)notif('Photo updated! 📷','ok');};inp.click()">${t('profChangePhoto')}</button>
         </div>
         <div class="card">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.88rem;color:var(--t);margin-bottom:.8rem">${t('profSocialLinks')}</h3>
-          ${[[t('profLinkedin'),S.linkedin||t('profNotLinked'),'🔗'],[t('profGithub'),S.github||t('profNotLinked'),'🐙'],[t('profPortfolio'),S.portfolio||t('profNotSet'),'🌐']].map(([l,v,ico])=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--b)"><span style="font-size:.9rem">${ico}</span><div style="flex:1"><div style="font-size:.68rem;color:var(--t3);text-transform:uppercase;font-weight:700;letter-spacing:.06em">${l}</div><div style="font-size:.78rem;color:var(--t);font-weight:600">${v}</div></div><button class="btn btn-ghost btn-xs" onclick="notif('Edit…','in')">${t('profEdit')}</button></div>`).join('')}
+          ${[[t('profLinkedin'),S.linkedin||t('profNotLinked'),'🔗','pli'],[t('profGithub'),S.github||t('profNotLinked'),'🐙','pgh'],[t('profPortfolio'),S.portfolio||t('profNotSet'),'🌐','ppf']].map(([l,v,ico,fid])=>`<div style="display:flex;align-items:center;gap:.6rem;padding:.45rem 0;border-bottom:1px solid var(--b)"><span style="font-size:.9rem">${ico}</span><div style="flex:1"><div style="font-size:.68rem;color:var(--t3);text-transform:uppercase;font-weight:700;letter-spacing:.06em">${l}</div><div style="font-size:.78rem;color:var(--t);font-weight:600">${v}</div></div><button class="btn btn-ghost btn-xs" onclick="const el=document.getElementById('${fid}');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),300);}">${t('profEdit')}</button></div>`).join('')}
         </div>
       </div>
       <div style="display:flex;flex-direction:column;gap:1rem">
         <div class="card">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.1rem">${t('profBasicInfo')}</h3>
           <div class="fr2">
-            <div class="fg"><label class="fl">${t('profFullName')}</label><input class="fi" value="${S.user?.name||''}"/></div>
+            <div class="fg"><label class="fl">${t('profFullName')}</label><input class="fi" id="pname" value="${S.user?.name||''}"/></div>
             <div class="fg"><label class="fl">${t('profLocation')}</label><input class="fi" id="ploc" value="${S.loc}"/></div>
             <div class="fg"><label class="fl">${t('profEducation')}</label><input class="fi" id="pedu" value="${S.edu}"/></div>
-            <div class="fg"><label class="fl">${t('profCollege')}</label><input class="fi" value="${S.college}"/></div>
+            <div class="fg"><label class="fl">${t('profCollege')}</label><input class="fi" id="pcol" value="${S.college}"/></div>
+            <div class="fg"><label class="fl">LinkedIn</label><input class="fi" id="pli" value="${S.linkedin}" placeholder="linkedin.com/in/yourname"/></div>
+            <div class="fg"><label class="fl">GitHub</label><input class="fi" id="pgh" value="${S.github}" placeholder="github.com/yourname"/></div>
+            <div class="fg"><label class="fl">Portfolio</label><input class="fi" id="ppf" value="${S.portfolio}" placeholder="yourportfolio.dev"/></div>
             <div class="fg ff"><label class="fl">${t('profSkills')}</label><div class="tw">${S.skills.map(s=>`<span class="tg">${s}<span class="tgx" onclick="rmSkill('${s}')">×</span></span>`).join('')}<input class="ti" placeholder="${t('profAddSkill')}" onkeydown="addSkillKey(event)"/></div></div>
           </div>
         </div>
@@ -2737,7 +2791,7 @@ function buildProfile(){
         </div>
         <div class="card">
           <h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.1rem">${t('profResume')}</h3>
-          <div class="uzn" onclick="notif('Resume uploaded! AI analysis complete 🤖','ok')"><div class="uzi">📄</div><div style="font-size:.86rem;font-weight:600;color:var(--t)">${t('profUploadResume')}</div><div style="font-size:.73rem;color:var(--t3);margin-top:.22rem">${t('profUploadSub')}</div></div>
+          <div class="uzn" onclick="const inp=document.createElement('input');inp.type='file';inp.accept='.pdf,.docx';inp.onchange=e=>{const f=e.target.files[0];if(f)notif('Resume uploaded! AI analysis complete 🤖','ok');};inp.click()"><div class="uzi">📄</div><div style="font-size:.86rem;font-weight:600;color:var(--t)">${t('profUploadResume')}</div><div style="font-size:.73rem;color:var(--t3);margin-top:.22rem">${t('profUploadSub')}</div></div>
         </div>
         <button class="btn btn-p" style="justify-content:center" onclick="saveProfile()">${t('profSaveBtn')}</button>
       </div>
@@ -2805,7 +2859,7 @@ function buildRoadmap(){
               <span style="font-size:.7rem;color:var(--t3);font-weight:600">${node.time}</span>
             </div>
             <div style="flex-shrink:0">
-              ${node.status==='active'?`<button class="btn btn-p btn-sm" onclick="notif('Marked complete! 🎉','ok')">${t('rmMarkDone')}</button>`:''}
+              ${node.status==='active'?`<button class="btn btn-p btn-sm" onclick="const n=ROADMAP.find(x=>x.id===${node.id});if(n){n.status='done';notif('Marked complete! 🎉','ok');render();}">${t('rmMarkDone')}</button>`:''}
               ${node.status==='locked'?`<button class="btn btn-ghost btn-sm" onclick="notif('Complete previous steps first','wn')">${t('rmLockedBtn')}</button>`:''}
               ${node.status==='done'?`<button class="btn btn-success btn-sm" onclick="notif('Reviewing…','in')">${t('rmReview')}</button>`:''}
             </div>
@@ -2919,7 +2973,7 @@ function buildNetwork(){
     <div class="aic nh-ai-banner">
       <div class="aih">${t('nhAiSuggestions')}</div>
       <div style="font-size:.8rem;color:var(--t2);line-height:1.6">${t('nhAiText')}
-        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="notif('AI sending connection requests…','ok')"> ${t('nhAutoConnect')}</span>
+        <span style="color:var(--p);cursor:pointer;font-weight:700" onclick="NETWORK.forEach(p=>p.conn=true);notif('Connected with all ${NETWORK.length} professionals! 🤝','ok');render()"> ${t('nhAutoConnect')}</span>
       </div>
     </div>
 
@@ -3000,7 +3054,7 @@ function buildCoDash(){
     <div class="mg">${[['💼','3','Active Postings'],['👥',CANDS.length,'Matches'],['✅','2','Shortlisted'],['📊','89%','Avg Match']].map(([ico,v,l])=>`<div class="mc"><div class="mi">${ico}</div><div class="mv">${v}</div><div class="ml">${l}</div></div>`).join('')}</div>
     <div class="tabs"><div class="tab ${S.coTab==='post'?'on':''}" onclick="S.coTab='post';render()">Post Internship</div><div class="tab ${S.coTab==='cands'?'on':''}" onclick="S.coTab='cands';render()">AI Candidates</div><div class="tab" onclick="notif('Analytics PDF generated!','ok')">Analytics</div></div>
     ${S.coTab==='cands'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap.65rem;gap:.65rem"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">AI-Ranked Candidates</h3><div style="display:flex;gap.4rem;gap:.4rem"><select class="fs" style="width:auto;padding:.38rem .7rem;font-size:.79rem"><option>All Roles</option><option>Frontend Dev</option><option>ML Intern</option></select><button class="btn btn-ghost btn-sm" onclick="notif('Exported to CSV!','ok')">↓ Export</button></div></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Candidate</th><th>College</th><th>Skills</th><th>AI Match</th><th>Applied</th><th>Status</th><th>Action</th></tr></thead><tbody>${CANDS.map(c=>`<tr><td><div style="display:flex;align-items:center;gap.6rem;gap:.6rem"><div class="av" style="width:30px;height:30px;font-size:.63rem;background:var(--g1);color:#fff">${c.name.split(' ').map(x=>x[0]).join('')}</div><span style="font-weight:700">${c.name}</span></div></td><td style="color:var(--t3)">${c.college}</td><td>${c.skills.map(s=>`<span class="bdg bi" style="margin:.08rem">${s}</span>`).join('')}</td><td><span style="font-weight:800;color:${c.match>=85?'var(--green)':'var(--amber)'}">${c.match}%</span></td><td style="color:var(--t3);font-size:.8rem">${c.ago}</td><td><span class="bdg ${c.status==='Shortlisted'?'bg':c.status==='Applied'?'bi':'ba'}">${c.status}</span></td><td><div style="display:flex;gap.32rem;gap:.32rem"><button class="btn btn-o btn-xs" onclick="notif('Viewing ${c.name} profile…','in')">View</button><button class="btn btn-success btn-xs" onclick="notif('${c.name} shortlisted! ✅','ok')">✓ Short</button><button class="btn btn-danger btn-xs" onclick="notif('${c.name} rejected','in')">✗</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
-    `<div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.35rem">Post New Internship</h3><div class="fr2"><div class="fg"><label class="fl">Role Title</label><input class="fi" placeholder="Frontend Developer Intern"/></div><div class="fg"><label class="fl">Department</label><select class="fs"><option>Engineering</option><option>Design</option><option>Data</option><option>Marketing</option><option>Product</option></select></div><div class="fg"><label class="fl">Location</label><input class="fi" placeholder="Bangalore or Remote"/></div><div class="fg"><label class="fl">Work Mode</label><select class="fs"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></div><div class="fg"><label class="fl">Duration</label><select class="fs"><option>2 months</option><option>3 months</option><option>4 months</option><option>6 months</option></select></div><div class="fg"><label class="fl">Stipend (₹/mo)</label><input class="fi" type="number" placeholder="25000"/></div><div class="fg"><label class="fl">Openings</label><input class="fi" type="number" placeholder="5"/></div><div class="fg"><label class="fl">Deadline</label><input class="fi" type="date"/></div><div class="fg ff"><label class="fl">Required Skills</label><input class="fi" placeholder="React, Node.js, MongoDB, TypeScript"/></div><div class="fg ff"><label class="fl">Job Description</label><textarea class="fta" rows="4" placeholder="Describe the role, responsibilities, and what you're looking for…"></textarea></div><div class="fg ff"><label class="fl">Perks & Benefits</label><div style="display:flex;flex-wrap:wrap;gap.4rem;gap:.4rem;margin-top:.3rem">${['Certificate','Recommendation Letter','PPO Opportunity','Flexible Hours','Work from Anywhere'].map(p=>`<div onclick="this.classList.toggle('sel');this.style.borderColor=this.classList.contains('sel')?'var(--p)':'var(--b)';this.style.background=this.classList.contains('sel')?'var(--pl)':'var(--bg3)';this.style.color=this.classList.contains('sel')?'var(--p)':'var(--t2)';" style="border:1.5px solid var(--b);border-radius:99px;padding:.3rem .78rem;font-size:.75rem;font-weight:600;color:var(--t2);background:var(--bg3);cursor:pointer;transition:all .15s">${p}</div>`).join('')}</div></div></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="notif('Internship posted! AI matching running 🤖','ok')">Publish →</button><button class="btn btn-ghost" onclick="notif('Saved as draft','in')">Save Draft</button><button class="btn btn-ghost" onclick="notif('Previewing posting…','in')">Preview</button></div></div>`}
+    `<div class="card"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t);margin-bottom:1.35rem">Post New Internship</h3><div class="fr2"><div class="fg"><label class="fl">Role Title</label><input class="fi" placeholder="Frontend Developer Intern"/></div><div class="fg"><label class="fl">Department</label><select class="fs"><option>Engineering</option><option>Design</option><option>Data</option><option>Marketing</option><option>Product</option></select></div><div class="fg"><label class="fl">Location</label><input class="fi" placeholder="Bangalore or Remote"/></div><div class="fg"><label class="fl">Work Mode</label><select class="fs"><option>Remote</option><option>Hybrid</option><option>On-site</option></select></div><div class="fg"><label class="fl">Duration</label><select class="fs"><option>2 months</option><option>3 months</option><option>4 months</option><option>6 months</option></select></div><div class="fg"><label class="fl">Stipend (₹/mo)</label><input class="fi" type="number" placeholder="25000"/></div><div class="fg"><label class="fl">Openings</label><input class="fi" type="number" placeholder="5"/></div><div class="fg"><label class="fl">Deadline</label><input class="fi" type="date"/></div><div class="fg ff"><label class="fl">Required Skills</label><input class="fi" placeholder="React, Node.js, MongoDB, TypeScript"/></div><div class="fg ff"><label class="fl">Job Description</label><textarea class="fta" rows="4" placeholder="Describe the role, responsibilities, and what you're looking for…"></textarea></div><div class="fg ff"><label class="fl">Perks & Benefits</label><div style="display:flex;flex-wrap:wrap;gap.4rem;gap:.4rem;margin-top:.3rem">${['Certificate','Recommendation Letter','PPO Opportunity','Flexible Hours','Work from Anywhere'].map(p=>`<div onclick="this.classList.toggle('sel');this.style.borderColor=this.classList.contains('sel')?'var(--p)':'var(--b)';this.style.background=this.classList.contains('sel')?'var(--pl)':'var(--bg3)';this.style.color=this.classList.contains('sel')?'var(--p)':'var(--t2)';" style="border:1.5px solid var(--b);border-radius:99px;padding:.3rem .78rem;font-size:.75rem;font-weight:600;color:var(--t2);background:var(--bg3);cursor:pointer;transition:all .15s">${p}</div>`).join('')}</div></div></div><div style="display:flex;gap.65rem;gap:.65rem;margin-top:1.2rem"><button class="btn btn-p" onclick="const role=this.closest('.card').querySelector('input')?.value?.trim();if(!role){notif('Enter a role title first','wn');return;}notif('Internship published! AI matching running 🤖','ok')">Publish →</button><button class="btn btn-ghost" onclick="notif('Saved as draft','in')">Save Draft</button><button class="btn btn-ghost" onclick="notif('Previewing posting…','in')">Preview</button></div></div>`}
   </div></div>`;
 }
 
@@ -3009,7 +3063,7 @@ function buildAdmin(){
   return `<div class="page dw">${sb('admin')}<div class="dm">
     <div style="margin-bottom:1.65rem"><h1 style="font-family:var(--fh);font-size:1.55rem;font-weight:700;color:var(--t);letter-spacing:-.03em">🛡️ Admin Panel</h1><p style="color:var(--t3);font-size:.845rem;margin-top:.2rem">Nirmaan v3.0 · <span style="color:var(--green)">● All systems operational</span></p></div>
     <div class="mg">${[['👥','6,241','Users','↑ 12%'],['💼','15k+','Internships','↑ 8%'],['🏢','1,100','Companies','↑ 5 new'],['🤖','97%','AI Accuracy','↑ 2%'],['💰','₹2.4Cr','MRR','↑ 34%']].map(([ico,v,l,c])=>`<div class="mc"><div class="mi">${ico}</div><div class="mv">${v}</div><div class="ml">${l}</div><div class="mch up">${c}</div></div>`).join('')}</div>
-    <div class="tabs">${['users','internships','analytics','ai','push'].map(t=>`<div class="tab ${S.adminTab===t?'on':''}" onclick="S.adminTab='${t}';render()">${{users:'👥 Users',internships:'💼 Internships',analytics:'📈 Analytics',ai:'🤖 AI Engine',push:'📢 Push'}[t]}</div>`).join('')}</div>
+    <div class="tabs">${['users','internships','analytics','ai','push'].map(tab=>`<div class="tab ${S.adminTab===tab?'on':''}" onclick="S.adminTab='${tab}';render()">${{users:'👥 Users',internships:'💼 Internships',analytics:'📈 Analytics',ai:'🤖 AI Engine',push:'📢 Push'}[tab]}</div>`).join('')}</div>
     ${S.adminTab==='users'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b);display:flex;justify-content:space-between;align-items:center"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">User Management</h3><div style="display:flex;gap.4rem;gap:.4rem"><input class="fi" style="width:175px" placeholder="Search users…"/><button class="btn btn-ghost btn-sm" onclick="notif('Users exported!','ok')">↓ Export</button><button class="btn btn-p btn-sm" onclick="notif('Invite sent!','ok')">+ Invite</button></div></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>User</th><th>Role</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead><tbody>${AUSERS.map(u=>`<tr><td><div style="display:flex;align-items:center;gap.6rem;gap:.6rem"><div class="av" style="width:29px;height:29px;font-size:.63rem;background:var(--g1);color:#fff">${u.name.split(' ').map(x=>x[0]).join('').slice(0,2)}</div><div><div style="font-weight:700;font-size:.84rem">${u.name}</div><div style="font-size:.7rem;color:var(--t3)">${u.email}</div></div></div></td><td><span class="bdg ${u.role==='Admin'?'bp':u.role==='Company'?'bc':'bi'}">${u.role}</span></td><td style="color:var(--t3);font-size:.8rem">${u.joined}</td><td><span class="bdg ${u.status==='Active'?'bg':'ba'}">${u.status}</span></td><td><div style="display:flex;gap.3rem;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="notif('Editing ${u.name}…','in')">Edit</button><button class="btn btn-danger btn-xs" onclick="notif('${u.name} suspended','in')">Suspend</button><button class="btn btn-ghost btn-xs" onclick="notif('Logged in as ${u.name}','in')">Login As</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
     S.adminTab==='internships'?`<div class="card" style="padding:0;overflow:hidden"><div style="padding:1.1rem;border-bottom:1px solid var(--b)"><h3 style="font-family:var(--fh);font-weight:700;font-size:.93rem;color:var(--t)">Internship Management</h3></div><div style="overflow-x:auto"><table class="dt"><thead><tr><th>Title</th><th>Company</th><th>Type</th><th>Match</th><th>Status</th><th>Actions</th></tr></thead><tbody>${INTERNS.map(i=>`<tr><td style="font-weight:700">${i.title}</td><td>${i.co}</td><td><span class="bdg bgr">${i.type}</span></td><td style="font-weight:800;color:${i.match>=85?'var(--green)':'var(--amber)'}">${i.match}%</td><td><span class="bdg bg">Active</span></td><td><div style="display:flex;gap.3rem;gap:.3rem"><button class="btn btn-ghost btn-xs" onclick="notif('Editing internship…','in')">Edit</button><button class="btn btn-danger btn-xs" onclick="notif('Internship removed','in')">Remove</button></div></td></tr>`).join('')}</tbody></table></div></div>`:
     S.adminTab==='ai'?`<div class="aic"><div class="aih">🤖 AI Engine Status</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:.85rem;margin-top:.65rem">${[['Embedding Model','Sentence-BERT v3','✅'],['Algorithm','Cosine + BM25','✅'],['Vector DB','Pinecone 16M','✅'],['Latency','<120ms avg','✅'],['Daily Queries','48,320','✅'],['Accuracy','97.2%','↑ +2.1%']].map(([l,v,s])=>`<div style="background:var(--bg2);border-radius:var(--r);padding:.75rem .9rem;border:1px solid var(--b)"><div style="font-size:.67rem;color:var(--t3);font-weight:700;text-transform:uppercase;letter-spacing.07em;letter-spacing:.07em">${l}</div><div style="font-family:var(--fh);font-size:.93rem;font-weight:700;color:var(--t);margin:.22rem 0">${v}</div><div style="font-size:.7rem;color:var(--green);font-weight:700">${s}</div></div>`).join('')}</div></div>`:
@@ -3415,7 +3469,7 @@ function buildInstallPage(){
 
 // ══════════════════════ FOOTER ══════════════════════
 function buildFooter(){
-  return `<footer class="footer"><div class="fg3"><div><div class="fbr">✦ Nirmaan</div><div style="font-size:.81rem;color:var(--t3);line-height:1.65;max-width:260px">AI-powered internship matching for every student in India.</div><div style="display:flex;gap.6rem;gap:.6rem;margin-top:.9rem">${['🐦','💼','🐙','💬'].map(ic=>`<span onclick="notif('Follow us!','in')" style="cursor:pointer;font-size:1.05rem">${ic}</span>`).join('')}</div></div><div class="fco"><h4>Platform</h4><a onclick="go('recs')">AI Matching</a><a onclick="go('skillgap')">Skill Gap</a><a onclick="go('roadmap')">Roadmap</a><a onclick="go('resume')">Resume Builder</a><a onclick="go('network')">Networking</a></div><div class="fco"><h4>Company</h4><a onclick="go('about')">About</a><a onclick="notif('Blog coming soon!','in')">Blog</a><a onclick="go('contact')">Contact</a><a onclick="notif('Careers page!','in')">Careers</a></div><div class="fco"><h4>Support</h4><a onclick="notif('Help center!','in')">Help Center</a><a onclick="notif('Privacy Policy','in')">Privacy</a><a onclick="notif('Terms of Service','in')">Terms</a><a onclick="notif('API docs!','in')">API Docs</a></div></div><div class="fbot"><div>© 2025 Nirmaan Technologies Pvt. Ltd. · Made with ❤️ in India 🇮🇳</div><div style="font-size:.73rem">v3.0 · All systems ✅</div></div></footer>`;
+  return `<footer class="footer"><div class="fg3"><div><div class="fbr">✦ Nirmaan</div><div style="font-size:.81rem;color:var(--t3);line-height:1.65;max-width:260px">AI-powered internship matching for every student in India.</div><div style="display:flex;gap:.6rem;margin-top:.9rem">${['🐦','💼','🐙','💬'].map(ic=>`<span onclick="notif('Follow us on social media!','in')" style="cursor:pointer;font-size:1.05rem">${ic}</span>`).join('')}</div></div><div class="fco"><h4>Platform</h4><a onclick="go('recs')">AI Matches</a><a onclick="go('skillgap')">Skill Gap</a><a onclick="go('roadmap')">Roadmap</a><a onclick="go('resume')">Resume Builder</a><a onclick="go('network')">Networking</a><a onclick="go('install')">📲 Install App</a></div><div class="fco"><h4>Company</h4><a onclick="go('about')">About Us</a><a onclick="notif('Blog coming soon!','in')">Blog</a><a onclick="go('contact')">Contact</a><a onclick="notif('Careers page coming soon!','in')">Careers</a><a onclick="notif('Press kit downloading…','in')">Press Kit</a></div><div class="fco"><h4>Legal</h4><a onclick="notif('Help center coming soon!','in')">Help Center</a><a onclick="notif('Privacy Policy','in')">Privacy Policy</a><a onclick="notif('Terms of Service','in')">Terms</a><a onclick="S.modal='cookiePolicy';render()">Cookie Policy</a><a onclick="notif('Refund Policy','in')">Refund Policy</a></div></div><div class="fbot"><div>© 2025 Nirmaan Technologies Pvt. Ltd. · Made with ❤️ in India 🇮🇳</div><div style="font-size:.73rem">v3.0 · All systems ✅</div></div></footer>`;
 }
 
 // ══════════════════════ PWA INSTALL ══════════════════════
@@ -3741,7 +3795,7 @@ function buildAdminPushPanel() {
 }
 
 // ══════════════════════ INIT ══════════════════════
-window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;
+window.go=go;window.toggleDark=toggleDark;window.toggleVoice=toggleVoice;window.doLogout=doLogout;window.doLogin=doLogin;window.doGLogin=doGLogin;window.nextStep=nextStep;window.completeSignup=completeSignup;window.applyInt=applyInt;window.saveInt=saveInt;window.rmSkill=rmSkill;window.addSkillKey=addSkillKey;window.toggleInt=toggleInt;window.toggleConn=toggleConn;window.sendNHMsg=sendNHMsg;window.addProject=addProject;window.rmProject=rmProject;window.saveProfile=saveProfile;window.exportResume=exportResume;window.copyResume=copyResume;window.closeN=closeN;window.performDemoLogin=performDemoLogin;window.cancelAutoLogin=cancelAutoLogin;window.processChat=processChat;window.S=S;window.sendOtp=sendOtp;window.verifyOtp=verifyOtp;window.toggleBell=toggleBell;window.markAllRead=markAllRead;window.dismissAppNotif=dismissAppNotif;window.navVoiceToChat=navVoiceToChat;
 window.render=render;window.chatVoice=chatVoice;window.notif=notif;window.tourNext=tourNext;window.tourPrev=tourPrev;window.tourSkip=tourSkip;
 window.triggerInstall=triggerInstall;window.dismissInstallBanner=dismissInstallBanner;window.dismissPushBanner=dismissPushBanner;window.requestPushPermission=requestPushPermission;window.adminSendPush=adminSendPush;window.showIOSInstallTip=showIOSInstallTip;
 if(!S.loginRole)S.loginRole='student';
