@@ -17,7 +17,7 @@ const S={
   adminPushTab:'compose',
   adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
   adminPushTitle:'',adminPushBody:'',adminPushUrl:'',adminPushTarget:'all',adminPushIcon:'🔔',
-  fType:'all',srchQ:'',
+  fType:'all',srchQ:'',srchOpen:false,
   skills:['JavaScript','React','Python'],
   interests:['Frontend','AI/ML'],
   loc:'Bangalore',edu:'B.Tech CS',college:'IIT Delhi',yr:'3rd Year',cgpa:'8.5',
@@ -1995,6 +1995,7 @@ function buildMobNav(){
     <button class="mob-nav-btn ${S.page==='recs'?'on':''}" onclick="go('recs')"><span>✨</span><span>${t('mobMatches')}</span></button>
     <button class="mob-nav-btn ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span>📊</span><span>${t('mobSkills')}</span></button>
     <button class="mob-nav-btn ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span>🗺️</span><span>${t('mobRoadmap')}</span></button>
+    <button class="mob-nav-btn ${S.srchOpen?'on':''}" onclick="openGlobalSearch()" aria-label="Search"><span>🔍</span><span>${S.lang==='hi'?'खोजें':'Search'}</span></button>
     <button class="mob-nav-btn" id="mob-more-btn" style="position:relative"><span>☰</span><span>${t('mobMore')}</span>
       ${S.user&&S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
     </button>
@@ -2071,6 +2072,7 @@ function buildNav(){
     <div class="nav-acts">
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
+      <button class="btn-ic" onclick="openGlobalSearch()" title="${S.lang==='hi'?'खोजें':'Search'}">🔍</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
       ${!S.pwaInstalled ? `<button class="btn btn-p btn-sm" onclick="go('install')" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : ''}
       ${S.user?`<div style="position:relative">
@@ -3699,22 +3701,89 @@ function buildPushBanner() {
 
 function buildInstallBanner() {
   if (S.pwaInstalled || S.installBannerDismissed) return '';
-  // Show on: (a) Chrome/Edge with prompt, (b) iOS Safari without prompt
   const hasPrompt = !!S.pwaInstallPrompt;
   const isIOS = window._isIOS;
-  if (!hasPrompt && !isIOS) return ''; // Firefox/desktop-only browsers — skip
-  const mob = window.innerWidth <= 768;
-  return `<div id="install-banner" style="position:fixed;bottom:${mob?'72px':'1.2rem'};left:1rem;z-index:900;max-width:300px;background:linear-gradient(135deg,#6366F1,#8B5CF6);border-radius:16px;padding:.9rem 1.1rem;box-shadow:0 8px 32px rgba(99,102,241,.25);display:flex;gap:.75rem;align-items:center;animation:slideUp .35s cubic-bezier(.34,1.56,.64,1)">
-    <div style="font-size:1.8rem;flex-shrink:0">📲</div>
-    <div style="flex:1">
-      <div style="font-family:var(--fh);font-weight:700;font-size:.86rem;color:#fff">Install Nirmaan</div>
-      <div style="font-size:.73rem;color:rgba(255,255,255,.8);margin:.15rem 0 .6rem">${isIOS ? 'Tap Share then "Add to Home Screen"' : 'Add to home screen for instant access'}</div>
-      <div style="display:flex;gap:.45rem">
-        <button onclick="${hasPrompt ? 'go(\'install\')' : 'go(\'install\')'}" style="background:#fff;color:#6366F1;border:none;border-radius:99px;padding:.35rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;font-family:var(--fb)">${isIOS ? 'Install' : 'Install App'}</button>
-        <button onclick="dismissInstallBanner()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:99px;padding:.35rem .65rem;font-size:.75rem;font-weight:600;cursor:pointer;font-family:var(--fb)">Later</button>
+  if (!hasPrompt && !isIOS) return '';
+
+  // ── Native browser-style "Install app" dialog ─────────────────
+  return `
+  <div id="install-banner" style="
+    position:fixed;bottom:0;left:0;right:0;
+    z-index:9800;
+    display:flex;align-items:flex-end;justify-content:center;
+    background:rgba(0,0,0,0);
+    pointer-events:none;
+  ">
+    <!-- Sheet -->
+    <div style="
+      pointer-events:auto;
+      width:100%;max-width:480px;
+      background:#1e2130;
+      border-radius:18px 18px 0 0;
+      padding:1.15rem 1.25rem 1.5rem;
+      box-shadow:0 -8px 40px rgba(0,0,0,.45);
+      animation:ib-up .32s cubic-bezier(.34,1.2,.64,1);
+    ">
+      <!-- Title row -->
+      <div style="font-size:.82rem;font-weight:700;color:#e2e8f0;letter-spacing:.01em;margin-bottom:1rem">Install app</div>
+
+      <!-- App identity row -->
+      <div style="display:flex;align-items:center;gap:.85rem;margin-bottom:1.25rem">
+        <!-- Icon -->
+        <div style="
+          width:48px;height:48px;flex-shrink:0;
+          background:#6366F1;border-radius:12px;
+          display:flex;align-items:center;justify-content:center;
+          font-size:1.5rem;
+          box-shadow:0 2px 10px rgba(99,102,241,.4);
+        ">✦</div>
+        <div>
+          <div style="font-size:.93rem;font-weight:600;color:#f1f5f9;line-height:1.3">Nirmaan</div>
+          <div style="font-size:.76rem;color:#94a3b8;margin-top:.1rem">nirmaan.app</div>
+        </div>
+      </div>
+
+      <!-- Action buttons — match screenshot style exactly -->
+      <div style="display:flex;justify-content:flex-end;gap:.65rem">
+        <button
+          onclick="dismissInstallBanner()"
+          style="
+            padding:.52rem 1.3rem;
+            border-radius:99px;
+            background:transparent;
+            border:1.5px solid #475569;
+            color:#cbd5e1;
+            font-size:.85rem;font-weight:600;
+            cursor:pointer;font-family:var(--fb);
+            letter-spacing:.01em;
+            transition:border-color .15s,color .15s;
+          "
+          onmouseover="this.style.borderColor='#94a3b8';this.style.color='#f1f5f9'"
+          onmouseout="this.style.borderColor='#475569';this.style.color='#cbd5e1'"
+        >Cancel</button>
+        <button
+          onclick="${isIOS ? "showIOSInstallTip()" : "triggerInstall()"}"
+          style="
+            padding:.52rem 1.45rem;
+            border-radius:99px;
+            background:#6366F1;
+            border:none;
+            color:#fff;
+            font-size:.85rem;font-weight:700;
+            cursor:pointer;font-family:var(--fb);
+            letter-spacing:.01em;
+            box-shadow:0 2px 12px rgba(99,102,241,.45);
+            transition:background .15s,box-shadow .15s;
+          "
+          onmouseover="this.style.background='#4f46e5';this.style.boxShadow='0 4px 18px rgba(99,102,241,.6)'"
+          onmouseout="this.style.background='#6366F1';this.style.boxShadow='0 2px 12px rgba(99,102,241,.45)'"
+        >Install</button>
       </div>
     </div>
-  </div>`;
+  </div>
+  <style>
+    @keyframes ib-up{from{transform:translateY(100%);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  </style>`;
 }
 
 // ══════════════════════ ADMIN PUSH TAB ══════════════════════
@@ -4062,6 +4131,160 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('storage', e => {
   if (e.key === 'nirmaan_pending_notifs') _pollAdminNotifs();
 });
+
+
+// ══════════════════════ GLOBAL SEARCH ══════════════════════
+// All pages — search internships, pages, features
+const SEARCH_PAGES = [
+  {label:'Dashboard',icon:'⚡',page:'dash',keywords:'dashboard home overview'},
+  {label:'AI Matches',icon:'✨',page:'recs',keywords:'internships matches recs recommendations jobs'},
+  {label:'Skill Gap',icon:'📊',page:'skillgap',keywords:'skills gap analysis learning'},
+  {label:'Career Roadmap',icon:'🗺️',page:'roadmap',keywords:'roadmap career plan week'},
+  {label:'Resume Builder',icon:'📄',page:'resume',keywords:'resume cv builder ai'},
+  {label:'Networking Hub',icon:'🤝',page:'network',keywords:'network connect alumni referral'},
+  {label:'Saved Internships',icon:'🔖',page:'saved',keywords:'saved bookmarked wishlist'},
+  {label:'My Profile',icon:'👤',page:'profile',keywords:'profile account settings edit'},
+];
+
+function openGlobalSearch(){
+  S.srchOpen=true;
+  // create overlay if not exists
+  let overlay=document.getElementById('gsearch-overlay');
+  if(!overlay){
+    overlay=document.createElement('div');
+    overlay.id='gsearch-overlay';
+    overlay.innerHTML=`
+      <div class="gsearch-backdrop" onclick="closeGlobalSearch()"></div>
+      <div class="gsearch-modal">
+        <div class="gsearch-bar">
+          <span class="gsearch-ic">🔍</span>
+          <input id="gsearch-input" class="gsearch-input" placeholder="${S.lang==='hi'?'इंटर्नशिप, स्किल्स, फीचर खोजें…':'Search internships, skills, features…'}" autocomplete="off" />
+          <button class="gsearch-close-btn" onclick="closeGlobalSearch()">✕</button>
+        </div>
+        <div class="gsearch-results" id="gsearch-results"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const inp=document.getElementById('gsearch-input');
+    inp.addEventListener('input',function(){runGSearch(this.value);});
+    inp.addEventListener('keydown',function(e){
+      if(e.key==='Escape') closeGlobalSearch();
+      if(e.key==='Enter'){
+        const first=document.querySelector('.gsearch-item');
+        if(first) first.click();
+      }
+      if(e.key==='ArrowDown'){
+        e.preventDefault();
+        const items=[...document.querySelectorAll('.gsearch-item')];
+        const cur=document.querySelector('.gsearch-item.focused');
+        const idx=cur?items.indexOf(cur):-1;
+        if(items[idx+1]){items[idx+1].classList.add('focused');if(cur)cur.classList.remove('focused');}
+      }
+      if(e.key==='ArrowUp'){
+        e.preventDefault();
+        const items=[...document.querySelectorAll('.gsearch-item')];
+        const cur=document.querySelector('.gsearch-item.focused');
+        const idx=cur?items.indexOf(cur):items.length;
+        if(items[idx-1]){items[idx-1].classList.add('focused');if(cur)cur.classList.remove('focused');}
+      }
+    });
+  }
+  overlay.classList.add('open');
+  // reset and focus
+  const inp=document.getElementById('gsearch-input');
+  inp.value='';
+  runGSearch('');
+  setTimeout(()=>inp.focus(),80);
+}
+
+function closeGlobalSearch(){
+  S.srchOpen=false;
+  const overlay=document.getElementById('gsearch-overlay');
+  if(overlay) overlay.classList.remove('open');
+}
+
+function runGSearch(q){
+  const res=document.getElementById('gsearch-results');
+  if(!res) return;
+  const query=q.trim().toLowerCase();
+
+  // Internship results
+  const internHits=INTERNS.filter(i=>
+    !query ||
+    i.title.toLowerCase().includes(query)||
+    i.co.toLowerCase().includes(query)||
+    i.skills.some(s=>s.toLowerCase().includes(query))||
+    i.field.toLowerCase().includes(query)||
+    i.loc.toLowerCase().includes(query)
+  ).slice(0,5);
+
+  // Page results
+  const pageHits=SEARCH_PAGES.filter(p=>
+    !query||
+    p.label.toLowerCase().includes(query)||
+    p.keywords.includes(query)
+  ).slice(0,4);
+
+  let html='';
+
+  if(!query){
+    html+=`<div class="gsearch-section-hd">${S.lang==='hi'?'⚡ जल्दी जाएं':'⚡ Quick Jump'}</div>`;
+    html+=pageHits.map(p=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('${p.page}')">
+      <span class="gsearch-item-ic">${p.icon}</span>
+      <div class="gsearch-item-txt"><div class="gsearch-item-label">${p.label}</div><div class="gsearch-item-sub">Page</div></div>
+      <span class="gsearch-item-arrow">→</span>
+    </div>`).join('');
+
+    html+=`<div class="gsearch-section-hd" style="margin-top:.75rem">${S.lang==='hi'?'✨ टॉप इंटर्नशिप':'✨ Top Internships'}</div>`;
+    html+=internHits.map(i=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('recs')">
+      <span class="gsearch-item-ic">${i.logo}</span>
+      <div class="gsearch-item-txt"><div class="gsearch-item-label">${i.title}</div><div class="gsearch-item-sub">${i.co} · ${i.loc} · ${i.match}% match</div></div>
+      <span class="gsearch-item-badge">${i.pay}</span>
+    </div>`).join('');
+  } else {
+    const total=internHits.length+pageHits.length;
+    if(total===0){
+      html=`<div class="gsearch-empty">
+        <div style="font-size:2rem;margin-bottom:.5rem">🔍</div>
+        <div style="font-weight:700;color:var(--t)">${S.lang==='hi'?'कोई परिणाम नहीं':'No results found'}</div>
+        <div style="font-size:.8rem;color:var(--t3);margin-top:.3rem">${S.lang==='hi'?'अलग शब्द आज़माएं':'Try a different keyword'}</div>
+      </div>`;
+    } else {
+      if(pageHits.length){
+        html+=`<div class="gsearch-section-hd">${S.lang==='hi'?'पेज':'Pages'}</div>`;
+        html+=pageHits.map(p=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('${p.page}')">
+          <span class="gsearch-item-ic">${p.icon}</span>
+          <div class="gsearch-item-txt"><div class="gsearch-item-label">${p.label}</div><div class="gsearch-item-sub">Page</div></div>
+          <span class="gsearch-item-arrow">→</span>
+        </div>`).join('');
+      }
+      if(internHits.length){
+        html+=`<div class="gsearch-section-hd" style="margin-top:.5rem">${S.lang==='hi'?'इंटर्नशिप':'Internships'} <span style="font-weight:400;font-size:.75rem;color:var(--t3)">(${internHits.length})</span></div>`;
+        html+=internHits.map(i=>`<div class="gsearch-item" onclick="closeGlobalSearch();S.srchQ='${q.replace(/'/g,"\'")}';go('recs')">
+          <span class="gsearch-item-ic">${i.logo}</span>
+          <div class="gsearch-item-txt"><div class="gsearch-item-label">${i.title}</div><div class="gsearch-item-sub">${i.co} · ${i.loc} · <strong style="color:var(--p)">${i.match}%</strong> match</div></div>
+          <span class="gsearch-item-badge">${i.pay}</span>
+        </div>`).join('');
+      }
+    }
+  }
+
+  res.innerHTML=html;
+}
+
+// Keyboard shortcut: Ctrl+K / Cmd+K opens search from anywhere
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&e.key==='k'){
+    e.preventDefault();
+    const overlay=document.getElementById('gsearch-overlay');
+    if(overlay&&overlay.classList.contains('open')) closeGlobalSearch();
+    else openGlobalSearch();
+  }
+  if(e.key==='Escape'&&S.srchOpen) closeGlobalSearch();
+});
+window.openGlobalSearch=openGlobalSearch;
+window.closeGlobalSearch=closeGlobalSearch;
 
 synth&&synth.getVoices();
 initSW(); // register service worker on boot
