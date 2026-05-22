@@ -1,0 +1,75 @@
+# ════════════════════════════════════════════════
+#  Nirmaan — robots.txt
+#  https://nirmaan.app/robots.txt
+# ════════════════════════════════════════════════
+
+User-agent: *
+Allow: /
+
+# Block private/authenticated pages from crawlers
+Disallow: /nirmaan.html#dash
+Disallow: /nirmaan.html#recs
+Disallow: /nirmaan.html#skillgap
+Disallow: /nirmaan.html#roadmap
+Disallow: /nirmaan.html#resume
+Disallow: /nirmaan.html#network
+Disallow: /nirmaan.html#saved
+Disallow: /nirmaan.html#profile
+Disallow: /nirmaan.html#admin
+Disallow: /nirmaan.html#codash
+Disallow: /nirmaan.html#rewards
+
+# Allow public-facing pages
+Allow: /nirmaan.html
+Allow: /nirmaan.html#home
+Allow: /nirmaan.html#about
+Allow: /nirmaan.html#contact
+Allow: /nirmaan.html#login
+Allow: /nirmaan.html#signup
+Allow: /nirmaan.html#install
+
+# Block utility / loader files
+Disallow: /nirmaan-loader.html
+Disallow: /nirmaan-chat-opener.html
+Disallow: /nirmaan-chatbot.html
+Disallow: /sw.js
+
+# Block icon assets from being indexed as pages
+Disallow: /icons/
+
+# Sitemaps
+Sitemap: https://nirmaan.app/sitemap.xml
+
+# Crawl rate (requests per second)
+Crawl-delay: 2
+
+# ── Specific bots ──────────────────────────────
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+# Block aggressive scrapers
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /

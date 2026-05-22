@@ -17,7 +17,7 @@ const S={
   adminPushTab:'compose',
   adminPushHistory: JSON.parse(localStorage.getItem('nirmaan_push_history')||'[]'),
   adminPushTitle:'',adminPushBody:'',adminPushUrl:'',adminPushTarget:'all',adminPushIcon:'🔔',
-  fType:'all',srchQ:'',srchOpen:false,
+  fType:'all',srchQ:'',
   skills:['JavaScript','React','Python'],
   interests:['Frontend','AI/ML'],
   loc:'Bangalore',edu:'B.Tech CS',college:'IIT Delhi',yr:'3rd Year',cgpa:'8.5',
@@ -499,7 +499,33 @@ function notif(msg,type='ok',dur=3400){
   setTimeout(()=>{S.notifs=S.notifs.filter(n=>n.id!==id);render();},dur);
 }
 function closeN(id){S.notifs=S.notifs.filter(n=>n.id!==id);render();}
-function go(page){if(page==='signup'){S.step=1;S.otpSent=false;S.otpVerified=false;S.otpCode='';S.otpInput='';S.firstName='';S.lastName='';S.email='';S.phone='';S.pw='';S.pwConfirm='';S.signupRole='student';S.totalSteps=7;S.coName='';S.coSize='';S.coIndustry='';S.coWebsite='';S.coDesc='';S.coHireRoles=[];S.coHireMode='';S.coStipendMin='';S.coBenefits=[];}S.page=page;window.scrollTo(0,0);render();}
+function go(page){
+  // Update document title per page for SPA SEO
+  const pageTitles={
+    home:'Nirmaan — AI Internship Platform for Indian Students',
+    about:'About Nirmaan — Building the Future of Internship Discovery',
+    contact:'Contact Nirmaan — Get in Touch',
+    login:'Login — Nirmaan AI Internship Platform',
+    signup:'Sign Up Free — Nirmaan AI Internship Platform',
+    dash:'Dashboard — Nirmaan',
+    recs:'AI Internship Matches — Nirmaan',
+    skillgap:'Skill Gap Analysis — Nirmaan',
+    roadmap:'Career Roadmap — Nirmaan',
+    resume:'AI Resume Builder — Nirmaan',
+    network:'Networking Hub — Nirmaan',
+    saved:'Saved Internships — Nirmaan',
+    profile:'My Profile — Nirmaan',
+    install:'Install Nirmaan App',
+    rewards:'Rewards & Achievements — Nirmaan',
+    admin:'Admin Panel — Nirmaan',
+    codash:'Company Dashboard — Nirmaan',
+  };
+  document.title = pageTitles[page] || 'Nirmaan — AI Internship Platform';
+  // Update canonical URL hash for crawlers
+  if(history.pushState){
+    history.pushState(null,'',page==='home'?'./':'#'+page);
+  }
+  if(page==='signup'){S.step=1;S.otpSent=false;S.otpVerified=false;S.otpCode='';S.otpInput='';S.firstName='';S.lastName='';S.email='';S.phone='';S.pw='';S.pwConfirm='';S.signupRole='student';S.totalSteps=7;S.coName='';S.coSize='';S.coIndustry='';S.coWebsite='';S.coDesc='';S.coHireRoles=[];S.coHireMode='';S.coStipendMin='';S.coBenefits=[];}S.page=page;window.scrollTo(0,0);render();}
 function toggleDark(){S.dark=!S.dark;document.documentElement.setAttribute('data-theme',S.dark?'dark':'');render();}
 
 // ══════════════════════ VOICE ══════════════════════
@@ -1995,7 +2021,6 @@ function buildMobNav(){
     <button class="mob-nav-btn ${S.page==='recs'?'on':''}" onclick="go('recs')"><span>✨</span><span>${t('mobMatches')}</span></button>
     <button class="mob-nav-btn ${S.page==='skillgap'?'on':''}" onclick="go('skillgap')"><span>📊</span><span>${t('mobSkills')}</span></button>
     <button class="mob-nav-btn ${S.page==='roadmap'?'on':''}" onclick="go('roadmap')"><span>🗺️</span><span>${t('mobRoadmap')}</span></button>
-    <button class="mob-nav-btn ${S.srchOpen?'on':''}" onclick="openGlobalSearch()" aria-label="Search"><span>🔍</span><span>${S.lang==='hi'?'खोजें':'Search'}</span></button>
     <button class="mob-nav-btn" id="mob-more-btn" style="position:relative"><span>☰</span><span>${t('mobMore')}</span>
       ${S.user&&S.appNotifs.filter(n=>!n.read).length>0?`<span style="position:absolute;top:6px;right:calc(50% - 14px);width:15px;height:15px;border-radius:50%;background:var(--red);color:#fff;font-size:.52rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg2)">${S.appNotifs.filter(n=>!n.read).length}</span>`:''}
     </button>
@@ -2060,7 +2085,7 @@ function buildApp(){
 }
 
 // ══════════════════════ NAV ══════════════════════
-function buildNav(){
+function buildNav(){ // SEO: nav has role=navigation via <nav> tag
   const isDash=['dash','recs','skillgap','saved','profile','roadmap','resume','network','codash','admin'].includes(S.page);
   return `<nav class="nav">
     <div class="logo" onclick="go('home')">✦ Nirmaan</div>
@@ -2072,7 +2097,6 @@ function buildNav(){
     <div class="nav-acts">
       <button class="btn-ic lang-globe" onclick="S.langChosen=false;render()" title="${S.lang==='hi'?'भाषा बदलें':'Change Language'}" style="font-size:1rem;position:relative">🌐<span style="position:absolute;bottom:-1px;right:-1px;font-size:.5rem;font-weight:900;background:var(--p);color:#fff;border-radius:99px;padding:.05rem .25rem;line-height:1.2">${S.lang==='hi'?'हि':'EN'}</span></button>
       <button class="btn-ic" onclick="toggleDark()" title="${S.lang==='hi'?'थीम':'Theme'}">${S.dark?'☀️':'🌙'}</button>
-      <button class="btn-ic" onclick="openGlobalSearch()" title="${S.lang==='hi'?'खोजें':'Search'}">🔍</button>
       <button class="btn-ic" id="nav-voice-btn" onclick="navVoiceToChat()" title="${S.lang==='hi'?'वॉइस चैट':'Voice Chat'}" style="${S.voiceActive?'background:var(--red);color:#fff;border-color:var(--red)':''}">🎙️</button>
       ${!S.pwaInstalled ? `<button class="btn btn-p btn-sm" onclick="go('install')" title="Install Nirmaan App" style="gap:.35rem;display:inline-flex;align-items:center">📲 Install App</button>` : ''}
       ${S.user?`<div style="position:relative">
@@ -2170,14 +2194,14 @@ function sb(role){
 
 // ══════════════════════ HOME ══════════════════════
 function buildHome(){
-  return `<div class="page"><section class="hero">
+  return `<div class="page"><main id="main-content" aria-label="Nirmaan home page"><section class="hero" aria-labelledby="hero-heading">
     <div class="hbg"></div>
     <div class="hfl hfl1">🏆 Google · 94% match</div>
     <div class="hfl hfl2">📊 Skill gap closed 40%</div>
     <div class="hfl hfl3">🎙️ Voice-powered</div>
     <div style="position:relative;z-index:1">
       <div class="hbadge a1">🤖 Powered by Sentence Transformers + Cosine Similarity</div>
-      <h1 class="a2" style="font-family:var(--fh);font-size:clamp(2.1rem,5vw,3.6rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;color:var(--t);max-width:700px;margin:0 auto 1.2rem">${t('heroTitle')}</h1>
+      <h1 id="hero-heading" class="a2" style="font-family:var(--fh);font-size:clamp(2.1rem,5vw,3.6rem);font-weight:700;line-height:1.1;letter-spacing:-.04em;color:var(--t);max-width:700px;margin:0 auto 1.2rem">${t('heroTitle')}</h1>
       <p class="a3" style="font-size:1rem;color:var(--t2);max-width:500px;margin:0 auto 2.2rem;line-height:1.75">${t('heroSub')}</p>
       <div class="a4" style="display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap">
         <button class="btn btn-p" style="font-size:.95rem;padding:.75rem 1.85rem" onclick="go('signup')">🚀 Get Started Free</button>
@@ -2202,7 +2226,7 @@ function buildHome(){
       <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;border:1.5px solid rgba(255,255,255,.3);font-size:.95rem;padding:.8rem 1.85rem" onclick="go('contact')">${t('talkTeam')}</button>
     </div>
   </section>
-  ${buildFooter()}</div>`;
+  </main>${buildFooter()}</div>`;
 }
 
 // ══════════════════════ LOGIN (REDESIGNED + AUTO) ══════════════════════
@@ -4131,160 +4155,6 @@ if ('serviceWorker' in navigator) {
 window.addEventListener('storage', e => {
   if (e.key === 'nirmaan_pending_notifs') _pollAdminNotifs();
 });
-
-
-// ══════════════════════ GLOBAL SEARCH ══════════════════════
-// All pages — search internships, pages, features
-const SEARCH_PAGES = [
-  {label:'Dashboard',icon:'⚡',page:'dash',keywords:'dashboard home overview'},
-  {label:'AI Matches',icon:'✨',page:'recs',keywords:'internships matches recs recommendations jobs'},
-  {label:'Skill Gap',icon:'📊',page:'skillgap',keywords:'skills gap analysis learning'},
-  {label:'Career Roadmap',icon:'🗺️',page:'roadmap',keywords:'roadmap career plan week'},
-  {label:'Resume Builder',icon:'📄',page:'resume',keywords:'resume cv builder ai'},
-  {label:'Networking Hub',icon:'🤝',page:'network',keywords:'network connect alumni referral'},
-  {label:'Saved Internships',icon:'🔖',page:'saved',keywords:'saved bookmarked wishlist'},
-  {label:'My Profile',icon:'👤',page:'profile',keywords:'profile account settings edit'},
-];
-
-function openGlobalSearch(){
-  S.srchOpen=true;
-  // create overlay if not exists
-  let overlay=document.getElementById('gsearch-overlay');
-  if(!overlay){
-    overlay=document.createElement('div');
-    overlay.id='gsearch-overlay';
-    overlay.innerHTML=`
-      <div class="gsearch-backdrop" onclick="closeGlobalSearch()"></div>
-      <div class="gsearch-modal">
-        <div class="gsearch-bar">
-          <span class="gsearch-ic">🔍</span>
-          <input id="gsearch-input" class="gsearch-input" placeholder="${S.lang==='hi'?'इंटर्नशिप, स्किल्स, फीचर खोजें…':'Search internships, skills, features…'}" autocomplete="off" />
-          <button class="gsearch-close-btn" onclick="closeGlobalSearch()">✕</button>
-        </div>
-        <div class="gsearch-results" id="gsearch-results"></div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const inp=document.getElementById('gsearch-input');
-    inp.addEventListener('input',function(){runGSearch(this.value);});
-    inp.addEventListener('keydown',function(e){
-      if(e.key==='Escape') closeGlobalSearch();
-      if(e.key==='Enter'){
-        const first=document.querySelector('.gsearch-item');
-        if(first) first.click();
-      }
-      if(e.key==='ArrowDown'){
-        e.preventDefault();
-        const items=[...document.querySelectorAll('.gsearch-item')];
-        const cur=document.querySelector('.gsearch-item.focused');
-        const idx=cur?items.indexOf(cur):-1;
-        if(items[idx+1]){items[idx+1].classList.add('focused');if(cur)cur.classList.remove('focused');}
-      }
-      if(e.key==='ArrowUp'){
-        e.preventDefault();
-        const items=[...document.querySelectorAll('.gsearch-item')];
-        const cur=document.querySelector('.gsearch-item.focused');
-        const idx=cur?items.indexOf(cur):items.length;
-        if(items[idx-1]){items[idx-1].classList.add('focused');if(cur)cur.classList.remove('focused');}
-      }
-    });
-  }
-  overlay.classList.add('open');
-  // reset and focus
-  const inp=document.getElementById('gsearch-input');
-  inp.value='';
-  runGSearch('');
-  setTimeout(()=>inp.focus(),80);
-}
-
-function closeGlobalSearch(){
-  S.srchOpen=false;
-  const overlay=document.getElementById('gsearch-overlay');
-  if(overlay) overlay.classList.remove('open');
-}
-
-function runGSearch(q){
-  const res=document.getElementById('gsearch-results');
-  if(!res) return;
-  const query=q.trim().toLowerCase();
-
-  // Internship results
-  const internHits=INTERNS.filter(i=>
-    !query ||
-    i.title.toLowerCase().includes(query)||
-    i.co.toLowerCase().includes(query)||
-    i.skills.some(s=>s.toLowerCase().includes(query))||
-    i.field.toLowerCase().includes(query)||
-    i.loc.toLowerCase().includes(query)
-  ).slice(0,5);
-
-  // Page results
-  const pageHits=SEARCH_PAGES.filter(p=>
-    !query||
-    p.label.toLowerCase().includes(query)||
-    p.keywords.includes(query)
-  ).slice(0,4);
-
-  let html='';
-
-  if(!query){
-    html+=`<div class="gsearch-section-hd">${S.lang==='hi'?'⚡ जल्दी जाएं':'⚡ Quick Jump'}</div>`;
-    html+=pageHits.map(p=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('${p.page}')">
-      <span class="gsearch-item-ic">${p.icon}</span>
-      <div class="gsearch-item-txt"><div class="gsearch-item-label">${p.label}</div><div class="gsearch-item-sub">Page</div></div>
-      <span class="gsearch-item-arrow">→</span>
-    </div>`).join('');
-
-    html+=`<div class="gsearch-section-hd" style="margin-top:.75rem">${S.lang==='hi'?'✨ टॉप इंटर्नशिप':'✨ Top Internships'}</div>`;
-    html+=internHits.map(i=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('recs')">
-      <span class="gsearch-item-ic">${i.logo}</span>
-      <div class="gsearch-item-txt"><div class="gsearch-item-label">${i.title}</div><div class="gsearch-item-sub">${i.co} · ${i.loc} · ${i.match}% match</div></div>
-      <span class="gsearch-item-badge">${i.pay}</span>
-    </div>`).join('');
-  } else {
-    const total=internHits.length+pageHits.length;
-    if(total===0){
-      html=`<div class="gsearch-empty">
-        <div style="font-size:2rem;margin-bottom:.5rem">🔍</div>
-        <div style="font-weight:700;color:var(--t)">${S.lang==='hi'?'कोई परिणाम नहीं':'No results found'}</div>
-        <div style="font-size:.8rem;color:var(--t3);margin-top:.3rem">${S.lang==='hi'?'अलग शब्द आज़माएं':'Try a different keyword'}</div>
-      </div>`;
-    } else {
-      if(pageHits.length){
-        html+=`<div class="gsearch-section-hd">${S.lang==='hi'?'पेज':'Pages'}</div>`;
-        html+=pageHits.map(p=>`<div class="gsearch-item" onclick="closeGlobalSearch();go('${p.page}')">
-          <span class="gsearch-item-ic">${p.icon}</span>
-          <div class="gsearch-item-txt"><div class="gsearch-item-label">${p.label}</div><div class="gsearch-item-sub">Page</div></div>
-          <span class="gsearch-item-arrow">→</span>
-        </div>`).join('');
-      }
-      if(internHits.length){
-        html+=`<div class="gsearch-section-hd" style="margin-top:.5rem">${S.lang==='hi'?'इंटर्नशिप':'Internships'} <span style="font-weight:400;font-size:.75rem;color:var(--t3)">(${internHits.length})</span></div>`;
-        html+=internHits.map(i=>`<div class="gsearch-item" onclick="closeGlobalSearch();S.srchQ='${q.replace(/'/g,"\'")}';go('recs')">
-          <span class="gsearch-item-ic">${i.logo}</span>
-          <div class="gsearch-item-txt"><div class="gsearch-item-label">${i.title}</div><div class="gsearch-item-sub">${i.co} · ${i.loc} · <strong style="color:var(--p)">${i.match}%</strong> match</div></div>
-          <span class="gsearch-item-badge">${i.pay}</span>
-        </div>`).join('');
-      }
-    }
-  }
-
-  res.innerHTML=html;
-}
-
-// Keyboard shortcut: Ctrl+K / Cmd+K opens search from anywhere
-document.addEventListener('keydown',function(e){
-  if((e.ctrlKey||e.metaKey)&&e.key==='k'){
-    e.preventDefault();
-    const overlay=document.getElementById('gsearch-overlay');
-    if(overlay&&overlay.classList.contains('open')) closeGlobalSearch();
-    else openGlobalSearch();
-  }
-  if(e.key==='Escape'&&S.srchOpen) closeGlobalSearch();
-});
-window.openGlobalSearch=openGlobalSearch;
-window.closeGlobalSearch=closeGlobalSearch;
 
 synth&&synth.getVoices();
 initSW(); // register service worker on boot

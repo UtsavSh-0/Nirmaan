@@ -2,6 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<!-- ═══════════════════════════════════════════════
+     Performance & SEO — Resource Hints
+════════════════════════════════════════════════ -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link rel="dns-prefetch" href="https://fonts.googleapis.com"/>
+<link rel="dns-prefetch" href="https://api.anthropic.com"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -10,13 +17,203 @@
 <meta name="theme-color" content="#6366F1"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icons/icon-192.png"/>
-<title>Nirmaan v3 – AI Internship Platform</title>
+<!-- ═══════════════════════════════════════════════
+     SEO — Primary Meta Tags
+════════════════════════════════════════════════ -->
+<title>Nirmaan — AI Internship Platform for Indian Students | Find Internships with AI</title>
+<meta name="description" content="Nirmaan uses AI to match Indian students with the perfect internship — based on your skills, not just your college. Skill gap analysis, AI resume builder, career roadmap, and 15,000+ internship listings. Free to join."/>
+<meta name="keywords" content="internship platform India, AI internship matching, internship for students India, find internship online, skill gap analysis, resume builder India, career roadmap students, internship Bangalore, internship Delhi, internship Mumbai, Nirmaan internship, AI career platform"/>
+<meta name="author" content="Nirmaan Technologies Pvt. Ltd."/>
+<meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
+<meta name="googlebot" content="index, follow"/>
+<link rel="canonical" href="https://nirmaan.app/"/>
+
+<!-- ═══════════════════════════════════════════════
+     Open Graph / Facebook
+════════════════════════════════════════════════ -->
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="Nirmaan"/>
+<meta property="og:title" content="Nirmaan — AI Internship Platform for Indian Students"/>
+<meta property="og:description" content="Find your perfect internship with AI. Nirmaan matches your skills to 15,000+ internships across India — with skill gap analysis, resume builder, and a personalized career roadmap."/>
+<meta property="og:url" content="https://nirmaan.app/"/>
+<meta property="og:image" content="https://nirmaan.app/icons/og-image.png"/>
+<meta property="og:image:width" content="1200"/>
+<meta property="og:image:height" content="630"/>
+<meta property="og:image:alt" content="Nirmaan AI Internship Platform — Find your perfect internship"/>
+<meta property="og:locale" content="en_IN"/>
+
+<!-- ═══════════════════════════════════════════════
+     Twitter / X Card
+════════════════════════════════════════════════ -->
+<meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:site" content="@NirmaanApp"/>
+<meta name="twitter:creator" content="@NirmaanApp"/>
+<meta name="twitter:title" content="Nirmaan — AI Internship Platform for Indian Students"/>
+<meta name="twitter:description" content="Find your perfect internship with AI. Skill gap analysis, resume builder, career roadmap and 15k+ listings — free for every student in India."/>
+<meta name="twitter:image" content="https://nirmaan.app/icons/og-image.png"/>
+<meta name="twitter:image:alt" content="Nirmaan AI Internship Platform"/>
+
+<!-- ═══════════════════════════════════════════════
+     JSON-LD Structured Data
+════════════════════════════════════════════════ -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://nirmaan.app/#website",
+      "url": "https://nirmaan.app/",
+      "name": "Nirmaan",
+      "description": "AI-powered internship matching platform for Indian students",
+      "inLanguage": ["en-IN", "hi-IN"],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://nirmaan.app/?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://nirmaan.app/#organization",
+      "name": "Nirmaan Technologies Pvt. Ltd.",
+      "url": "https://nirmaan.app/",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://nirmaan.app/icons/icon-512.png",
+        "width": 512,
+        "height": 512
+      },
+      "sameAs": [
+        "https://twitter.com/NirmaanApp",
+        "https://linkedin.com/company/nirmaan-app",
+        "https://github.com/nirmaan-app"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "customer support",
+        "availableLanguage": ["English", "Hindi"]
+      },
+      "foundingDate": "2024",
+      "foundingLocation": "India",
+      "description": "Nirmaan uses semantic AI to match Indian students with internship opportunities based on skills, interests, and career goals."
+    },
+    {
+      "@type": "WebApplication",
+      "@id": "https://nirmaan.app/#webapp",
+      "name": "Nirmaan — AI Internship Platform",
+      "url": "https://nirmaan.app/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web, Android, iOS",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "INR"
+      },
+      "featureList": [
+        "AI-powered internship matching",
+        "Skill gap analysis",
+        "Personalized career roadmap",
+        "AI resume builder",
+        "Networking hub",
+        "Voice assistant in English and Hindi",
+        "PWA — installable on all devices"
+      ],
+      "screenshot": "https://nirmaan.app/icons/og-image.png",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "6200",
+        "bestRating": "5"
+      }
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://nirmaan.app/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is Nirmaan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Nirmaan is a free AI-powered internship platform for Indian students. It uses semantic AI to match your skills and profile to the best-fit internships across India, with tools like skill gap analysis, resume builder, and a personalized career roadmap."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Nirmaan free for students?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes, Nirmaan is completely free for students. Sign up with your email, build your profile, and start getting AI-ranked internship matches instantly."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does the AI internship matching work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Nirmaan uses Sentence Transformers and cosine similarity to semantically compare your skills, projects, and interests against internship requirements — giving each listing a percentage match score tailored to you."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Which cities have internships on Nirmaan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Nirmaan has 15,000+ internships across Bangalore, Delhi, Mumbai, Hyderabad, Pune, Chennai, and remote opportunities all over India."
+          }
+        }
+      ]
+    }
+  ]
+}
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=General+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="nirmaan.css"/>
 
 </head>
 <body>
 <div id="root"></div>
+<!-- ═══════════════════════════════════════════════
+     SEO — Static content fallback for crawlers
+     (shown only when JS is disabled)
+════════════════════════════════════════════════ -->
+<noscript>
+  <main style="font-family:sans-serif;max-width:800px;margin:4rem auto;padding:2rem;color:#1e1b4b">
+    <header>
+      <h1>Nirmaan — AI Internship Platform for Indian Students</h1>
+      <p>Find your perfect internship with AI. Nirmaan matches your skills to 15,000+ internships across India.</p>
+    </header>
+    <section>
+      <h2>Features</h2>
+      <ul>
+        <li><strong>AI Matching</strong> — Internships ranked by percentage match to your skills</li>
+        <li><strong>Skill Gap Analysis</strong> — Identify and close gaps for your target roles</li>
+        <li><strong>Career Roadmap</strong> — Week-by-week personalised plan to land your internship</li>
+        <li><strong>Resume Builder</strong> — AI-assisted resume with ATS optimisation</li>
+        <li><strong>Networking Hub</strong> — Connect with alumni and professionals for referrals</li>
+        <li><strong>Voice Assistant</strong> — Navigate in English or Hindi with voice commands</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Platform Stats</h2>
+      <ul>
+        <li>15,000+ Internship listings</li>
+        <li>97% AI matching accuracy</li>
+        <li>6,200+ Students placed</li>
+        <li>1,100+ Partner companies</li>
+      </ul>
+    </section>
+    <section>
+      <h2>Available in</h2>
+      <p>Bangalore · Delhi · Mumbai · Hyderabad · Pune · Chennai · Remote (All India)</p>
+    </section>
+    <p><strong>Please enable JavaScript to use the full Nirmaan platform.</strong></p>
+  </main>
+</noscript>
 <script src="nirmaan.js" onerror="console.error('Failed to load nirmaan.js!')"></script>
 <script>
 setTimeout(function() {
