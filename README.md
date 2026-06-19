@@ -2,7 +2,6 @@
 
 > **AI-powered internship matching for every student in India.**
 > Version 3.0 · Made in India 🇮🇳 · PWA · Bilingual (EN / हिंदी)
-The version 4.0 is still in development...
 ---
 
 ## Table of Contents
