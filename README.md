@@ -1,7 +1,7 @@
 # ✦ Nirmaan — AI Internship Platform
 
 > **AI-powered internship matching for every student in India.**
-> Version 3.0 · Made in India 🇮🇳 · PWA · Bilingual (EN / हिंदी)
+> Version 3.0 · Made in India 🇮🇳 · PWA · Bilingual (EN / हिंदी) git
 ---
 
 ## Table of Contents
